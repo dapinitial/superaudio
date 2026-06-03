@@ -1,0 +1,27 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+DerivedData/
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+# Built app bundle (produced by Scripts/build_app.sh)
+SuperAudio.app/
+
+# Compiled probe binaries (source committed, binaries are local)
+probe/Day0Capture
+probe/PortProbe
+probe/LosslessVerify
+probe/*.dSYM/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# macOS
+.DS_Store

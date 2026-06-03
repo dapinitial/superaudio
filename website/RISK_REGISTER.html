@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — honest risk register. Legal, technical, market, and operational risks. Likelihood, impact, mitigation, trigger-to-act per row.">
+<title>SuperAudio — Risk Register</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Page-specific overlays — danger-tinted hero */
+  .hero::before {
+    content: ""; position: absolute; top: -40%; right: -10%;
+    width: 70%; height: 180%;
+    background: radial-gradient(circle, rgba(248,113,113,0.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: ""; position: absolute; bottom: -30%; left: -10%;
+    width: 60%; height: 140%;
+    background: radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  /* Heat-map legend */
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 24px 0 32px; }
+  .legend .cell {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .legend .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .legend .dot.high { background: var(--bad); box-shadow: 0 0 0 4px rgba(248,113,113,0.18); }
+  .legend .dot.medium { background: var(--warn); box-shadow: 0 0 0 4px rgba(251,191,36,0.18); }
+  .legend .dot.low { background: var(--good); box-shadow: 0 0 0 4px rgba(74,222,128,0.18); }
+  .legend .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .legend .desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Risk row table — overridden to be denser than the default table */
+  .risk-table { margin: 16px 0 32px; }
+  .risk-table th { font-size: 10.5px; }
+  .risk-table td { font-size: 13px; }
+  .risk-table .sev { font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; }
+  .risk-table .sev.high { color: var(--bad); }
+  .risk-table .sev.medium { color: var(--warn); }
+  .risk-table .sev.low { color: var(--good); }
+  .risk-table .mit { color: var(--text); font-size: 12.5px; }
+  .risk-table .trigger { color: var(--cyan); font-size: 12.5px; font-style: italic; }
+
+  /* Watch list — flat list */
+  .watch { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 24px 0; }
+  .watch-item {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px; padding: 16px 20px;
+    display: grid; grid-template-columns: 1fr 100px; gap: 16px; align-items: center;
+  }
+  .watch-item .signal { font-size: 14.5px; color: var(--text); }
+  .watch-item .signal strong { color: var(--cyan); }
+  .watch-item .cadence { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; text-align: right; }
+  @media (max-width: 640px) { .watch-item { grid-template-columns: 1fr; } .watch-item .cadence { text-align: left; } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html" class="current">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+    <div class="tag">Risk Register</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Risk Register · Honest about what could kill this</div>
+    <h1>What could go wrong, <em>ranked.</em></h1>
+    <p class="lede">
+      Every product has failure modes. Pretending they don't exist is how founders get blindsided. This document enumerates the risks across legal, technical, market, and operational dimensions, scores each by likelihood and impact, names the mitigation, and — most importantly — gives a <strong>trigger-to-act</strong>: the specific event that would tell us "the risk is materializing, do the mitigation now."
+    </p>
+    <div class="meta">
+      <span><strong>Date:</strong> 2026-05-13 · revised 2026-05-15 (T6 resolved, T8 de-risked)</span>
+      <span><strong>Author:</strong> David Puerto</span>
+      <span><strong>Cadence:</strong> Revisit quarterly &amp; whenever a trigger fires</span>
+    </div>
+
+    <div class="legend">
+      <div class="cell">
+        <div class="dot high"></div>
+        <div>
+          <div class="label" style="color: var(--bad);">High</div>
+          <div class="desc">Could kill the project or force a major pivot.</div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="dot medium"></div>
+        <div>
+          <div class="label" style="color: var(--warn);">Medium</div>
+          <div class="desc">Could delay a milestone by 1–3 months or cut margins materially.</div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="dot low"></div>
+        <div>
+          <div class="label" style="color: var(--good);">Low</div>
+          <div class="desc">Manageable annoyance; mitigation is straightforward.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">18</div>
+        <div class="label">risks tracked across 4 categories</div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="label">scored High × High (existential)</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">currently triggered (as of 2026-05-15) — T6 closed, T8 de-risked pre-trigger</div>
+      </div>
+      <div class="stat">
+        <div class="num">~$10K</div>
+        <div class="label">total reserve fund recommended pre-M13</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. Legal / regulatory -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>Legal &amp; regulatory risks</h2>
+    <p class="subhead">Patents, App Store policy, hardware certification.</p>
+
+    <div class="table-wrap risk-table">
+      <table>
+        <thead>
+          <tr><th>Risk</th><th>Lik.</th><th>Imp.</th><th>Mitigation</th><th>Trigger-to-act</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>L1 · Sonos sends a patent cease-and-desist</strong> over multi-room sync.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">We don't invent sync — we use each protocol's native mechanism. Document this defense before launch. Budget $5K for FTO patent search before M13.</td>
+            <td class="trigger">Any legal letter from Sonos, or pattern of Sonos suing competitors who do less than us.</td>
+          </tr>
+          <tr>
+            <td><strong>L2 · App Store reverses on tvOS</strong>, requires MFi for AirPlay sending from tvOS apps.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">M9 (Apple TV companion) becomes unshippable via App Store. Fallback: companion only on Macs and Hubs; Apple TV is a receiver only.</td>
+            <td class="trigger">Apple developer-policy update touching tvOS audio APIs, or rejection of M9 build.</td>
+          </tr>
+          <tr>
+            <td><strong>L3 · FCC / CE / IC certification delays</strong> for Hub Stick or Hub Pro.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Budget 8 weeks slack in M13/M14 timelines. Use chipset-leveraged cert where possible (Pi's CM4 has pre-cert; we ride on it).</td>
+            <td class="trigger">Cert lab returns first findings &gt;3 weeks past quote.</td>
+          </tr>
+          <tr>
+            <td><strong>L4 · DMCA Section 1201 challenge</strong> on AP1 RSA handshake or HDMI ARC capture.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">AP1 key is published numerical constant (16+ years, no enforcement). HDMI ARC capture is well-trodden (consumer extractors exist legally). Posture: we don't circumvent DRM; FairPlay content stays silent through the tap, by design.</td>
+            <td class="trigger">DMCA takedown of any reference implementation we use (shairport-sync, libraop, etc.).</td>
+          </tr>
+          <tr>
+            <td><strong>L5 · GDPR / DSA compliance</strong> issue in EU.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td class="mit">No data collection, no cloud, no telemetry. Paddle handles EU Merchant of Record obligations. Privacy policy template; reviewed pre-launch.</td>
+            <td class="trigger">EU regulator inquiry (any), or material change to DSA scope affecting indie software.</td>
+          </tr>
+          <tr>
+            <td><strong>L6 · Trademark conflict</strong> on "SuperAudio."</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td class="mit">USPTO search clean as of 2026-05-13 for our exact mark in our class. Budget $1–2K for filing within year 1 if launch traction warrants.</td>
+            <td class="trigger">C&amp;D from a "SuperAudio" mark holder we missed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Technical risks -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>Technical risks</h2>
+    <p class="subhead">Platform changes, protocol breaks, fundamental capture limits.</p>
+
+    <div class="table-wrap risk-table">
+      <table>
+        <thead>
+          <tr><th>Risk</th><th>Lik.</th><th>Imp.</th><th>Mitigation</th><th>Trigger-to-act</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T1 · Apple deprecates CATapDescription</strong> or process taps in a future macOS.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">BlackHole (Plan B) is the documented fallback — virtual audio device that captures system output without process-tap APIs. Architecture already supports swap-in (CLAUDE.md "module boundaries").</td>
+            <td class="trigger">macOS release notes deprecate the API, or sample compilation breaks on a new SDK.</td>
+          </tr>
+          <tr>
+            <td><strong>T2 · B&amp;W firmware update breaks RAOP</strong> on A5 / A7.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">Pin dev hardware to current firmware (auto-update off). B&amp;W discontinued the line in 2017; unlikely to push more updates. Even if they do, shairport-sync community would notice and document the change within days.</td>
+            <td class="trigger">B&amp;W firmware version bump, or shairport-sync issue tracker noting break.</td>
+          </tr>
+          <tr>
+            <td><strong>T3 · Apple ends AP1 entirely</strong> on receiver side (e.g., AirPort Express EOL in firmware).</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">AP1 is frozen but functional in current Apple infrastructure. Apple has zero incentive to actively kill it (hardware they no longer sell). If they do: ship a shairport-sync receiver as a separate process on Hub Stick — preserves the use case.</td>
+            <td class="trigger">Apple security advisory affecting AirPort Express, or AP1-only third-party speaker vendor announces end-of-support.</td>
+          </tr>
+          <tr>
+            <td><strong>T4 · NTP timing-channel approach fails</strong> on a non-B&amp;W AP1 receiver model.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Code path is generic (RFC-shaped NTP, not B&amp;W-specific). Test against AirPort Express + 2–3 other AP1 receivers before M8. If a divergent model is found, add a per-receiver quirk table.</td>
+            <td class="trigger">Beta-tester report: RECORD hangs on a specific AP1 model.</td>
+          </tr>
+          <tr>
+            <td><strong>T5 · AAC-LC encoder latency exceeds Sonos buffer tolerance</strong> (~600ms+).</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">AVAudioConverter low-latency mode measured. If too high, fall back to MP3 192kbps (Sonos accepts; slightly worse quality, lower latency).</td>
+            <td class="trigger">M4 testing: Sonos lags B&amp;W by &gt;800ms after manual offset.</td>
+          </tr>
+          <tr style="background: rgba(74,222,128,0.04);">
+            <td><strong>T6 · ALAC encoder integration is harder than estimated</strong> (M3 blocker). <span style="color: var(--good); font-weight:700;">— Resolved.</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td class="mit"><strong style="color: var(--good);">✓ Resolved 2026-05-14/15.</strong> <code>AVAudioConverter</code> with <code>kAudioFormatAppleLossless</code> produces compliant compressed ALAC natively (parameters <code>pb=40, mb=10, kb=14</code> match standard SDP <code>fmtp</code> lines). No C-interop with Apple's open-source encoder required. The "ALAC verbatim" fallback was attempted first — B&amp;W firmware silently drops verbatim/escape frames; compressed ALAC was mandatory, not optional. See DECISIONS.md 2026-05-14 Finding 1.</td>
+            <td class="trigger">Closed — first audible AP1 audio shipped 2026-05-14 on both B&amp;W A5 and A7.</td>
+          </tr>
+          <tr style="background: rgba(74,222,128,0.04);">
+            <td><strong>T7 · Multi-sink sync drift &gt;100 ms</strong> despite latency probes. <span style="color: var(--good); font-weight:700;">— De-risked by M6 sync arc 2026-05-17.</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td class="mit"><strong style="color: var(--good);">✓ M6 sync + reliability arc closed 2026-05-17.</strong> Cross-AP1 first-audio measured at <strong>&lt;1 ms</strong> regardless of per-sink handshake variance (handshake barrier in <code>SessionState</code> holds all AP1 sinks until every one finishes RTSP work, then releases simultaneously). Sonos within ~200 ms of AP1 via start-align defer. User-validated empirically at <code>slider=3085 ms</code>. The "manual offset slider" approach (original mitigation) is now augmented by: sender-side broadcaster delay (sidesteps receivers' silent NTP-clamping behavior), supervisor exit-reason enum + retry cap (kills retry storms that competed for TCP bandwidth), and audio-gap telemetry (logs <code>⚠ Capture gap detected: N ms</code> for ground-truth drop detection). See <a href="../docs/DECISIONS.md">docs/DECISIONS.md</a> 2026-05-17 entry + <a href="CASE_STUDY.html">CASE_STUDY.html</a> validation log.</td>
+            <td class="trigger">Trigger reduced to: (a) <code>⚠ Capture gap</code> logs &gt;3/hour in normal use, or (b) cross-AP1 first-audio diff &gt;30 ms on a fresh restart (regression).</td>
+          </tr>
+          <tr style="background: rgba(74,222,128,0.04);">
+            <td><strong>T8 · "Lossless" claim broken by accidental resampling</strong> in our pipeline (audiophile forums fact-check us within 48 hours of any marketing claim). <span style="color: var(--good); font-weight:700;">— De-risked; discipline retained.</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit"><strong style="color: var(--good);">✓ Verification shipped 2026-05-15.</strong> <code>probe/LosslessVerify</code> proves the ALAC encode → decode round-trip is <strong>SHA-256-identical to source</strong> (verified hash <code>2f9f7c83…1bb47e1</code>). Lossless Mode toggle ships in the menu bar — forces Mac default output to 44.1 kHz while any session is active. OSLog tags the active path (◆ LOSSLESS PASS-THROUGH vs SRC) so reviewers can independently verify per-session. <strong>Discipline retained: every release re-runs <code>probe/LosslessVerify</code>; the 30-min soak test is still pending before any public "lossless" marketing copy goes live.</strong></td>
+            <td class="trigger">Trigger reduced to: (a) <code>probe/LosslessVerify</code> regression on any commit touching the encode path, or (b) 30-min soak surfaces audible drift / glitch that wasn't predicted by the bit-exact test.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Market risks -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>Market risks</h2>
+    <p class="subhead">Demand, competition, pricing, distribution.</p>
+
+    <div class="table-wrap risk-table">
+      <table>
+        <thead>
+          <tr><th>Risk</th><th>Lik.</th><th>Imp.</th><th>Mitigation</th><th>Trigger-to-act</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>M1 · No demand at $19 price point</strong> — buyers don't materialize.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">Airfoil at $35 has sold for 17 years; demand is proven. Pricing flexibility: drop to $14 if conversion is &lt;1.5% from organic traffic over 3 months post-launch. Could ALSO test $24 with a coupon to find true elasticity.</td>
+            <td class="trigger">&lt;30 sales in first 30 days after a real launch post.</td>
+          </tr>
+          <tr>
+            <td><strong>M2 · A bigger player ships cross-ecosystem fan-out</strong> (WiiM expands, Sonos adds non-Sonos drive, Apple adds Sonos).</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">Speed-to-market: M8 (Mac launch) ASAP. <strong>Cross-protocol calibration is the durable moat and it shipped 2026-05-18 in the base Mac app</strong> (Mac-mic chirp auto-calibration, 3-pass convergence to sub-perceptual sync, verified on B&amp;W A5 + A7 + Sonos Playbar gen 1). The iPhone-mic Room Tuning addon (M11) extends it. Also: hardware (Hub Pro) is a structural moat a software player can't replicate quickly.</td>
+            <td class="trigger">WiiM, Sonos, Bluesound, or Apple announcement of any cross-ecosystem feature.</td>
+          </tr>
+          <tr>
+            <td><strong>M3 · DRM crackdown on system audio</strong> (Apple Music, Spotify) makes capture unviable for buyer's main use case.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Already documented: FairPlay content is silent through the tap. Marketing copy emphasizes Spotify (no FairPlay) + browser audio + system-app audio. If Spotify adopts DRM at the OS layer (unlikely), pivot to AirPlay/Sonos-from-Spotify-Connect routing.</td>
+            <td class="trigger">Apple or Spotify announces FairPlay-equivalent DRM on the system audio path.</td>
+          </tr>
+          <tr>
+            <td><strong>M4 · Hardware unit economics worse than projected</strong> at M13.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">BOM is validated at M7 (pre-launch hardening) before committing to MOQ. If margins are &lt;25%, defer hardware launch; software-only product is viable on its own (M1–M12 revenue covers founder time).</td>
+            <td class="trigger">First ODM quote +30% above estimate, or BOM creep at &gt;20% after first iteration.</td>
+          </tr>
+          <tr>
+            <td><strong>M5 · Word-of-mouth doesn't compound</strong> — product doesn't get review coverage.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="mit">Active outreach to: r/audiophile, r/sonos, AVS Forum, the Verge, Wirecutter, MacStories, 9to5Mac, daringfireball, Hacker News (Show HN). Press kit prepared at M7 with real-hardware photos and the differentiation matrix.</span></td>
+            <td class="trigger">Zero notable review coverage 60 days post-M8.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Operational risks -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>Operational risks</h2>
+    <p class="subhead">The risks that come with being a solo bootstrapped operation.</p>
+
+    <div class="table-wrap risk-table">
+      <table>
+        <thead>
+          <tr><th>Risk</th><th>Lik.</th><th>Imp.</th><th>Mitigation</th><th>Trigger-to-act</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>O1 · Solo founder burnout</strong> or health event.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">Codebase is MIT-clean by design. Worst-case: open-source the project so the community can maintain it. Document architecture in CLAUDE.md to enable a fast handoff to a contractor if needed. Build in deliberate gaps — no all-night sessions like the M2 RECORD-debug night.</td>
+            <td class="trigger">Two consecutive weeks of zero meaningful progress.</td>
+          </tr>
+          <tr>
+            <td><strong>O2 · ODM falls through</strong> for Hub Stick or Hub Pro manufacturing.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Identify 3 candidate ODMs before committing to one (Shenzhen-based for Pi-derived; Taiwan for premium). v1 of Hub Pro uses Raspberry Pi compute module which is widely available even outside the chosen ODM.</td>
+            <td class="trigger">ODM communication delays &gt;2 weeks, or quote change &gt;15%.</td>
+          </tr>
+          <tr>
+            <td><strong>O3 · Paddle (MoR) policy change</strong> affecting indie audio products.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Stripe + manual VAT handling is the fallback (more work but viable). Code is decoupled from payments provider — license-key system is internal.</td>
+            <td class="trigger">Paddle ToS update affecting our category, or account review notice.</td>
+          </tr>
+          <tr>
+            <td><strong>O4 · Apple Developer cert revocation</strong>.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev high">High</span></td>
+            <td class="mit">Maintain clean App Store relationship (tvOS + iOS companions). Avoid private APIs (already a discipline per CLAUDE.md). If revoked: app distribution via DMG with notarization only stays viable, no App Store companions until reinstated.</td>
+            <td class="trigger">Any Apple developer-program email about review/violation.</td>
+          </tr>
+          <tr>
+            <td><strong>O5 · Support volume exceeds founder capacity</strong> post-launch.</td>
+            <td><span class="sev medium">Med</span></td>
+            <td><span class="sev low">Low</span></td>
+            <td class="mit">FAQ pages exhaustive at launch (cover known speaker quirks, network setup, license activation). Discord community for peer support. Plead.io or similar low-cost ticketing if needed; one-person ticketing is OK at &lt;20 tickets/week.</td>
+            <td class="trigger">&gt;5 unanswered tickets aged 48+ hours.</td>
+          </tr>
+          <tr>
+            <td><strong>O6 · Refund rate exceeds 5%</strong> indicating product-market fit issue.</td>
+            <td><span class="sev low">Low</span></td>
+            <td><span class="sev medium">Med</span></td>
+            <td class="mit">Demo video on landing page sets expectations (especially around Sonos floor). 14-day refund window is generous but unambiguous. Track refund reasons; iterate.</td>
+            <td class="trigger">Refund rate &gt;3% in any 30-day window.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Heat map summary -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>What's actually scary</h2>
+    <p class="subhead">The High × High cell of the matrix. These three risks could kill the project; everything else is recoverable.</p>
+
+    <div class="risk high">
+      <div class="badge-col"><span class="badge">Existential</span></div>
+      <div>
+        <div class="title">L1 — Sonos patent suit</div>
+        <div class="body">Sonos is the most-litigious player in this space. They sued Google over multi-room and won material claims. If they read the COMPETITIVE_LANDSCAPE.html on this site and decide we're a real threat, we get a letter. The defense (using each protocol's native sync, not inventing our own) is plausible but unproven in court.</div>
+        <div class="defense"><strong>Mitigation budget:</strong> $5K FTO patent search before M13 (Hub hardware). Document the "router, not inventor" defense in code comments and in DECISIONS.md. Build a relationship with a patent attorney early so we have someone to call. If we get a C&amp;D pre-M13, pause hardware and respond formally.</div>
+      </div>
+    </div>
+
+    <div class="risk high">
+      <div class="badge-col"><span class="badge">Existential</span></div>
+      <div>
+        <div class="title">O1 — Solo founder burnout</div>
+        <div class="body">Two facts that compound: (1) the project depends on the founder's full attention through M8 and beyond; (2) the M2 RECORD-debugging night was a warning sign. Solo bootstrapped audio engineering is intense.</div>
+        <div class="defense"><strong>Mitigation:</strong> MIT-clean codebase as a load-bearing decision. Architecture documented exhaustively. If burnout fires the trigger, open-source the project — the community can maintain it indefinitely, the brand survives even if the company doesn't.</div>
+      </div>
+    </div>
+
+    <div class="risk high">
+      <div class="badge-col"><span class="badge">Existential</span></div>
+      <div>
+        <div class="title">M2 — Cross-ecosystem fan-out gets commoditized</div>
+        <div class="body">If WiiM, Sonos, or (most damagingly) Apple announces cross-ecosystem fan-out as a feature, our software moat collapses. Apple has the install base to do this overnight if they choose.</div>
+        <div class="defense"><strong>Mitigation:</strong> Cross-protocol acoustic calibration <strong>shipped 2026-05-18</strong> in the base Mac app — 3-pass Mac-mic chirp converging to sub-perceptual sync, verified on B&amp;W A5 + A7 + Sonos Playbar gen 1. The M11 iPhone-mic Room Tuning addon extends it with whole-room frequency correction. <strong>The moat we promised exists today — no longer a "next year" claim.</strong> Hardware moat (Hub Pro HDMI ARC) is structural. Speed to M8 is the single best mitigation. Every month of unique market presence builds brand equity that survives commoditization.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Watch list -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>The watch list</h2>
+    <p class="subhead">Signals to monitor. If any of these fire, jump to the trigger row in sections 1–4.</p>
+
+    <div class="watch">
+      <div class="watch-item">
+        <div class="signal"><strong>Sonos news.</strong> Press releases, blog posts, lawsuits, executive interviews mentioning multi-room or interoperability.</div>
+        <div class="cadence">Weekly · Google Alert</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>Apple developer policy.</strong> macOS / iOS / tvOS release notes, especially around AudioToolbox, AVFoundation, AirPlay APIs.</div>
+        <div class="cadence">Each beta cycle</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>WiiM / Linkplay roadmap.</strong> Reddit r/wiim, their forum, product launches. Closest direct competitor in price band.</div>
+        <div class="cadence">Monthly</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>shairport-sync issue tracker.</strong> AP1 receiver changes surface here first.</div>
+        <div class="cadence">Weekly</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>B&amp;W firmware.</strong> Pin dev hardware; check monthly for any update notices.</div>
+        <div class="cadence">Monthly</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>Refund / support volume.</strong> Post-launch metric; review the dashboard daily.</div>
+        <div class="cadence">Daily after M8</div>
+      </div>
+      <div class="watch-item">
+        <div class="signal"><strong>Founder energy / focus.</strong> Subjective but real. If three days pass without meaningful progress, take a week off rather than push through.</div>
+        <div class="cadence">Weekly retrospective</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Conclusion -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>How this register stays useful</h2>
+
+    <div class="wedge">
+      <div class="label">Document discipline</div>
+      <div class="title">A risk register that isn't <em>revisited</em> is just <em>journaling.</em></div>
+      <p>Quarterly revisit cadence (Jan 15 / Apr 15 / Jul 15 / Oct 15). Every revisit: walk each row, ask "is the likelihood still right? has the impact changed? has the trigger fired?" Update or remove. Add any new risks discovered in the prior quarter.</p>
+      <p>The point isn't to predict the future. It's to remove "we never thought about that" from the list of possible failure stories. When the surprise comes, the response is faster because the muscle memory is in place. <strong>Risk registers are insurance; the premium is one afternoon per quarter.</strong></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Risk Register · Drafted 2026-05-13 · Revised 2026-05-15 (T6 closed, T8 de-risked) · Revised 2026-05-17 (T7 de-risked by M6 sync arc) · Next revisit: 2026-08-15</p>
+    <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a>, <a href="COMPETITIVE_LANDSCAPE.html">COMPETITIVE_LANDSCAPE.html</a>, <a href="PRICING.html">PRICING.html</a>, and <a href="POSITIONING.html">POSITIONING.html</a>. Likelihood and impact scores are forward-looking judgments, not predictions; revisit quarterly and whenever a trigger fires.</p>
+  </div>
+</footer>
+
+</body>
+</html>

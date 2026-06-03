@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — Hub Stick (M13) and Hub Pro (M14) hardware design vision, sizing analysis, design gaps, and manufacturing strategy. Forward-looking architectural notes for the hardware SKUs.">
+<title>SuperAudio — Hub Design</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Page-specific overlays — cyan-tinted to distinguish "future" from "shipped" */
+  .hero::before {
+    content: ""; position: absolute; top: -30%; right: -15%;
+    width: 60%; height: 160%;
+    background: radial-gradient(circle, rgba(103,232,249,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: ""; position: absolute; bottom: -20%; left: -10%;
+    width: 60%; height: 130%;
+    background: radial-gradient(circle, rgba(255,106,61,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  /* Two-up product cards (Hub Stick + Hub Pro) */
+  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 28px 0; }
+  .product {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px;
+    position: relative;
+  }
+  .product.stick { border-top: 3px solid var(--accent); }
+  .product.pro { border-top: 3px solid var(--cyan); }
+  .product .sku { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  .product .name { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 2px; }
+  .product .stick .name { color: var(--accent); }
+  .product .pro .name { color: var(--cyan); }
+  .product .price { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+  .product .price .target { color: var(--text-muted); font-weight: 400; }
+  .product h4 { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-2); margin: 18px 0 6px; }
+  .product ul { margin: 0 0 12px; padding-left: 18px; }
+  .product li { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; margin-bottom: 4px; }
+  .product li strong { color: var(--text); }
+  @media (max-width: 880px) { .product-grid { grid-template-columns: 1fr; } }
+
+  /* Magic-moment quote callout */
+  .magic {
+    background: linear-gradient(135deg, rgba(103,232,249,0.06), rgba(255,106,61,0.04));
+    border: 1px solid var(--border-bright);
+    border-left: 4px solid var(--cyan);
+    border-radius: 12px; padding: 28px 32px; margin: 24px 0;
+  }
+  .magic p { font-size: 22px; font-weight: 600; line-height: 1.4; color: var(--text); margin: 0 0 14px; letter-spacing: -0.015em; }
+  .magic p:last-child { margin-bottom: 0; }
+  .magic em { color: var(--cyan); font-style: normal; }
+  .magic .caption { font-size: 13px; color: var(--text-muted); margin-top: 18px; }
+
+  /* CEC table */
+  .remote-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+  .remote-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .remote-table td { font-size: 14px; color: var(--text); padding: 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .remote-table td:first-child { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .remote-table td:last-child { color: var(--text-muted); }
+
+  /* Gap tiers */
+  .gap-stack { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 24px 0; }
+  .gap {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 22px;
+    display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: start;
+  }
+  .gap.tier1 { border-left: 3px solid var(--bad); }
+  .gap.tier2 { border-left: 3px solid var(--warn); }
+  .gap.tier3 { border-left: 3px solid var(--good); }
+  .gap.tier4 { border-left: 3px solid var(--text-dim); }
+  .gap .label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .gap.tier1 .label { color: var(--bad); }
+  .gap.tier2 .label { color: var(--warn); }
+  .gap.tier3 .label { color: var(--good); }
+  .gap.tier4 .label { color: var(--text-dim); }
+  .gap .body h5 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+  .gap .body p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.55; }
+  @media (max-width: 720px) { .gap { grid-template-columns: 1fr; } }
+
+  /* Manufacturing country table */
+  .mfg-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+  .mfg-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .mfg-table td { font-size: 13.5px; color: var(--text); padding: 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .mfg-table td:first-child { font-weight: 700; }
+  .mfg-table .pick { background: rgba(255,106,61,0.04); }
+  .mfg-table .pick td:first-child { color: var(--accent); }
+
+  /* Sizing comparison */
+  .sizing-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+  .sizing-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 12px 10px; border-bottom: 1px solid var(--border); }
+  .sizing-table td { font-size: 13px; color: var(--text); padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .sizing-table td:first-child { font-weight: 700; }
+  .sizing-table .pick-stick { background: rgba(255,106,61,0.04); }
+  .sizing-table .pick-pro { background: rgba(103,232,249,0.04); }
+  .sizing-table .pick-stick td:first-child { color: var(--accent); }
+  .sizing-table .pick-pro td:first-child { color: var(--cyan); }
+  .check { color: var(--good); font-weight: 700; }
+  .warn { color: var(--warn); font-weight: 700; }
+  .nope { color: var(--bad); font-weight: 700; }
+
+  /* Timeline strip */
+  .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 24px 0; }
+  .tstep {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px;
+  }
+  .tstep .when { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 6px; }
+  .tstep .what { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .tstep .desc { font-size: 12px; color: var(--text-muted); }
+  @media (max-width: 880px) { .timeline { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .timeline { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html" class="current">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+    <div class="tag">Hub Design</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Hub Stick (M13) · Hub Pro (M14) · Forward-looking design</div>
+    <h1>Press TV power. <em>Audio everywhere.</em></h1>
+    <p class="lede">
+      The Mac app is the developer / audiophile tool. The <strong>Hub products</strong> are what a normal household actually buys — a small box you plug into the router or behind the TV, and audio just works across every speaker in the house. This document captures the design vision for Hub Stick + Hub Pro, the hardware sizing analysis, the design gaps still open, and the manufacturing strategy. Forward-looking; nothing here ships before M13.
+    </p>
+    <div class="meta">
+      <span><strong>Date:</strong> 2026-05-16 (initial draft + same-night expansion: 5-SKU lineup, streaming-stick landscape, leverage-existing-soundbar via Claude Skill, M5.5 schema dual-role)</span>
+      <span><strong>Author:</strong> David Puerto</span>
+      <span><strong>Status:</strong> Architectural — informs M13/M14 build planning, not yet committed BOM</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">5</div>
+        <div class="label">hardware SKUs spanning $29 → $279, each addressing a distinct household scenario</div>
+      </div>
+      <div class="stat">
+        <div class="num">$29</div>
+        <div class="label">Audio Bridge — cheapest entry point, leverages existing soundbar</div>
+      </div>
+      <div class="stat">
+        <div class="num">2 sec</div>
+        <div class="label">target lag from TV power-on to audio playing everywhere (Hub Pro)</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">new hardware required when soundbar exposes API (Sonos / WiiM / BluOS / HomeKit / SmartThings)</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. The vision -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>The magic moment</h2>
+    <p class="subhead">Three sentences of user experience that define the entire product line.</p>
+
+    <div class="magic">
+      <p>Day 1 — plug Hub Pro into your TV's HDMI ARC port, scan a QR code with your phone, pick which speakers you want, give it a tune.</p>
+      <p>Day 2 — press the TV power button. <em>In two seconds, audio is playing on every speaker in the house, at the levels you saved, in sync.</em> No phone touched. No app opened. Just the TV remote you already use.</p>
+      <p>Press volume on the same remote — <em>volume changes on every speaker, balance preserved.</em> Press mute — <em>everything quiets.</em> Power off — <em>everything stops cleanly.</em></p>
+      <div class="caption">Nobody else does this. Sonos Beam controls only Sonos speakers via the TV remote. Apple TV controls only HomePods. WiiM bridges one source to one output. SuperAudio Hub Pro is the only product that turns a single TV remote into the universal volume control for a heterogeneous mesh of B&amp;W AirPlay 1 + Sonos + HomePod + Chromecast speakers — playing the same audio, in sync, from one HDMI ARC return.</div>
+    </div>
+
+    <h3 style="margin-top: 36px;">Why we ship hardware instead of riding existing streaming sticks</h3>
+    <p style="color: var(--text-muted);">
+      Obvious question: most households already have an Apple TV, Roku, Fire TV Stick, or Chromecast plugged into their HDMI. Why can't we ship as a tvOS / Roku / Fire TV app and skip the hardware entirely?
+    </p>
+    <p style="color: var(--text-muted);">
+      Honest answer: <strong>only Apple TV's developer platform is open enough to host our orchestrator</strong>. We <em>do</em> ship a tvOS companion (M9, $5 addon) for households that already own an Apple TV 4K — for that ~30% of US households, the Apple TV becomes our Hub Pro equivalent for free. The other 70% need our hardware because:
+    </p>
+    <ul style="color: var(--text-muted); margin: 14px 0; padding-left: 22px;">
+      <li><strong>Roku</strong> — BrightScript channels are restricted to content streaming; no system-level audio routing APIs, no persistent background services, no sideloading. <em>Closed</em>.</li>
+      <li><strong>Fire TV Stick</strong> — Fire OS allows sideloading but Amazon Appstore is hostile to non-Amazon multi-room solutions; Fire TV Multi-Room is their walled-garden play. <em>Closed in practice.</em></li>
+      <li><strong>Chromecast with Google TV</strong> — Android TV is more open but Google's Cast ecosystem is the intended path; not a host for cross-vendor orchestration. <em>Tied to Cast.</em></li>
+      <li><strong>Nvidia Shield</strong> — Android TV, most open of the bunch. Possible eventual target post-M14, but small audience.</li>
+      <li><strong>Smart TVs with Tizen / WebOS / Roku OS</strong> — closed platforms generally.</li>
+    </ul>
+    <p style="color: var(--text-muted);">
+      <strong>The fact that no streaming stick is open enough to host our orchestrator is exactly why Hub Stick / Hub Pro exist as a category.</strong> If Roku or Fire TV were open, we'd ship there and skip hardware entirely. They're not, so we ship our own boxes. <em>Apple TV is the exception</em> — M9 turns it into Hub Pro for households that already own one.
+    </p>
+  </div>
+</section>
+
+<!-- 2. The SKU lineup -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>The SKU lineup</h2>
+    <p class="subhead">Same software engine across five hardware SKUs, each addressing a distinct household scenario. Tonight's design conversation expanded this from a 2-SKU lineup (Hub Stick + Hub Pro) to five — the gaps were real, especially the cheaper "leverage what's already there" entry points.</p>
+
+    <table class="sizing-table" style="margin-top: 28px;">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Price</th>
+          <th>Form factor</th>
+          <th>TV-side input</th>
+          <th>Volume control source</th>
+          <th>Audience</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="pick-stick">
+          <td>Audio Bridge</td>
+          <td>$29–39</td>
+          <td>Tiny dongle, TOSLINK in, USB-C power</td>
+          <td>TOSLINK (via splitter, alongside existing soundbar)</td>
+          <td>Existing soundbar's volume events (Sonos/WiiM/HomeKit/SmartThings) via Claude Skill onboarding · phone-app fallback for closed soundbars</td>
+          <td><strong>Mixed-speaker households with existing soundbar.</strong> Keep your Playbar/WiiM/Bose, extend TV audio to your B&amp;W AP1 + other speakers.</td>
+        </tr>
+        <tr class="pick-stick">
+          <td>Hub Stick Mini</td>
+          <td>$39–45</td>
+          <td>USB-A stick, TV-USB-A powered</td>
+          <td>None (LAN-only via Wi-Fi)</td>
+          <td>Phone app</td>
+          <td><strong>Impulse-buy entry point.</strong> "I want phone audio everywhere; no wall wart." Powered directly by TV's USB-A port.</td>
+        </tr>
+        <tr>
+          <td>Hub Stick</td>
+          <td>$59</td>
+          <td>Router-plug box, own USB-C wall wart</td>
+          <td>None (LAN-only via Wi-Fi or Ethernet)</td>
+          <td>Phone app</td>
+          <td><strong>Households with no Mac and no Apple TV.</strong> All connectivity by the router — Ethernet option, analog out.</td>
+        </tr>
+        <tr>
+          <td>Optical Hub</td>
+          <td>$79</td>
+          <td>Small box, TOSLINK in, USB-C power, <strong>IR receiver</strong></td>
+          <td>TOSLINK</td>
+          <td><strong>Own IR remote-learning</strong> — pairs with TV remote during setup, picks up volume codes line-of-sight (Sonos Beam optical-mode pattern)</td>
+          <td><strong>Mass-market sweet spot.</strong> 2014–2018 TVs (huge installed base) with optical out, no HDMI ARC reliability. Replaces / consolidates the existing soundbar entirely.</td>
+        </tr>
+        <tr class="pick-pro">
+          <td>Hub Pro Dongle</td>
+          <td>$249</td>
+          <td>Chromecast-style HDMI dongle, USB-C wall wart</td>
+          <td>HDMI eARC</td>
+          <td>TV remote via HDMI-CEC <code>User Control Pressed</code> — fans to mesh</td>
+          <td><strong>The magic-moment flagship.</strong> Modern TV with eARC. Press TV power → audio everywhere in 2 sec.</td>
+        </tr>
+        <tr class="pick-pro">
+          <td>Hub Pro Box</td>
+          <td>$279</td>
+          <td>Set-top box, full ports, own PSU</td>
+          <td>HDMI eARC + TOSLINK</td>
+          <td>TV remote via HDMI-CEC + own IR receiver + phone app</td>
+          <td><strong>Audiophile / AV cabinet.</strong> Same internals as Dongle but every port — Ethernet, TOSLINK in/out, analog out.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 32px;">The price ladder + audience map</h3>
+    <p style="color: var(--text-muted);">
+      Five products may sound like SKU sprawl. The argument for it: <strong>each SKU addresses a distinct decision the household has already made</strong>. The Audio Bridge ($29) is for the user who's invested in their Sonos/WiiM/Bose soundbar and doesn't want to replace it. The Optical Hub ($79) is for the user who's open to replacing the soundbar entirely and wants TV-remote integration without HDMI. The Hub Pro ($249/$279) is for the user with a modern eARC TV who wants the full magic-moment experience. Each transition is a real upgrade with a real cost-justification.
+    </p>
+
+    <h3 style="margin-top: 28px;">The hardware sizing analysis (§4 below)</h3>
+    <p style="color: var(--text-muted);">
+      Same Pi Zero 2 W vs Pi CM4 vs CM5 analysis applies across all five SKUs. Hub Stick Mini + Audio Bridge + Hub Stick + Optical Hub all use Pi Zero 2 W (workload is light — just protocol fan-out, no HDMI processing). Hub Pro Dongle + Box use Pi CM4 (needs 5 GHz Wi-Fi + headroom for HDMI receiver chip). See §4 for the full table.
+    </p>
+  </div>
+</section>
+
+<!-- 3. CEC remote passthrough + per-source profiles -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>HDMI-CEC remote passthrough + per-source profiles</h2>
+    <p class="subhead">The detail that makes the magic moment work. Standard mechanism (CEC), novel aggregation (mesh-wide).</p>
+
+    <h3>What the TV remote actually does</h3>
+    <p style="color: var(--text-muted);">HDMI-CEC carries a command called <code>User Control Pressed</code> with sub-codes for volume / mute / power / pause / etc. When you press a button on the TV remote, the TV doesn't change its own state — it sends the CEC command to whatever device has registered as the <strong>Audio System</strong> on the HDMI bus. Today that's your Sonos Beam (or HomePod, or AVR). Hub Pro takes that role and fans the command out.</p>
+
+    <table class="remote-table">
+      <thead>
+        <tr><th>TV remote action</th><th>CEC command Hub Pro receives</th><th>What Hub Pro does</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Power on</td>
+          <td>CEC <code>Set Stream Path</code> + ARC audio becomes active</td>
+          <td>Auto-start session with saved per-TV profile · resolve speakers · ≤2 sec until audio plays everywhere</td>
+        </tr>
+        <tr>
+          <td>Volume up</td>
+          <td><code>User Control Pressed (Volume Up)</code></td>
+          <td>Bump every active sink by 5% of its slider value · preserves relative balance · iOS companion master-volume widget reflects new level</td>
+        </tr>
+        <tr>
+          <td>Volume down</td>
+          <td><code>User Control Pressed (Volume Down)</code></td>
+          <td>Inverse of above</td>
+        </tr>
+        <tr>
+          <td>Mute</td>
+          <td><code>User Control Pressed (Mute)</code></td>
+          <td><code>setVolume(0)</code> on every sink · remember prior values · unmute restores</td>
+        </tr>
+        <tr>
+          <td>Power off</td>
+          <td>ARC audio goes silent for &gt;5 sec</td>
+          <td>RTSP TEARDOWN to AP1 sinks · SOAP <code>Stop</code> to Sonos · everything goes idle cleanly</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Per-source profiles</h3>
+    <p style="color: var(--text-muted);">Each TV + input combination saves its own profile: which speakers, what EQ, default volume, per-sink offsets, surround behavior. CEC's <code>Set Stream Path</code> + the EDID Vendor Specific Data Block let us identify the TV (make / model). On first connection: "What TV is this?" picker if CEC EDID doesn't auto-resolve. After that — automatic.</p>
+
+    <p style="color: var(--text-muted);">A typical household profile set:</p>
+    <ul style="color: var(--text-muted); margin: 14px 0; padding-left: 20px;">
+      <li><strong>Living room Sony</strong> → A5 + A7 + Sonos Den, "movie night" EQ, all sinks at 70% master · saved offsets per the user's M5d tuning</li>
+      <li><strong>Bedroom LG</strong> → just Bedroom Sonos, low-default volume (~15%), late-night EQ tilted toward dialogue clarity</li>
+      <li><strong>Kitchen TCL</strong> → kitchen Chromecast, "news clarity" EQ for spoken-word content</li>
+    </ul>
+
+    <p style="color: var(--text-muted);">Saved as JSON in the Hub Pro's eMMC, synced to the iOS companion. Same persistence layer as the Mac app's <code>SessionState</code> + <code>SpeakerGroups</code> — we extend, not rebuild.</p>
+
+    <h3 style="margin-top: 36px;">Leverage existing soundbar — the Claude Skill as universal adapter</h3>
+    <p style="color: var(--text-muted);">
+      Real-world households don't have homogeneous audio gear. Your TV is LG OLED; your soundbar is Sonos Playbar; your other speakers are B&amp;W AP1; the guest bedroom has a Bose Bluetooth speaker. <strong>The TV remote already controls the soundbar's volume — via the soundbar's IR receiver or HDMI-CEC integration.</strong> Why would we ask the user to replace that working chain?
+    </p>
+    <p style="color: var(--text-muted);">
+      Instead, <strong>SuperAudio software leverages the existing soundbar as the control layer</strong>. The M6.5 Claude Skill — originally scoped for unsupported-speaker onboarding — expands to cover any audio device in the household, including the soundbar acting as control surface. The Skill identifies the soundbar's make/model, probes for API/event endpoints, and writes a per-soundbar profile that the public <code>superaudio-device-profiles</code> repo contributes back to the community.
+    </p>
+
+    <table class="remote-table">
+      <thead>
+        <tr><th>Soundbar category</th><th>Claude Skill approach</th><th>Volume control path</th><th>New hardware needed?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sonos / WiiM / BluOS / HEOS / MusicCast</strong></td>
+          <td>Web-search API docs, probe UPnP / HTTP endpoints, write API-based profile</td>
+          <td>Subscribe to soundbar's volume-change events; propagate to mesh in real-time</td>
+          <td><span class="check">None</span> — software only</td>
+        </tr>
+        <tr>
+          <td><strong>HomeKit-integrated</strong> (newer Sony, LG, Bose)</td>
+          <td>Skill identifies via Apple's HomeKit accessory list</td>
+          <td>Apple TV / HomePod hub becomes event source — TV remote → CEC → HomeKit event → us</td>
+          <td><span class="check">None</span> — leverages existing Apple TV / HomePod</td>
+        </tr>
+        <tr>
+          <td><strong>SmartThings-integrated</strong> (most Samsung)</td>
+          <td>Skill identifies via SmartThings API, walks user through token grant</td>
+          <td>Subscribe via SmartThings event stream</td>
+          <td><span class="check">None</span> — software only</td>
+        </tr>
+        <tr>
+          <td><strong>AirPlay 2 / Cast / Spotify Connect receivers</strong> (any vendor)</td>
+          <td>Probe Bonjour, find the receiver service</td>
+          <td>Hook into the AP2 / Cast / SPC event stream</td>
+          <td><span class="check">None</span> — software only</td>
+        </tr>
+        <tr>
+          <td><strong>Closed / IR-only generic soundbars</strong> (older B&amp;W, dumb optical bars)</td>
+          <td>Skill notes "no API path available"; offers fallback options</td>
+          <td><strong>Fallback A:</strong> phone-app master volume (works today, no hardware). <strong>Fallback B:</strong> Audio Bridge / Optical Hub with IR receiver to learn TV-remote codes (Sonos Beam pattern).</td>
+          <td><span class="warn">Optional</span> — Audio Bridge $29 if user wants TV-remote integration; otherwise phone-app control</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 24px;">M5.5 schema gains a "control role" alongside "sink role"</h3>
+    <p style="color: var(--text-muted);">
+      The Device Profile substrate originally specced "sink role" only (a profile describes how to send audio to this device). Tonight's reveal expands the schema: profiles now describe <strong>two roles</strong>:
+    </p>
+    <ul style="color: var(--text-muted); margin: 14px 0; padding-left: 22px;">
+      <li><strong>Sink role:</strong> receives audio (how to send, what codecs, timing tolerances, quirks). What we already specced.</li>
+      <li><strong>Control role:</strong> provides volume / power / pause events for the mesh to propagate (which API to subscribe to, IR codes if learned, fallback to phone-app control).</li>
+    </ul>
+    <p style="color: var(--text-muted);">
+      A Sonos Playbar has both roles: it's a sink (receives audio) AND a control source (its volume events propagate to other speakers). A B&amp;W A5 has only the sink role. A generic IR-only soundbar paired with an Audio Bridge has only the control role (the user keeps the soundbar for TV audio; the Audio Bridge captures audio for the rest of the mesh). The schema accommodates all three.
+    </p>
+
+    <div class="pullquote" style="border-left-color: var(--cyan); margin-top: 28px;">
+      The pitch sharpens to: <em>"Keep your soundbar. Keep your TV-remote habits. Our software (plus an optional $29 dongle if needed) extends the experience to every other speaker you own — and our AI Skill figures out your specific gear's quirks in 10 minutes of guided setup."</em> AI-driven device adaptation, not hardware-per-vendor.
+    </div>
+  </div>
+</section>
+
+<!-- 4. Hardware sizing -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>Hardware sizing — Pi Zero 2 W vs CM4 vs CM5</h2>
+    <p class="subhead">Honest engineering math, not marketing. The wrong chip kills either the price target or the customer experience.</p>
+
+    <table class="sizing-table">
+      <thead>
+        <tr>
+          <th>Board</th>
+          <th>SoC</th>
+          <th>RAM</th>
+          <th>Wi-Fi</th>
+          <th>Board cost</th>
+          <th>Total BOM</th>
+          <th>$59 Hub Stick?</th>
+          <th>$249 Hub Pro?</th>
+          <th>3 sinks</th>
+          <th>6 sinks</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="pick-stick">
+          <td>Pi Zero 2 W</td>
+          <td>Quad A53 @ 1 GHz</td>
+          <td>512 MB</td>
+          <td>2.4 GHz only</td>
+          <td>~$15</td>
+          <td>$35–45</td>
+          <td><span class="check">✓ Fits</span></td>
+          <td><span class="nope">✗ Wi-Fi too weak</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="warn">⚠ Tight</span></td>
+        </tr>
+        <tr>
+          <td>Pi 4 (2 GB)</td>
+          <td>Quad A72 @ 1.5 GHz</td>
+          <td>2 GB</td>
+          <td>5 GHz Wi-Fi 5</td>
+          <td>~$35</td>
+          <td>$55–70</td>
+          <td><span class="warn">⚠ Blows by $5–10</span></td>
+          <td><span class="check">✓ Fits</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Pi 5 (2 GB)</td>
+          <td>Quad A76 @ 2.4 GHz</td>
+          <td>2 GB</td>
+          <td>5 GHz Wi-Fi 5</td>
+          <td>~$50</td>
+          <td>$80–95</td>
+          <td><span class="nope">✗</span></td>
+          <td><span class="check">✓ Fits comfortably</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr class="pick-pro">
+          <td>Pi CM4 (4 GB, Lite)</td>
+          <td>Quad A72 @ 1.5 GHz</td>
+          <td>4 GB</td>
+          <td>5 GHz Wi-Fi 5</td>
+          <td>~$25–30 module + ~$40 carrier</td>
+          <td>$100–115</td>
+          <td><span class="nope">✗</span></td>
+          <td><span class="check">✓ Sweet spot for $249</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Pi CM5 (4 GB, Lite)</td>
+          <td>Quad A76 @ 2.4 GHz</td>
+          <td>4 GB</td>
+          <td>5 GHz Wi-Fi 5</td>
+          <td>~$70 module + ~$30 carrier</td>
+          <td>$130–160</td>
+          <td><span class="nope">✗</span></td>
+          <td><span class="warn">⚠ Margin tight at $249 · works at $299</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Why these picks</h3>
+    <ul style="color: var(--text-muted);">
+      <li><strong>Pi Zero 2 W for Hub Stick — accepted-risk choice.</strong> CPU is enough for 3–4 sink households (the median). 2.4 GHz Wi-Fi 4 is the real constraint — for 6+ sink power-users on congested networks, audio glitches are likely. Hedge: M13.5 Hub Stick Plus at $99 on Pi 5 (2 GB) if real-world testing surfaces the glitch.</li>
+      <li><strong>Pi CM4 for Hub Pro — sweet spot.</strong> Same A72 cores as Pi 4 (proven for our workload), 4 GB RAM (comfortable), 5 GHz Wi-Fi 5 (solves the Hub Stick wireless concern), purpose-built carrier-board form factor (clean industrial-mount design). BOM $100–115 leaves $130–150 margin at $249 retail.</li>
+      <li><strong>Why not CM5:</strong> the A76 cores are nice but we don't actually need them for our workload (no heavy video processing, just audio fan-out). The $30–45 BOM premium burns margin we'd rather keep. Revisit if/when M14 v2 ships Atmos passthrough (more CPU-heavy).</li>
+      <li><strong>Why not Adafruit's own hardware:</strong> Adafruit's Feather / ItsyBitsy / Metro lines are microcontroller-class (ESP32, RP2350, M0/M4). Wrong tier — we need a Linux-running SBC, not a microcontroller. Adafruit <em>resells</em> Pi which is fine; their own boards don't fit our workload.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 5. Design gaps -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>Design gaps — what we still need to figure out</h2>
+    <p class="subhead">Honest accounting of open questions. Tier 1 = must address before M14 build starts. Tier 4 = mostly settled, just documented.</p>
+
+    <div class="gap-stack">
+
+      <div class="gap tier1">
+        <div class="label">Tier 1<br>Pre-build</div>
+        <div class="body">
+          <h5>eARC vs ARC capability scope at launch</h5>
+          <p>eARC carries Atmos / DTS-X (compressed surround). ARC carries PCM stereo or Dolby Digital 5.1 only. <strong>Decision needed:</strong> target eARC (HDMI 2.1) for full Atmos passthrough, or ship M14 v1 with ARC stereo downmix and add Atmos in v2. Probably <strong>v1 = stereo downmix; v2 = surround split</strong> for engineering tractability.</p>
+        </div>
+      </div>
+
+      <div class="gap tier1">
+        <div class="label">Tier 1<br>Pre-build</div>
+        <div class="body">
+          <h5>HDMI passthrough vs ARC-only topology</h5>
+          <p>Two ways Hub Pro can sit on HDMI: (a) <em>ARC-only</em> — Hub Pro plugs into TV's ARC return, doesn't touch the video signal. Simpler, cheaper, no HDCP complexity. (b) <em>Full passthrough</em> — Hub Pro between TV and source, handles HDCP, can override audio. More expensive ($350+ retail). <strong>Decision: ARC-only at $249.</strong> Passthrough is a future Hub Pro Plus SKU at $349 if customers ask.</p>
+        </div>
+      </div>
+
+      <div class="gap tier1">
+        <div class="label">Tier 1<br>Pre-build</div>
+        <div class="body">
+          <h5>HDCP handling</h5>
+          <p>eARC carries encrypted streams. Realtek RTD2173 (and similar receiver chipsets) handle HDCP transparently — not our code, vendor stack. Need to confirm RTD2173 firmware supports HDCP 2.3 (required for Atmos over eARC on 2024+ TVs).</p>
+        </div>
+      </div>
+
+      <div class="gap tier2">
+        <div class="label">Tier 2<br>Post-launch</div>
+        <div class="body">
+          <h5>Surround audio split vs downmix</h5>
+          <p>If TV outputs Atmos, do we (a) downmix to stereo for non-Atmos sinks (B&amp;W A5, etc.), or (b) split — pass Atmos to capable sinks, stereo to others, in sync? Option (b) is the killer feature but real engineering. M14 v1 = (a); M14 v2 = (b).</p>
+        </div>
+      </div>
+
+      <div class="gap tier2">
+        <div class="label">Tier 2<br>Post-launch</div>
+        <div class="body">
+          <h5>Per-HDMI-input profiles</h5>
+          <p>Modern TVs have 4–5 HDMI ports. Audio comes from different sources (cable box / Apple TV / console). Today our profile is "per TV"; "per HDMI input" needs CEC's <code>Set Stream Path</code> parsing. Real engineering, ship as v2 polish.</p>
+        </div>
+      </div>
+
+      <div class="gap tier2">
+        <div class="label">Tier 2<br>Post-launch</div>
+        <div class="body">
+          <h5>Voice-assistant conflicts</h5>
+          <p>"Alexa, volume up" said in the room → only Sonos hears it locally → mesh goes out of sync. Two options: (a) accept as documented limit, (b) intercept Sonos's event subscription and propagate the change to other sinks. (b) is real engineering, post-launch polish.</p>
+        </div>
+      </div>
+
+      <div class="gap tier3">
+        <div class="label">Tier 3<br>Nice-to-have</div>
+        <div class="body">
+          <h5>TV USB-A port as power source for Hub Stick</h5>
+          <p>Pi Zero 2 W draws ~150 mA idle, ~500 mA peak. Many TV USB-A ports do 500 mA+. <strong>Could eliminate the wall wart entirely</strong> — "plug into your TV's USB port, done." Real UX win. Needs power-management testing across TV brands to confirm.</p>
+        </div>
+      </div>
+
+      <div class="gap tier3">
+        <div class="label">Tier 3<br>Nice-to-have</div>
+        <div class="body">
+          <h5>Bluetooth A2DP receive on both products</h5>
+          <p>Guest phones pair with Hub Pro/Stick → audio fans to mesh. Single-pairing limit (Bluetooth A2DP is one-at-a-time) but useful for guests, kids, anything without AirPlay/Cast support.</p>
+        </div>
+      </div>
+
+      <div class="gap tier3">
+        <div class="label">Tier 3<br>Nice-to-have</div>
+        <div class="body">
+          <h5>Boot time optimization</h5>
+          <p>Hub Pro needs to be "ready" within 5 s of power-on so the TV-power-on auto-trigger doesn't miss the first second of audio. Default Pi Zero 2 W boot ~30 s; CM4 default ~15 s. Custom initramfs + direct-boot-to-daemon (no systemd full stack) gets both under 5 s. Real engineering effort.</p>
+        </div>
+      </div>
+
+      <div class="gap tier4">
+        <div class="label">Tier 4<br>Settled</div>
+        <div class="body">
+          <h5>Latency budget for CEC volume command → mesh</h5>
+          <p>CEC command arrives (~10 ms) + parallel dispatch to N sinks (~50–100 ms RTT each, but parallel via TaskGroup) = ~100 ms worst case at 6 sinks. Below the 200 ms "instant" threshold. ✓ Fine.</p>
+        </div>
+      </div>
+
+      <div class="gap tier4">
+        <div class="label">Tier 4<br>Settled</div>
+        <div class="body">
+          <h5>Graceful TV-power-off teardown</h5>
+          <p>ARC audio goes silent for 5 s → fire RTSP TEARDOWN to AP1 sinks + Sonos SOAP <code>Stop</code> + clean process exit. Reuses the existing <code>applicationWillTerminate</code> path from the Mac app. ✓ Fine.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 6. Manufacturing strategy -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>Manufacturing strategy — Latin America hybrid</h2>
+    <p class="subhead">The founder is a US/Colombia dual citizen with family in Mexico, Panama, and Dominican Republic. That's strategic optionality most indie hardware founders don't have. Use it.</p>
+
+    <h3>Trade-agreement reality across the four countries</h3>
+    <p style="color: var(--text-muted);">All four have zero-tariff agreements with the USA. That means the China-vs-elsewhere math becomes "is the BOM savings worth the IP risk + tariff exposure" — and at current US tariff posture (25–30% on Chinese consumer electronics, with discussion of higher), the answer is mostly no.</p>
+
+    <table class="mfg-table">
+      <thead>
+        <tr><th>Country</th><th>Trade agreement</th><th>Tariff to USA</th><th>Electronics ecosystem</th><th>Founder access</th></tr>
+      </thead>
+      <tbody>
+        <tr class="pick">
+          <td>Mexico</td>
+          <td>USMCA</td>
+          <td><span class="check">0%</span></td>
+          <td><strong>Strongest in LATAM.</strong> Guadalajara, Monterrey, Tijuana — Jabil, Flex, Sanmina, plus dozens of smaller specialists. Mature contract-mfg supply chain.</td>
+          <td>Cousin holds dual citizenship · direct relationship</td>
+        </tr>
+        <tr>
+          <td>Colombia</td>
+          <td>CTPA (2012)</td>
+          <td><span class="check">0%</span></td>
+          <td>Small for hardware mfg. <strong>Strong for software / firmware engineering talent</strong> — Medellín, Bogotá. Costs ~30–50% of comparable US engineering.</td>
+          <td>Founder holds dual citizenship</td>
+        </tr>
+        <tr>
+          <td>Dominican Republic</td>
+          <td>DR-CAFTA (2007)</td>
+          <td><span class="check">0%</span></td>
+          <td>Real electronics mfg in free trade zones (Santo Domingo, Punta Cana). Lower wages than Mexico. Smaller ecosystem but growing.</td>
+          <td>Family in country · trust factor</td>
+        </tr>
+        <tr>
+          <td>Panama</td>
+          <td>Panama TPA (2012)</td>
+          <td><span class="check">0%</span></td>
+          <td>Limited mfg. <strong>Colón Free Trade Zone</strong> is one of the world's largest — logistics + holding-company strength, not assembly.</td>
+          <td>Family in country</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Recommended function-by-country mapping</h3>
+    <ul style="color: var(--text-muted); margin: 12px 0; padding-left: 22px;">
+      <li><strong>Software / firmware engineering</strong> → <strong>Colombia</strong> (Medellín or Bogotá) once we hire beyond the founder. Tech-talent arbitrage + founder's dual citizenship enables direct hiring. Audiophile-press story works.</li>
+      <li><strong>Hardware design (PCB schematic, mechanical, firmware)</strong> → <strong>USA or Colombia.</strong> Contract PCB-layout firms in Bay Area / Austin (~$5–15 K) or a hired engineer in Medellín.</li>
+      <li><strong>Component sourcing</strong> → <strong>Shenzhen via Alibaba.</strong> Most chips are made in Asia regardless. Sourcing components ≠ assembling them. Use verified suppliers (Seeed Studio for Pi-related, established chipmakers for the rest).</li>
+      <li><strong>PCB assembly + final box assembly</strong> → <strong>Mexico (Guadalajara or Monterrey)</strong> via cousin's network. Best LATAM ecosystem + zero tariff + IP protection better than China + direct trust.</li>
+      <li><strong>Lower-cost assembly hedge / backup</strong> → <strong>Dominican Republic</strong> for batch 2+ if Mexico costs creep. Family connection enables relationship.</li>
+      <li><strong>Logistics / LATAM distribution hub</strong> → <strong>Panama (Colón FTZ)</strong> when we eventually distribute regionally. US market alone uses a US-based 3PL (ShipBob, Amazon FBA).</li>
+      <li><strong>Certification (FCC / CE / IC)</strong> → US third-party labs, $8–14 K per market, one-time per design.</li>
+    </ul>
+
+    <h3>Marketing-story angle worth using</h3>
+    <p style="color: var(--text-muted);">
+      "Designed in Latin America, assembled in Mexico, engineered for the world." The David-vs-Goliath energy of an indie audio company with LATAM DNA + US tech expertise is genuinely compelling — and underused. Sonos hides its mfg origin; Bluesound markets Canadian roots; B&amp;W markets British. SuperAudio markets <strong>regional dignity</strong>: not foreign-made, not American-corporate, but <em>founded by someone with real cultural roots across the Americas</em>. Audiophile press will eat this. Latin American market (post-M8 expansion) will respond to a brand of and from the region, not foreign brands condescending in.
+    </p>
+
+    <h3>Important honest caveats</h3>
+    <ul style="color: var(--text-muted); margin: 12px 0; padding-left: 22px;">
+      <li><strong>This is months out.</strong> M13 ships after M5.5 + M6.5 + M7 + M8 + M9 + M10 + M11 + M12. Realistic timeline: 2027. Manufacturing outreach starts ~6 months before ship date. Plenty of time to vet factories.</li>
+      <li><strong>Get a US international tax accountant + a lawyer familiar with US/LATAM hardware imports before committing to a holding-company structure.</strong> Probably $1–3 K of advice money but pays for itself if it surfaces tax benefits or unblocks a problem early.</li>
+      <li><strong>MOQ realities.</strong> Most CMs in any of these countries want 250–500-unit minimums. At 100 units we'd be limited to small US CMs or specialty Chinese factories. Acceptable for a first run while we validate demand.</li>
+      <li><strong>The factory pick happens after sample units + factory visits, not after this document.</strong> This is the framework, not the contract.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7. Timeline reality -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>Honest timeline reality</h2>
+    <p class="subhead">Software prototypes are tomorrow. Hardware prototypes are months. Calling that out so the doc reflects truth.</p>
+
+    <div class="timeline">
+      <div class="tstep">
+        <div class="when">Now → 1 mo</div>
+        <div class="what">Mac app polish</div>
+        <div class="desc">M5.5 Device Profile substrate · M6.5 Claude Skill · M7 pre-launch hardening · iterate fast with software-only commits</div>
+      </div>
+      <div class="tstep">
+        <div class="when">~2–3 mo</div>
+        <div class="what">M8 public beta</div>
+        <div class="desc">Mac app at $19 live. First revenue data. Validates the consumer hypothesis before any hardware commitment.</div>
+      </div>
+      <div class="tstep">
+        <div class="when">~3–6 mo</div>
+        <div class="what">M9 + M10 + M11</div>
+        <div class="desc">Apple TV companion · iOS companion · iPhone-mic Room Tuning addon (frequency correction across multiple positions; per-speaker delay calibration via the Mac's mic already shipped in the base app 2026-05-18 as the M11 Path A precursor). Still software-only. Hardware planning starts in parallel toward end.</div>
+      </div>
+      <div class="tstep">
+        <div class="when">~9–12 mo</div>
+        <div class="what">M13 Hub Stick</div>
+        <div class="desc">PCB design + Shenzhen sourcing + Mexico assembly + FCC/CE/IC cert + first 500-unit run. Working prototype around mo 7–8; production around mo 10–12.</div>
+      </div>
+    </div>
+
+    <p style="color: var(--text-muted); margin-top: 12px;">
+      Working <em>software</em> prototypes for any specific feature are 1–2 weeks at our current pace. Working <em>hardware</em> prototypes are months — PCB layout (2–4 weeks), first-article fabrication (3–6 weeks), assembly + firmware bring-up (2–4 weeks), iterate, repeat. <strong>Hub Stick working prototype is ~7–8 months out at fast pace; production around month 10–12.</strong> Hub Pro is +3 months on top. Plan accordingly.
+    </p>
+  </div>
+</section>
+
+<!-- 8. Closing -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8</span>Why this all matters</h2>
+    <p class="subhead">Where the Mac app gets to in M8 + the hub products from M13/M14 in combination.</p>
+
+    <div class="wedge">
+      <div class="label">The strategic point</div>
+      <div class="title">The Mac app is the wedge. <em>The hub products are the platform.</em></div>
+      <p>By the time Hub Pro ships, a household can have: Mac app on their MacBook (for direct-from-app audio), tvOS companion on their Apple TV (for direct-from-streaming audio), Hub Stick by the router (for headless audio orchestration), Hub Pro behind the TV (for the magic-moment "press TV power, audio everywhere" experience). Every speaker the household owns — B&amp;W from 2013, Sonos from 2018, HomePod from 2022, Chromecast from anytime — plays the same audio at the same time, tuned to each room, controlled by whatever interface is most convenient.</p>
+      <p>That's not "another multi-room product." That's <strong>universal audio orchestration for existing hardware</strong> — the layer above the fragmented current state, the thing that doesn't exist as a unified product anywhere on the market or on GitHub. The Mac app proves the hypothesis. The hub products turn it into a platform that scales beyond one household's geek.</p>
+      <p><strong>Press TV power. Audio everywhere.</strong> That's the demo. Everything in this document exists to make that demo real and reliable.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Hub Design · Drafted 2026-05-16 (night session) · Same-night expansion: 5-SKU lineup, streaming-stick landscape, leverage-existing-soundbar via Claude Skill, M5.5 schema dual-role · Forward-looking · Not a committed BOM or factory list</p>
+    <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a> (strategy + TAM), <a href="COMPETITIVE_LANDSCAPE.html">COMPETITIVE_LANDSCAPE.html</a> (hardware bridges + GitHub matrix), <a href="POSITIONING.html">POSITIONING.html</a> (consumer pillars + technical framing for non-consumer surfaces), and <a href="PRICING.html">PRICING.html</a> (price defense). See also <a href="../docs/ROADMAP.md">ROADMAP.md</a> for the M13/M14 milestone definitions and <a href="../docs/DECISIONS.md">DECISIONS.md</a> for the dated decision trail behind everything here.</p>
+  </div>
+</footer>
+
+</body>
+</html>

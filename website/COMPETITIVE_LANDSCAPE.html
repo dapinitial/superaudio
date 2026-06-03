@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — competitive landscape and legal posture. Hardware, software, room tuning, patents, regulatory hurdles. The full picture in one place.">
+<title>SuperAudio — Competitive Landscape &amp; Legal Posture</title>
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --bg-card:   #14141c;
+    --bg-card-2: #1a1a24;
+    --border:    #23232e;
+    --border-bright: #2e2e3c;
+    --text:      #ececf1;
+    --text-muted:#8a8a96;
+    --text-dim:  #5a5a66;
+    --accent:    #ff6a3d;
+    --accent-2:  #ffba6d;
+    --good:      #4ade80;
+    --warn:      #fbbf24;
+    --bad:       #f87171;
+    --cyan:      #67e8f9;
+    --violet:    #a78bfa;
+    --pink:      #f472b6;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-2); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 80px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.78);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 16px; padding-bottom: 16px;
+  }
+  .topnav .brand {
+    font-weight: 800; letter-spacing: -0.01em;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-size: 18px;
+  }
+  .topnav .nav-links { display: flex; gap: 18px; font-size: 13px; }
+  .topnav .nav-links a { color: var(--text-muted); }
+  .topnav .nav-links a:hover { color: var(--accent); }
+  .topnav .nav-links a.current { color: var(--accent); font-weight: 600; }
+  .topnav .nav-links .nav-sep { color: var(--border); user-select: none; }
+  .topnav .brand { text-decoration: none; }
+  .topnav .tag {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 96px 0 64px;
+    border-top: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; top: -40%; right: -10%;
+    width: 70%; height: 180%;
+    background: radial-gradient(circle, rgba(248,113,113,0.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: "";
+    position: absolute; bottom: -30%; left: -10%;
+    width: 60%; height: 140%;
+    background: radial-gradient(circle, rgba(255,106,61,0.08) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .hero > .wrap { position: relative; }
+  .hero .eyebrow {
+    color: var(--accent);
+    font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: 1.05; letter-spacing: -0.025em;
+    font-weight: 800; margin: 0 0 24px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--pink) 70%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .hero .lede {
+    font-size: 20px; color: var(--text-muted); max-width: 760px;
+    line-height: 1.55;
+  }
+  .hero .lede strong { color: var(--text); font-weight: 600; }
+  .hero .meta {
+    margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap;
+    color: var(--text-dim); font-size: 14px;
+  }
+  .hero .meta strong { color: var(--text-muted); font-weight: 500; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 56px; }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 20px;
+  }
+  .stat .num {
+    font-size: 32px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .stat .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Section heads */
+  h2 {
+    font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;
+    font-weight: 800; margin: 0 0 8px;
+  }
+  h2 .num {
+    display: inline-block; width: 32px;
+    color: var(--text-dim); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  h2 + .subhead {
+    color: var(--text-muted); font-size: 16px; margin-bottom: 40px;
+    max-width: 760px;
+  }
+  h3 {
+    font-size: 22px; margin: 40px 0 14px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  p { margin: 0 0 18px; }
+  ul { padding-left: 20px; margin: 0 0 18px; }
+  li { margin: 6px 0; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "SF Mono", Menlo, monospace;
+    color: var(--accent-2);
+  }
+
+  /* Competitor card grid */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin: 32px 0; }
+  .comp-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px;
+    display: flex; flex-direction: column;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .comp-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+  .comp-card.us { border-color: var(--accent); background: linear-gradient(180deg, rgba(255,106,61,0.08) 0%, var(--bg-card) 100%); }
+  .comp-card.us::before {
+    content: "US";
+    display: inline-block;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+    background: var(--accent); color: var(--bg);
+    padding: 3px 8px; border-radius: 4px;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
+  .comp-card .vendor { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .comp-card .name { font-size: 19px; font-weight: 700; margin: 4px 0 6px; }
+  .comp-card .price { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--accent-2); margin-bottom: 14px; }
+  .comp-card .desc { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 12px; flex: 1; }
+  .comp-card .lock {
+    font-size: 12px; padding: 8px 12px;
+    background: rgba(248,113,113,0.10); border: 1px solid rgba(248,113,113,0.25);
+    color: var(--bad); border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .comp-card.us .lock { display: none; }
+  .comp-card .win {
+    font-size: 12px; padding: 8px 12px;
+    background: rgba(74,222,128,0.10); border: 1px solid rgba(74,222,128,0.25);
+    color: var(--good); border-radius: 6px;
+  }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead { background: var(--bg-card); }
+  th {
+    text-align: left; padding: 12px 14px; font-weight: 600;
+    color: var(--text); text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 12px 14px; vertical-align: top;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  td strong { color: var(--text); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-card); }
+  tr.us-row td { background: rgba(255,106,61,0.04); }
+  tr.us-row:hover td { background: rgba(255,106,61,0.08); }
+  tr.us-row td strong { color: var(--accent-2); }
+
+  /* Verdict / capability badges */
+  .v { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .v.good { background: rgba(74,222,128,0.12); color: var(--good); border: 1px solid rgba(74,222,128,0.25); }
+  .v.warn { background: rgba(251,191,36,0.12); color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+  .v.bad  { background: rgba(248,113,113,0.12); color: var(--bad);  border: 1px solid rgba(248,113,113,0.25); }
+  .v.info { background: rgba(103,232,249,0.12); color: var(--cyan); border: 1px solid rgba(103,232,249,0.25); }
+  .v.us   { background: rgba(255,106,61,0.15);  color: var(--accent); border: 1px solid rgba(255,106,61,0.35); font-weight: 700; }
+
+  .yes { color: var(--good); font-weight: 600; }
+  .no  { color: var(--bad);  font-weight: 600; }
+  .partial { color: var(--warn); font-weight: 600; }
+
+  /* Pull quote */
+  .pullquote {
+    border-left: 3px solid var(--accent);
+    padding: 22px 26px;
+    background: linear-gradient(90deg, rgba(255,106,61,0.06) 0%, transparent 100%);
+    margin: 28px 0;
+    font-size: 20px; line-height: 1.45; font-weight: 500;
+    border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  .pullquote strong { color: var(--accent-2); font-weight: 700; }
+
+  /* Risk-level callouts (patents/legal) */
+  .risk { display: grid; grid-template-columns: 130px 1fr; gap: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 14px; }
+  .risk .badge-col { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .risk .badge {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 5px;
+  }
+  .risk.high .badge { background: rgba(248,113,113,0.15); color: var(--bad); border: 1px solid rgba(248,113,113,0.35); }
+  .risk.medium .badge { background: rgba(251,191,36,0.15); color: var(--warn); border: 1px solid rgba(251,191,36,0.35); }
+  .risk.low .badge { background: rgba(74,222,128,0.15); color: var(--good); border: 1px solid rgba(74,222,128,0.35); }
+  .risk .title { font-size: 18px; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+  .risk .body { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+  .risk .defense {
+    margin-top: 12px; padding: 12px 14px; background: var(--bg-card-2); border-left: 2px solid var(--cyan);
+    font-size: 13px; color: var(--text); border-radius: 0 6px 6px 0;
+  }
+  .risk .defense strong { color: var(--cyan); font-weight: 700; }
+  @media (max-width: 640px) { .risk { grid-template-columns: 1fr; } }
+
+  /* Big differentiation matrix */
+  .matrix { overflow-x: auto; margin: 28px 0; }
+  .matrix table { font-size: 13px; }
+  .matrix th, .matrix td { padding: 10px 12px; }
+  .matrix th:first-child, .matrix td:first-child { font-weight: 600; min-width: 180px; }
+
+  /* Final wedge */
+  .wedge {
+    background: linear-gradient(135deg, rgba(255,106,61,0.10) 0%, rgba(244,114,182,0.08) 100%);
+    border: 1px solid rgba(255,106,61,0.30);
+    border-radius: 18px; padding: 40px 44px; margin-top: 32px;
+  }
+  .wedge .label { color: var(--accent); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 14px; }
+  .wedge .title { font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; color: var(--text); margin-bottom: 18px; }
+  .wedge .title em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-weight: 800;
+  }
+  .wedge p { color: var(--text-muted); font-size: 15px; margin: 12px 0; max-width: 720px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0; color: var(--text-dim); font-size: 13px;
+  }
+  footer p { margin: 8px 0; }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    .topnav, .hero .meta { display: none; }
+    section { break-inside: avoid; }
+    .stat, .comp-card, .risk, .wedge { break-inside: avoid; border-color: #ccc; background: white; }
+    h2 .num { color: #888; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html" class="current">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+    <div class="tag">Competitive Landscape</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">The Landscape · Hardware · Software · Moat · Patents · Law</div>
+    <h1>Everyone's locked into <em>their own walled garden.</em><br>We're the only one that isn't.</h1>
+    <p class="lede">
+      Aggregated view of every product that touches the multi-room / cross-protocol audio space, why each one corners users into their ecosystem, the patent and legal exposure of building outside those walls, and the strategic wedge SuperAudio occupies that nobody else does.
+    </p>
+    <div class="meta">
+      <span><strong>Date:</strong> 2026-05-13 · revised 2026-05-15 (Moat section + Claude-Skill device-profile row; universal-bridge hardware tier + GitHub competitor matrix) · revised 2026-05-16 (compositional-stacks framing for § 3 pullquote)</span>
+      <span><strong>Author:</strong> David Puerto</span>
+      <span><strong>Status:</strong> Strategic — informs go-to-market, not engineering</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">~14</div>
+        <div class="label">competing products surveyed (hardware + software)</div>
+      </div>
+      <div class="stat">
+        <div class="num">$0–$1,199</div>
+        <div class="label">price spread in the space (free OSS → Dirac Live)</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">competitors doing cross-ecosystem multi-room fan-out</div>
+      </div>
+      <div class="stat">
+        <div class="num">$3–5K</div>
+        <div class="label">budgeted patent FTO search before hardware ships</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. The wedge -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>The strategic wedge</h2>
+    <p class="subhead">Every competitor sells a walled garden. We sell the door between them.</p>
+
+    <p>The multi-room / network audio market today splits cleanly into three groups, each with a different lock-in strategy:</p>
+
+    <ul>
+      <li><strong>Walled-garden hardware vendors</strong> — <em>Sonos, Bluesound, HEOS (Denon), MusicCast (Yamaha), BluOS</em> — sell speakers AND the software, and their software refuses to drive anyone else's speakers. Buy in, you're in for life.</li>
+      <li><strong>Apple's ecosystem</strong> — AirPlay 2 + HomePod + Apple Music multi-room. Works beautifully if every speaker is AP2-capable. Useless for the ~half of in-home speakers that aren't.</li>
+      <li><strong>Audiophile single-protocol streamers</strong> — <em>Roon, iFi, Bluesound Node</em> — solve the protocol gap but cost $400–700+ per device and require buying Roon-Ready / BluOS-compatible speakers, which is its own lock-in.</li>
+    </ul>
+
+    <p>Then there's a handful of <strong>open-source senders</strong> (Airfoil, AirParrot, AirConnect, shairport-sync) that cross protocols, but they're software-only, require a Mac/PC, have no Room Tuning, no HDMI ARC, no consumer hardware story.</p>
+
+    <p><strong>What nobody sells: a single product that captures the TV / Mac / phone's audio, fans it out to AirPlay 1 + AirPlay 2 + Sonos + Chromecast + Bluetooth speakers simultaneously, in sync, with cross-protocol room tuning, at consumer prices.</strong> That's the wedge SuperAudio occupies. Everyone else picks one ecosystem and defends it. We're explicitly the router between them.</p>
+  </div>
+</section>
+
+<!-- 2. Hardware competitors -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>Hardware competitors</h2>
+    <p class="subhead">Network streamers, multi-room hubs, and bridges. Where each one locks you in.</p>
+
+    <div class="comp-grid">
+
+      <div class="comp-card us">
+        <div class="vendor">SuperAudio</div>
+        <div class="name">Hub Stick</div>
+        <div class="price">$59</div>
+        <div class="desc">Pi Zero 2 W in a preconfigured case. Drives AirPlay 1 + Sonos + (with addons) AP2 + Chromecast + Bluetooth simultaneously, in sync, with cross-protocol Room Tuning.</div>
+        <div class="win">✓ Only consumer-priced product doing cross-ecosystem fan-out</div>
+      </div>
+
+      <div class="comp-card us">
+        <div class="vendor">SuperAudio</div>
+        <div class="name">Hub Pro (HDMI ARC)</div>
+        <div class="price">$199–249</div>
+        <div class="desc">Sits between TV and soundbar via HDMI ARC. Captures all TV audio (Netflix, cable, broadcast, every smart-TV app) and fans out to every wireless speaker. Phase 9.</div>
+        <div class="win">✓ The only "any TV → every speaker" product anywhere</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Linkplay</div>
+        <div class="name">WiiM Pro Plus</div>
+        <div class="price">$149</div>
+        <div class="desc">WiFi streamer, AirPlay 2 receiver, line-in, optical-in, multi-room. Very polished consumer product. Closest competitor by price.</div>
+        <div class="lock">⚠ Multi-room only between other WiiM devices. Won't drive your B&amp;W AP1 + Sonos at the same time.</div>
+        <div class="win">SuperAudio: cross-ecosystem, doesn't trap you in WiiM's app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Sonos</div>
+        <div class="name">Port</div>
+        <div class="price">$449</div>
+        <div class="desc">Line-in / optical adapter that adds an external audio source to your Sonos system.</div>
+        <div class="lock">⚠ Sonos-only output. 3× our price. Locked to Sonos ecosystem.</div>
+        <div class="win">SuperAudio: 1/3 the price, plays outside the Sonos walled garden too</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Audioengine</div>
+        <div class="name">B-FI</div>
+        <div class="price">$79</div>
+        <div class="desc">Tiny WiFi + AirPlay receiver that adds streaming to a wired speaker.</div>
+        <div class="lock">⚠ One endpoint only. No fan-out. Not a multi-room product.</div>
+        <div class="win">SuperAudio: drives many endpoints simultaneously</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Bluesound</div>
+        <div class="name">Node</div>
+        <div class="price">$599</div>
+        <div class="desc">High-end network streamer for the BluOS ecosystem. Audiophile-grade DACs, hi-res audio, multi-room.</div>
+        <div class="lock">⚠ Locked to BluOS / Bluesound speakers. Premium-only audience.</div>
+        <div class="win">SuperAudio: 1/10 the price, doesn't require buying BluOS speakers</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">iFi</div>
+        <div class="name">Zen Stream</div>
+        <div class="price">$399</div>
+        <div class="desc">High-end Roon endpoint / network audio bridge for audiophiles.</div>
+        <div class="lock">⚠ Roon-only. Requires $700 Roon license. Single-room only.</div>
+        <div class="win">SuperAudio: no subscription, multi-room, mass market</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Apple</div>
+        <div class="name">HomePod mini</div>
+        <div class="price">$99</div>
+        <div class="desc">Apple's smart speaker + AirPlay 2 hub. Pairs with other HomePods or AP2 speakers for multi-room.</div>
+        <div class="lock">⚠ AP2 only. Won't drive your gen-1 Sonos, B&amp;W A5/A7, or anything pre-2018.</div>
+        <div class="win">SuperAudio: bridges AP2 to AP1 + Sonos + Cast</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Apple</div>
+        <div class="name">Apple TV 4K</div>
+        <div class="price">$129–149 new<br>$35–130 used</div>
+        <div class="desc">Native AirPlay 2 receiver. Multi-room within AP2.</div>
+        <div class="lock">⚠ AP2 only natively. Same gap as HomePod.</div>
+        <div class="win">SuperAudio: ships a $5 tvOS companion that turns it into a multi-ecosystem hub</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Roku / Amazon</div>
+        <div class="name">Streambar / Echo Studio</div>
+        <div class="price">$130 / $200</div>
+        <div class="desc">Smart speakers with optional multi-room within their respective ecosystems.</div>
+        <div class="lock">⚠ Roku Connect / Alexa Multi-Room only. Not cross-vendor.</div>
+        <div class="win">SuperAudio: vendor-agnostic</div>
+      </div>
+
+    </div>
+
+    <h3 style="margin-top: 40px;">Universal-bridge appliances <span style="font-weight: 400; color: var(--text-muted); font-size: 16px;">— the hardware shape we compete with directly at M13 Hub Stick</span></h3>
+    <p style="color: var(--text-muted); margin-bottom: 16px;">
+      Single-purpose boxes that convert one protocol to another (AirPlay 2 in → analog/HDMI/optical out, or AirPlay 1 in → AirPlay 2 out, etc.). Closest hardware analog to what our $59 Hub Stick will do. Each is a real, currently-shipping product the user might compare us against.
+    </p>
+    <div class="comp-grid">
+
+      <div class="comp-card us">
+        <div class="vendor">SuperAudio</div>
+        <div class="name">Hub Stick <span style="font-size: 11px; color: var(--text-muted);">(M13, planned)</span></div>
+        <div class="price">$59</div>
+        <div class="desc">Pi Zero 2 W in a case. Receives AP1/AP2/Cast from any LAN device, fans out to all other discovered speakers. For households with no Mac and no Apple TV.</div>
+        <div class="lock">None — vendor-neutral by design.</div>
+        <div class="win">3.7× cheaper than WiiM Pro Plus, ~12× cheaper than Bluesound NODE, ~8× cheaper than Sonos Port — and the only one that <em>fans out to many existing speakers</em> rather than just being one more endpoint.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">WiiM (Linkplay)</div>
+        <div class="name">WiiM Pro Plus</div>
+        <div class="price">$219</div>
+        <div class="desc">Receives AP2 + Bluetooth + Spotify Connect + DLNA. Outputs analog (RCA) + digital (optical/coax) + USB. Most-praised entry in this category; commonly compared head-to-head with Sonos in reviews.</div>
+        <div class="lock">⚠ Single-source-to-single-output. Bridges one stream to one connected speaker — not multi-room fan-out from a Mac source.</div>
+        <div class="win">SuperAudio captures from <em>any</em> Mac source app (Spotify, Music, system audio incl. Slack/YouTube) and fans to N existing speakers. WiiM is one box per zone.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Bluesound (Lenbrook)</div>
+        <div class="name">NODE</div>
+        <div class="price">$749</div>
+        <div class="desc">BluOS streamer + DAC. Hi-res audio, multi-room within BluOS, AirPlay 2, MQA support. Premium audiophile positioning.</div>
+        <div class="lock">⚠ BluOS-walled multi-room. AP2 inbound only. Not bridging Mac source → mixed-vendor outputs.</div>
+        <div class="win">Different segment. We're $19 software + $59 hardware (~$78 total) vs $749. Audiophile niche is real but small; we play the mainstream.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Sonos</div>
+        <div class="name">Port</div>
+        <div class="price">$499</div>
+        <div class="desc">Sonos hardware bridge — connects an existing stereo system into the Sonos ecosystem. Adds AP2-inbound + Sonos-grouping.</div>
+        <div class="lock">⚠ Sonos-walled. Only useful if you're committed to Sonos; doesn't bridge AirPlay 1 speakers or anything outside Sonos.</div>
+        <div class="win">Solves a Sonos-specific problem. We solve the cross-vendor problem.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Apple <span style="font-size: 11px; color: var(--text-muted);">(EOL)</span></div>
+        <div class="name">AirPort Express A1392</div>
+        <div class="price">$30–80 used eBay</div>
+        <div class="desc">The OG bridge. AP1 receiver + analog/optical out. Discontinued by Apple 2018; only available used. Often paired with TOSLINK input on existing speakers to enable AP1.</div>
+        <div class="lock">⚠ AP1 only. No firmware updates. No AP2 path.</div>
+        <div class="win">SuperAudio actively supports AirPort Express as a target sink (see profile in M5.5 substrate). We're the modern software you point at your legacy hardware.</div>
+      </div>
+
+    </div>
+
+    <div class="pullquote" style="margin-top: 32px;">
+      The universal-bridge category averages <strong>$489</strong> across these four hardware products. Our Hub Stick at $59 is the cheapest entry by 3.7×, AND it's the only one that <strong>fans out from one source to multiple existing speakers</strong>. Every commercial box above is "one source → one output" by design.
+    </div>
+  </div>
+</section>
+
+<!-- 3. Software competitors -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>Software competitors</h2>
+    <p class="subhead">Mac/PC senders + ecosystem apps + open-source bridges.</p>
+
+    <h3>Mac / PC senders</h3>
+    <div class="comp-grid">
+
+      <div class="comp-card">
+        <div class="vendor">Rogue Amoeba</div>
+        <div class="name">Airfoil for Mac</div>
+        <div class="price">$35</div>
+        <div class="desc">20-year veteran. Captures any Mac audio, sends to AirPlay (1 + 2), Sonos, Chromecast, Bluetooth. Solid multi-room sync.</div>
+        <div class="lock">⚠ Mac-only. No hardware story. No Room Tuning. Premium price for software-only.</div>
+        <div class="win">SuperAudio: less than half the price, ships hardware path, adds Room Tuning, supports tvOS</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Squirrels</div>
+        <div class="name">AirParrot</div>
+        <div class="price">$16</div>
+        <div class="desc">Mac/PC. Primarily for screen mirroring + audio fan-out to AirPlay / Chromecast.</div>
+        <div class="lock">⚠ Mirroring-focused; audio is secondary. Limited protocol coverage.</div>
+        <div class="win">SuperAudio: audio-first, broader protocol support, hardware path</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Tunesserve</div>
+        <div class="name">TuneBlade</div>
+        <div class="price">$20</div>
+        <div class="desc">Windows-only. PC system audio → AirPlay receivers.</div>
+        <div class="lock">⚠ Windows only. AirPlay only (no Sonos).</div>
+        <div class="win">SuperAudio: cross-platform vision, multi-protocol</div>
+      </div>
+
+    </div>
+
+    <h3>Ecosystem multi-room apps (free with hardware)</h3>
+    <div class="comp-grid">
+
+      <div class="comp-card">
+        <div class="vendor">Sonos</div>
+        <div class="name">Sonos S2 app</div>
+        <div class="price">Free w/ Sonos</div>
+        <div class="desc">The polished one. Tight integration, AirPlay 2 in, Spotify Connect, etc.</div>
+        <div class="lock">⚠ Sonos-only. The reason Sonos owners can't easily play to their B&amp;W speakers.</div>
+        <div class="win">SuperAudio: makes Sonos play alongside non-Sonos</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Apple</div>
+        <div class="name">Music.app multi-room</div>
+        <div class="price">Free w/ Apple</div>
+        <div class="desc">macOS Music.app can fan out to multiple AirPlay receivers natively.</div>
+        <div class="lock">⚠ Music.app source only. Not Spotify, browser, system audio, anything else.</div>
+        <div class="win">SuperAudio: any audio source, not just Music.app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Denon / Yamaha</div>
+        <div class="name">HEOS / MusicCast</div>
+        <div class="price">Free w/ AVR</div>
+        <div class="desc">Whole-house audio over their proprietary AVR networks.</div>
+        <div class="lock">⚠ HEOS / MusicCast hardware only. No cross-vendor.</div>
+        <div class="win">SuperAudio: cross-vendor</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Roon</div>
+        <div class="name">Roon Server</div>
+        <div class="price">$150/yr or $700 lifetime</div>
+        <div class="desc">Audiophile streaming + multi-room. Beautiful library management. DSP room correction.</div>
+        <div class="lock">⚠ Roon-ready endpoints only. Music-only (no system audio). Subscription.</div>
+        <div class="win">SuperAudio: $15–$249 one-time, supports any speaker, captures any audio source</div>
+      </div>
+
+    </div>
+
+    <h3 id="open-source">Open-source senders / bridges</h3>
+    <p style="color: var(--text-muted); margin-bottom: 16px;">
+      A 2026 sweep of GitHub for "the project that does what SuperAudio does." Findings: every well-maintained project is either a <strong>receiver</strong>, a <strong>one-direction bridge</strong>, or a <strong>media server</strong>. No project combines Mac system-audio capture with cross-protocol fan-out to existing AirPlay 1+2/Sonos/Cast speakers. This isn't an accident — the GPLv2/v3 receiver lineage (shairport-sync) hasn't been extended into a sender-side equivalent, and the cross-protocol bridges (AirConnect) are intentionally narrow-shape.
+    </p>
+    <div class="comp-grid">
+
+      <div class="comp-card">
+        <div class="vendor">philippe44 / community</div>
+        <div class="name">AirConnect</div>
+        <div class="price">Free (MIT)</div>
+        <div class="desc">Headless daemon. Receives AirPlay, forwards to UPnP / Sonos / Chromecast. Runs Linux / macOS / Windows / Synology / Pi. Actively maintained.</div>
+        <div class="lock">⚠ One-direction bridge — makes UPnP/Sonos/Cast appear as AirPlay receivers to AirPlay senders. Does NOT capture Mac audio or fan out from a single source.</div>
+        <div class="win">Different shape. Adjacent — could even integrate with us (we could send to AirConnect-virtualized Sonos endpoints).</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Mike Brady</div>
+        <div class="name">shairport-sync + nqptp</div>
+        <div class="price">Free (GPLv3)</div>
+        <div class="desc">Canonical AirPlay 1/2 receiver for Linux/BSD. nqptp companion handles AP2 PTP timing. Reference implementation for understanding the wire protocol.</div>
+        <div class="lock">⚠ Receiver-only. Can't run AP2 mode on macOS (nqptp needs ports 319/320 which macOS already uses). GPLv3 — we read it for protocol reference but don't lift code.</div>
+        <div class="win">Complementary, not competing. We could ship a Pi recipe that runs shairport-sync as one of SuperAudio's target sinks.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">OwnTone community</div>
+        <div class="name">OwnTone (formerly forked-daapd)</div>
+        <div class="price">Free (GPLv2)</div>
+        <div class="desc">Media server with AirPlay 1+2 + Chromecast + local output. Multi-room sync supported. Linux/BSD primary, macOS secondary. <strong>Closest in functional shape to SuperAudio</strong> but...</div>
+        <div class="lock">⚠ Media-server model — you pick from its library/Spotify Connect, not system-audio capture. Linux-first; macOS support is community-second-tier. GPLv2 license clash with our MIT-clean codebase.</div>
+        <div class="win">Different user model. They're "build me a Roon-like server." We're "capture whatever's playing on this Mac and fan it out."</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">badaix</div>
+        <div class="name">Snapcast</div>
+        <div class="price">Free (GPLv3)</div>
+        <div class="desc">Most prominent open-source multi-room sync project. Sub-millisecond synchronized playback. Server + client architecture. v0.35 (early 2026). Active community, ESP32 microcontroller clients available.</div>
+        <div class="lock">⚠ Replaces your existing speakers — every endpoint runs Snapclient. Doesn't send to existing AirPlay/Sonos/Chromecast hardware. Different architecture entirely.</div>
+        <div class="win">Different category. We're the "keep your existing speakers" answer; Snapcast is the "buy/build a custom whole-house system" answer.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">openairplay / ciderapp</div>
+        <div class="name">node_airtunes / node_airtunes2</div>
+        <div class="price">Free (BSD-2)</div>
+        <div class="desc">node.js AirTunes v2 (AirPlay 1 sender) implementation. ciderapp's fork (powering the Cider music app) is the more actively maintained branch.</div>
+        <div class="lock">⚠ Library, not a product. JavaScript runtime + node.js dependency for what we do in 5MB of native Swift. AP1 only.</div>
+        <div class="win">Useful reading reference. We re-implement in Swift to stay native + MIT-clean + dependency-free.</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">muammar</div>
+        <div class="name">mkchromecast</div>
+        <div class="price">Free (MIT)</div>
+        <div class="desc">macOS system tray app. Casts audio + video to Google Cast / Sonos. Lossy + lossless formats. Multi-room playback within Cast ecosystem.</div>
+        <div class="lock">⚠ Cast-focused (Sonos via mDNS/UPnP only). No AirPlay sender. No Room Tuning. Limited GUI.</div>
+        <div class="win">SuperAudio: AirPlay 1 + AirPlay 2 (M12) + Cast (M12) + Sonos + Room Tuning all in one product.</div>
+      </div>
+
+    </div>
+
+    <div class="pullquote" style="margin-top: 24px;">
+      The honest competitive truth from a 2026 GitHub sweep: <strong>compositional stacks, not single systems.</strong> Every well-maintained project handles one slice — Snapcast does sync (in its own ecosystem), shairport-sync is a receiver, AirConnect is a one-direction bridge, OwnTone is a media server. SuperAudio sits one layer above them: composes the slices into a unified product, then adds the pieces that don't exist anywhere yet (cross-protocol sample-accurate sync via per-chunk wall-time NTP, per-sink mid-stream controls, cross-protocol Room Tuning, AI-assisted Claude Skill device onboarding). See <a href="POSITIONING.html" style="color: var(--cyan);">POSITIONING.html § Technical framing</a> for the investor/partner-grade pitch this implies.
+    </div>
+  </div>
+</section>
+
+<!-- 4. Room tuning competitors -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>Room tuning competitors</h2>
+    <p class="subhead">Closed ecosystems own this — it's our second-biggest differentiation moat.</p>
+
+    <div class="comp-grid">
+
+      <div class="comp-card us">
+        <div class="vendor">SuperAudio</div>
+        <div class="name">Mac-mic auto-calibrate <span style="font-size:11px; color: var(--cyan);">(shipped 2026-05-18)</span></div>
+        <div class="price">Base app · $19</div>
+        <div class="desc">Mac's built-in mic + 1-sec chirp per speaker. Per-speaker delay measurement at the listening spot. <strong>Works across every protocol we support</strong> — B&amp;W AP1 alongside Sonos. Verified on B&amp;W A5 + A7 (side room) + Sonos Playbar gen 1: 3-pass convergence to sub-perceptual sync, SNR 18–33 dB.</div>
+        <div class="win">✓ The only cross-protocol acoustic delay calibration product, full stop. Shipped 2026-05-18.</div>
+      </div>
+
+      <div class="comp-card us">
+        <div class="vendor">SuperAudio</div>
+        <div class="name">Room Tuning addon <span style="font-size:11px; color: var(--text-dim);">(M11 — iPhone-mic variant)</span></div>
+        <div class="price">$5</div>
+        <div class="desc">Extends the base-app Mac-mic auto-calibrate to an iPhone-mic walk-around. Multiple listening positions, frequency-domain EQ correction on top of the per-speaker delay calibration. Same algorithm, more measurement points.</div>
+        <div class="win">✓ Whole-room frequency correction across mixed protocols — still nobody else does this</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Sonos</div>
+        <div class="name">Trueplay</div>
+        <div class="price">Free w/ Sonos hardware</div>
+        <div class="desc">iPhone walk-around calibration. Smooth UX. Established 2015.</div>
+        <div class="lock">⚠ Sonos hardware only. Won't tune your B&amp;W or AP1 receivers.</div>
+        <div class="win">SuperAudio: same workflow, every protocol</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Dirac</div>
+        <div class="name">Dirac Live</div>
+        <div class="price">$499 (basic) – $1,199 (full)</div>
+        <div class="desc">Gold-standard room correction. Pro-audio market. Used in high-end AVRs (NAD, Onkyo, etc.).</div>
+        <div class="lock">⚠ Pro audience, expensive, requires Dirac-ready hardware.</div>
+        <div class="win">SuperAudio: $5 vs $500+, consumer-friendly, works across mixed speakers</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Roon Labs</div>
+        <div class="name">Roon DSP / room correction</div>
+        <div class="price">Included w/ Roon</div>
+        <div class="desc">Audiophile DSP with convolution filters. Manual upload of REW-generated filters.</div>
+        <div class="lock">⚠ Roon-ecosystem only. Requires REW expertise to generate filters.</div>
+        <div class="win">SuperAudio: one-walk automated calibration, no REW required</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">Audyssey / various</div>
+        <div class="name">AVR-built-in correction</div>
+        <div class="price">Free w/ AVR</div>
+        <div class="desc">Calibration mic + automated EQ. Built into mid/high-end AVRs (Denon, Marantz, Yamaha).</div>
+        <div class="lock">⚠ Only tunes the AVR's outputs. Not whole-house. AVR-locked.</div>
+        <div class="win">SuperAudio: whole-house, cross-protocol</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="vendor">community</div>
+        <div class="name">REW (Room EQ Wizard)</div>
+        <div class="price">Free</div>
+        <div class="desc">Open-source measurement and filter generation tool. The audiophile community's reference.</div>
+        <div class="lock">⚠ Power-user only. No automatic per-speaker application. Manual.</div>
+        <div class="win">SuperAudio: REW-quality measurement under a consumer UX</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 5. The big differentiation matrix -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>The differentiation matrix</h2>
+    <p class="subhead">Capability vs capability. Where each player wins, loses, and where our gap is.</p>
+
+    <div class="matrix">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>Airfoil</th>
+              <th>WiiM Pro+</th>
+              <th>Sonos S2</th>
+              <th>Roon</th>
+              <th>HomePod / AP2</th>
+              <th>AirConnect</th>
+              <th>SuperAudio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>System audio capture (any app)</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗ line-in only</td>
+              <td class="no">✗</td>
+              <td class="no">✗ music only</td>
+              <td class="no">✗</td>
+              <td class="no">✗ AP-in only</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>AirPlay 1 sender</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="partial">via endpoint</td>
+              <td class="no">✗</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>AirPlay 2 sender</strong></td>
+              <td class="yes">✓</td>
+              <td class="partial">receiver</td>
+              <td class="no">✗</td>
+              <td class="partial">via endpoint</td>
+              <td class="yes">✓ native</td>
+              <td class="no">✗</td>
+              <td class="partial">$5 addon</td>
+            </tr>
+            <tr>
+              <td><strong>Sonos drive (UPnP)</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗</td>
+              <td class="yes">✓ native</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>Chromecast sender</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="yes">✓</td>
+              <td class="partial">$5 addon</td>
+            </tr>
+            <tr>
+              <td><strong>Bluetooth A2DP fan-out</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="partial">$5 addon</td>
+            </tr>
+            <tr>
+              <td><strong>Cross-protocol multi-room SYNC</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗ WiiM-only</td>
+              <td class="no">✗ Sonos-only</td>
+              <td class="partial">Roon-ready</td>
+              <td class="no">✗ AP2-only</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>Lossless wireless to old AP1 speakers</strong></td>
+              <td class="partial">via AP1 send</td>
+              <td class="no">✗</td>
+              <td class="no">✗ lossy AAC/MP3</td>
+              <td class="partial">if Roon endpoint is AP1</td>
+              <td class="no">✗ AAC ~256</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓ <strong>by default</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Mic-based room calibration</strong></td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="partial">Trueplay (Sonos only)</td>
+              <td class="partial">manual REW</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="yes">✓ <strong>cross-protocol</strong> (Mac-mic shipped 2026-05-18; iPhone-mic M11)</td>
+            </tr>
+            <tr>
+              <td><strong>HDMI ARC TV capture</strong></td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="yes">✓ Hub Pro</td>
+            </tr>
+            <tr>
+              <td><strong>Consumer-grade GUI</strong></td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+              <td class="no">✗ CLI</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>Open architecture (no walled garden)</strong></td>
+              <td class="yes">✓</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="yes">✓</td>
+              <td class="yes">✓</td>
+            </tr>
+            <tr>
+              <td><strong>One-time price (not subscription)</strong></td>
+              <td class="yes">$35</td>
+              <td class="yes">$149</td>
+              <td class="partial">w/ hardware</td>
+              <td class="no">$150/yr or $700</td>
+              <td class="partial">w/ hardware</td>
+              <td class="yes">free</td>
+              <td class="yes"><strong>$15–249</strong></td>
+            </tr>
+            <tr class="us-row">
+              <td><strong>Hardware Hub product</strong></td>
+              <td class="no">✗</td>
+              <td class="yes">$149 (one-room)</td>
+              <td class="no">✗</td>
+              <td class="no">✗</td>
+              <td class="partial">HomePod $99</td>
+              <td class="no">✗</td>
+              <td class="yes"><strong>$59 / $79 / $249</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pullquote">
+      Read down the SuperAudio column: <strong>only product that ticks every box.</strong> Read down the others: each has 3–5 hard "no"s. That gap is the entire pitch.
+    </div>
+  </div>
+</section>
+
+<!-- 6. Moat -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>Moat — what's structural, what's just first-mover</h2>
+    <p class="subhead">An advantage is only a moat if a competitor can't take it without breaking something more valuable. Here's the honest split.</p>
+
+    <p>The differentiation matrix above shows what we do that competitors don't. This section asks the harder question: <strong>which of those gaps are durable?</strong> Some are structural — incumbents would have to abandon their business model to copy them. Others are just first-mover advantages a well-funded company could erase in a quarter. Confusing the two leads to lazy pricing and lazy planning. Better to be honest now.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 30%;">Capability</th>
+            <th style="width: 18%;">Type</th>
+            <th>Why it's that type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cross-protocol fan-out from one capture</strong><br><span style="color: var(--text-dim); font-size: 13px;">Same Spotify stream → A5 (AP1) + Sonos Den (UPnP) simultaneously</span></td>
+            <td><span class="v good">Structural</span></td>
+            <td>Sonos, Apple, Google, Bose and HEOS each <em>sell speakers</em>. Bridging to competitors devalues their own hardware and contradicts the lock-in their business depends on. They literally cannot ship this without firing their own product strategy. The only entrants who could are protocol-agnostic software vendors — Airfoil and Rogue Amoeba have been the only serious ones in 20 years, and neither has shipped cross-protocol Room Tuning. The market has stayed open this long because it's structurally uncomfortable for everyone else.</td>
+          </tr>
+          <tr>
+            <td><strong>Cross-protocol auto-sync calibration</strong><br><span style="color: var(--text-dim); font-size: 13px;">Mic measures each speaker's arrival lag at the listening spot, aligns AirPlay 1 to match Sonos. Mac-mic version shipped 2026-05-18; iPhone-mic Room Tuning (M11) extends with frequency correction across multiple positions.</span></td>
+            <td><span class="v good">Structural · shipped</span></td>
+            <td>Trueplay tunes only Sonos. Apple's HomePod calibration tunes only HomePods. Dirac tunes whatever you feed it but lives at $400+ and doesn't fan out. Same business reason as cross-protocol fan-out above: a calibration that improves a B&amp;W Zeppelin makes Sonos's wall less valuable. We can do this because we own the audio pipeline pre-encoder for every protocol we support — the EQ/delay slot lives in our mixer (see DECISIONS.md 2026-05-15 M11 architecture entry + 2026-05-18 chirp shipping entry). Verified working 2026-05-18 against B&amp;W A5, A7, Sonos Playbar gen 1 with SNR 18–33 dB and sub-perceptual sync.</td>
+          </tr>
+          <tr>
+            <td><strong>Crowdsourced device support via Claude Skill onboarding</strong><br><span style="color: var(--text-dim); font-size: 13px;">Community-contributed JSON device profiles + an AI skill that probes unknown speakers, drafts the profile, and opens a PR</span></td>
+            <td><span class="v good">Structural</span></td>
+            <td>Sonos, Apple, Google sell the "we control the ecosystem" promise. Accepting community profiles for competitor devices contradicts that promise — they can't crowdsource without admitting they don't control the universe of devices their users care about. Our architecture is protocol-agnostic from day one, so our supported-hardware list is <strong>not gated by our headcount.</strong> The "database" is a public MIT-licensed GitHub repo (Homebrew-style); the Claude Skill runs locally on the user's machine and opens a PR via <code>gh</code> only when the user explicitly submits — preserving the LAN-only / no-telemetry stance. See DECISIONS.md 2026-05-15, Device Profile System + Claude Skill entry.</td>
+          </tr>
+          <tr>
+            <td><strong>Lossless AP1 renaissance</strong><br><span style="color: var(--text-dim); font-size: 13px;">ALAC 44.1/16 to AirPort-Express-era hardware, while AirPlay 2 forces AAC 256</span></td>
+            <td><span class="v warn">Partial</span></td>
+            <td>Apple <em>could</em> resurrect lossless on AP1 hardware tomorrow — they own the protocol. They haven't in eight years and they won't, because doing so would undercut AP2's positioning and admit AP2 went the wrong direction on quality. The structural piece is Apple's reluctance, not impossibility. If they ever change their minds, this advantage compresses to "we got there first and the install base trusts us." Durable for the medium term, not forever.</td>
+          </tr>
+          <tr>
+            <td><strong>LAN-only, no cloud, no telemetry</strong><br><span style="color: var(--text-dim); font-size: 13px;">All discovery, control, audio stays on the local network</span></td>
+            <td><span class="v warn">Partial</span></td>
+            <td>Sonos has a structural cloud dependency — their voice service, their app's account model, their firmware updater. They can't ship a fully LAN-only mode without breaking their installed base's expectations. Apple is closer to LAN-only but pulls Apple-ID-bound features (HomeKit, Find My) into the experience by default. The structural piece is the incumbents' inability to shed their cloud architecture without years of rework. The non-structural piece is that a new entrant could match us on privacy from day one (Roon comes close already, at 20× the price).</td>
+          </tr>
+          <tr class="us-row">
+            <td colspan="3" style="text-align: center; padding: 18px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);">— Below this line: differentiation that's copyable, not moat —</td>
+          </tr>
+          <tr>
+            <td><strong>Per-protocol $5 addon pricing</strong></td>
+            <td><span class="v bad">Differentiation</span></td>
+            <td>Clever, not defensible. Any competitor could ship this next quarter. It's a pricing innovation, not a moat — useful for our cash flow and user trust, but it doesn't keep anyone out.</td>
+          </tr>
+          <tr>
+            <td><strong>Per-protocol SPM module architecture</strong></td>
+            <td><span class="v bad">Differentiation</span></td>
+            <td>Internal engineering elegance. Users don't see it, competitors don't care about it, and any team with a senior engineer could replicate the pattern. It speeds <em>our</em> shipping cadence; it doesn't slow anyone else's.</td>
+          </tr>
+          <tr>
+            <td><strong>Older-hardware audience (AirPort Express era, B&amp;W A5/A7, early Sonos)</strong></td>
+            <td><span class="v bad">Differentiation</span></td>
+            <td>Underserved, not unreachable. We win because nobody else is chasing this market, not because nobody else <em>can</em>. If Airfoil or a Sonos competitor decided to defend this segment, our lead would compress to the brand trust we've built.</td>
+          </tr>
+          <tr>
+            <td><strong>Direct sale, not App Store</strong></td>
+            <td><span class="v bad">Differentiation</span></td>
+            <td>A distribution choice. Airfoil does it. Rogue Amoeba does it. It's the right call for system-audio-capture apps, but it's not exclusive.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pullquote">
+      The real moat is three capabilities — <strong>cross-protocol fan-out</strong>, <strong>cross-protocol Room Tuning</strong>, and <strong>community-crowdsourced device support via Claude Skill onboarding</strong> — that incumbents cannot ship without firing their own lock-in business model. Everything else on our differentiation list is a head start, not a wall.
+    </div>
+
+    <h3 style="margin-top: 40px;">Half-life — what changes the picture</h3>
+    <p>Naming the conditions under which the moat weakens, so we'd see it coming:</p>
+    <ul>
+      <li><strong>Apple opens AirPlay 2 to third-party software senders</strong> — currently MFi-gated, intentionally. If they relax, our "we're the only AP2 software path" claim disappears (we'd still own AP1 + Sonos + Cast, but the lossless renaissance pitch weakens).</li>
+      <li><strong>Sonos ships a "play to AirPlay 2" mode</strong> — they could. They haven't because it cannibalizes Sonos-speaker sales. If they decide it's net-positive (e.g., to defend against Apple), the fan-out moat compresses on the Sonos-as-source vector — but not on Mac-as-source, which is our actual product.</li>
+      <li><strong>Google adopts a cross-vendor multi-room standard</strong> — Matter-for-audio is rumored periodically. If shipped widely, the protocol-translation moat softens. Five-plus years out at minimum.</li>
+      <li><strong>A well-funded startup raises against the same wedge</strong> — most likely vector. Defense is shipping speed and Room Tuning quality. Our head start began 2026-05-18 with shipped Mac-mic auto-calibration (3-pass chirp convergence to sub-perceptual sync); the M11 iPhone-mic walk-around extends it. Cross-protocol calibration is no longer hypothetical for us.</li>
+      <li><strong>A vendor consortium ships an open cross-brand device-profile standard</strong> — would compress the crowdsourced-device-support moat to "we got there first with better tooling." Possible if Matter-for-audio (or similar) gains real traction; not imminent. Defense is shipping the Claude Skill onboarding flow and building enough profile coverage in the GitHub repo that switching to a vendor standard becomes the slower path.</li>
+    </ul>
+
+    <p style="margin-top: 24px; color: var(--text-muted); font-size: 15px;">None of these trigger conditions is imminent. The most credible threat is a competitor noticing the same wedge before our Room Tuning ships. The defense is shipping it.</p>
+  </div>
+</section>
+
+<!-- 7. Patents -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>Patents — what to fear, what's free</h2>
+    <p class="subhead">Multi-room audio has real patent exposure. Most of it doesn't apply to us; some of it does. Here's the honest map.</p>
+
+    <div class="risk high">
+      <div class="badge-col">
+        <span class="badge">HIGH RISK</span>
+      </div>
+      <div>
+        <div class="title">Sonos multi-room sync patents</div>
+        <div class="body">
+          <p>Sonos has aggressively patented multi-room audio synchronization since the mid-2000s. They sued Google in 2020 over multi-room patents (settled mostly in Sonos's favor on key claims). Their patent portfolio covers:</p>
+          <ul>
+            <li>Specific algorithms for clock synchronization across speakers</li>
+            <li>Stereo pairing and grouping behaviors on their own hardware</li>
+            <li>Their proprietary SonosNet mesh networking</li>
+            <li>Specific UPnP/SOAP control-flow patterns</li>
+          </ul>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> we do not implement our own multi-room synchronization algorithm. We use each protocol's native sync mechanism — RAOP timing-channel for AirPlay, Sonos's own UPnP grouping for Sonos. We are a <em>router</em> between ecosystems, not an inventor of sync. Sonos's patents are about inventing sync; we're about <em>using</em> existing sync. Worth a formal patent attorney review before Hub Pro hardware mass-production (~$3–5K freedom-to-operate search).
+        </div>
+      </div>
+    </div>
+
+    <div class="risk medium">
+      <div class="badge-col">
+        <span class="badge">MEDIUM RISK</span>
+      </div>
+      <div>
+        <div class="title">Apple AirPlay 2 protocol</div>
+        <div class="body">
+          <p>AirPlay 2 sending requires Apple's MFi (Made for iPhone/iPad) licensing program. Implementing an AirPlay 2 <em>sender</em> outside MFi has not been done publicly at scale; Apple has not enforced against reverse-engineered implementations (pyatv, etc.), but enforcement is theoretically possible.</p>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> <strong>permanently out of scope.</strong> SuperAudio does not implement an AirPlay 2 sender. AirPlay 2 receiving (which Apple TVs and HomePods do natively) is handled by their hardware, not our code. Our $5 "AirPlay 2" addon would only enable scenarios where the speaker is already an AP2-licensed receiver and our code uses standard public discovery.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk low">
+      <div class="badge-col">
+        <span class="badge">LOW RISK</span>
+      </div>
+      <div>
+        <div class="title">Apple AirPlay 1 / RAOP protocol</div>
+        <div class="body">
+          <p>The original AirTunes / RAOP protocol was reverse-engineered publicly in 2008–2009. It's used verbatim in shairport-sync, libraop, Airfoil ($35 retail since 2008), AirConnect, OwnTone, node-airtunes, and dozens of other shipping products for 16+ years. Apple has never enforced against any of them.</p>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> we use the publicly-documented protocol with the publicly-known Apple AirPort Express RSA key (a numerical constant, not copyrightable). Code is fresh-written Swift; we don't copy from GPL sources.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk low">
+      <div class="badge-col">
+        <span class="badge">LOW RISK</span>
+      </div>
+      <div>
+        <div class="title">Audio codec patents (ALAC, AAC)</div>
+        <div class="body">
+          <p>Apple Lossless (ALAC) was open-sourced by Apple in 2011 under Apache 2.0. AAC-LC patents (Fraunhofer, Dolby) generally have ended or are covered by macOS's built-in AVFoundation encoder license.</p>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> use Apple's open-source ALAC encoder + AVFoundation's built-in AAC-LC. Both are royalty-free for our use case.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk low">
+      <div class="badge-col">
+        <span class="badge">LOW RISK</span>
+      </div>
+      <div>
+        <div class="title">Chromecast / Google Cast protocol</div>
+        <div class="body">
+          <p>Google has never enforced against Cast protocol reverse-engineering. node-castv2, OwnTone, and many open-source Cast senders ship without Google action.</p>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> when we ship the Chromecast addon, fresh-write the protocol from publicly-documented references. Same posture as AP1.
+        </div>
+      </div>
+    </div>
+
+    <div class="risk low">
+      <div class="badge-col">
+        <span class="badge">LOW RISK</span>
+      </div>
+      <div>
+        <div class="title">HDMI ARC / eARC audio extraction</div>
+        <div class="body">
+          <p>HDMI Forum's HDMI specs are licensed; the ARC / eARC audio paths are part of standard HDMI implementations. Hundreds of products (HDMI audio extractors, AVRs, soundbars) implement ARC audio extraction.</p>
+        </div>
+        <div class="defense">
+          <strong>Our defense:</strong> Hub Pro uses commodity HDMI audio extractor chipsets sourced from Asian ODMs that already pay HDMI licensing. We integrate them, we don't reverse-engineer them. Our HDMI implementer cert ride along with the chipset vendor.
+        </div>
+      </div>
+    </div>
+
+    <div class="pullquote">
+      <strong>Total patent-related budget before hardware ships: ~$3–5K</strong> for a freedom-to-operate search by a patent attorney specializing in audio / consumer electronics. Required before mass-production of any hardware SKU. <strong>Not required for Mac, tvOS, or iOS app releases</strong> — software through App Store / direct download is in well-trodden ground.
+    </div>
+  </div>
+</section>
+
+<!-- 8. Legal & regulatory hurdles -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8</span>Legal &amp; regulatory hurdles</h2>
+    <p class="subhead">App stores, hardware certification, EU compliance, international distribution.</p>
+
+    <h3>Software distribution</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Channel</th><th>Hurdle</th><th>Our approach</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>macOS App Store</strong></td>
+            <td>Sandbox restrictions prohibit system audio capture (CATapDescription not allowed in sandboxed apps in many cases).</td>
+            <td>Not targeting. Direct download (notarized Developer ID) — same model as Airfoil.</td>
+          </tr>
+          <tr>
+            <td><strong>tvOS App Store</strong></td>
+            <td>Required for tvOS distribution. ~1 week review. Apple Small Business Program drops cut from 30% to 15% under $1M/yr.</td>
+            <td>Target this for the $5 Apple TV companion. Apple's standard process.</td>
+          </tr>
+          <tr>
+            <td><strong>iOS App Store</strong></td>
+            <td>Required for iOS Companion. Same Small Business Program.</td>
+            <td>Target this. Companion app is free, so no payment processing concerns.</td>
+          </tr>
+          <tr>
+            <td><strong>Direct sale (superaudio.app)</strong></td>
+            <td>VAT handling in EU/UK, payment processing, license-key delivery, refund handling.</td>
+            <td>Paddle (Merchant of Record) handles VAT, payment, refunds globally. ~5% fee but eliminates the legal entity in 30+ countries.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Hardware regulatory (Hub Stick, Hub Pro)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Market</th><th>Certification required</th><th>Cost (per SKU)</th><th>Timeline</th></tr></thead>
+        <tbody>
+          <tr><td>🇺🇸 US</td><td>FCC Part 15 (intentional radiator, since WiFi/BT)</td><td>$3K–6K</td><td>4–6 weeks</td></tr>
+          <tr><td>🇨🇦 Canada</td><td>ISED (Innovation, Science and Economic Development)</td><td>$1.5K–3K</td><td>2–4 weeks</td></tr>
+          <tr><td>🇪🇺 EU + 🇬🇧 UK</td><td>CE / UKCA self-declaration + RED Directive for radio</td><td>$3K–5K</td><td>6–8 weeks (lab testing)</td></tr>
+          <tr><td>🇯🇵 Japan</td><td>MIC / Telec for radio</td><td>$2K–4K</td><td>4–6 weeks</td></tr>
+          <tr><td>🇦🇺 Australia / 🇳🇿 NZ</td><td>ACMA / RSM</td><td>$1K–2K</td><td>2–4 weeks</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Hardware certification total (US + EU + Canada launch): ~$8–14K per SKU.</strong> Multiple SKUs share certification when the radio module (Pi's WiFi/BT chip) is the same — we'd reuse 90% across Hub Stick + Optical Hub + Hub Pro. Practical total for initial multi-SKU launch: <strong>$15–25K one-time</strong>. Required before any hardware ships to consumers.</p>
+
+    <h3>EU Digital Services Act (DSA) + GDPR</h3>
+    <p>SuperAudio collects no personal data, runs no cloud services, performs no telemetry. <strong>DSA and GDPR exposure is minimal</strong>:</p>
+    <ul>
+      <li>The website has a privacy policy stating "we collect nothing."</li>
+      <li>Paddle handles all VAT and customer data on EU sales (they're the Merchant of Record).</li>
+      <li>Apple/Google handle App Store regulatory burden on app downloads.</li>
+      <li>No cookies needed beyond a session cookie for the storefront.</li>
+    </ul>
+
+    <h3>Right-to-repair, open-source licensing</h3>
+    <p>Our codebase is MIT-licensed (per <code>CLAUDE.md</code> license hygiene). No GPL code copied. We can:</p>
+    <ul>
+      <li>Open-source the Mac app post-launch if we want — community-building lever (TBD).</li>
+      <li>Publish the Hub Stick OS image (with the GPL components like Linux kernel, BusyBox properly attributed). Required under GPL compliance when shipping hardware running Linux.</li>
+      <li>Provide source for any GPL-licensed dependencies (Linux kernel, etc.) per GPL Section 6.</li>
+    </ul>
+    <p><strong>GPL compliance bundle for the Hub Stick OS image</strong> is a one-time effort (~1 week to assemble, then updated per release). Public source repository on GitHub is the standard mechanism.</p>
+
+    <h3>Trademark</h3>
+    <p>"SuperAudio" trademark availability: USPTO search shows no active registration in our exact mark for "computer software for multi-room audio" or "wireless audio bridges." Trademark filing budget: <strong>$1–2K (one international class)</strong> after launch traction. Not required for initial release; nice to have within year 1.</p>
+  </div>
+</section>
+
+<!-- 9. The wedge revisited -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">9</span>The strategic wedge, restated</h2>
+    <p class="subhead">Why this competitive position is durable.</p>
+
+    <div class="wedge">
+      <div class="label">The conclusion</div>
+      <div class="title">Every other player picks one ecosystem and defends the wall. <em>We're the door.</em></div>
+      <p>Sonos, Bluesound, HEOS, MusicCast, BluOS, Apple's AirPlay 2 — all defending their own walled gardens. They will never bridge to competitors because their business model is selling speakers, not bridges.</p>
+      <p>Roon, Dirac, iFi — premium-priced, niche-focused. They serve the top 5% of audiophiles and have no interest in mass market.</p>
+      <p>Airfoil, AirParrot, AirConnect — software-only, no hardware story, no Room Tuning, premium pricing for what they do.</p>
+      <p><strong>SuperAudio's wedge is the combination of: (a) cross-ecosystem fan-out at consumer prices, (b) Room Tuning that works across protocols, (c) HDMI ARC for the TV use case, and (d) a hardware path so non-Mac households are reachable. No competitor combines these four. The wedge is durable because the walled-garden incumbents cannot compete without abandoning their lock-in business model.</strong></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Competitive Landscape &amp; Legal Posture · Drafted 2026-05-13 · Moat section added 2026-05-15 · Hardware bridges + GitHub matrix added 2026-05-15 (night)</p>
+    <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a> (strategy) and <a href="REACTIVE_DISCOVERY.html">REACTIVE_DISCOVERY.html</a> (build log). Forward-looking; not legal advice. Patent FTO search by qualified attorney required before hardware mass-production.</p>
+  </div>
+</footer>
+
+</body>
+</html>

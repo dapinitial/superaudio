@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — Reactive Discovery milestone. The day cross-protocol Bonjour discovery validated the entire extensibility model on real hardware.">
+<title>SuperAudio — Reactive Discovery</title>
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --bg-card:   #14141c;
+    --border:    #23232e;
+    --text:      #ececf1;
+    --text-muted:#8a8a96;
+    --text-dim:  #5a5a66;
+    --accent:    #ff6a3d;
+    --accent-2:  #ffba6d;
+    --good:      #4ade80;
+    --warn:      #fbbf24;
+    --bad:       #f87171;
+    --cyan:      #67e8f9;
+    --violet:    #a78bfa;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-2); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.75);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 16px; padding-bottom: 16px;
+  }
+  .topnav .brand {
+    font-weight: 800; letter-spacing: -0.01em;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-size: 18px;
+  }
+  .topnav .nav-links { display: flex; gap: 18px; font-size: 13px; color: var(--text-muted); }
+  .topnav .nav-links a { color: var(--text-muted); text-decoration: none; }
+  .topnav .nav-links a:hover { color: var(--accent); }
+  .topnav .nav-links a.current { color: var(--accent); font-weight: 600; }
+  .topnav .nav-links .nav-sep { color: var(--border); user-select: none; }
+  .topnav .brand { text-decoration: none; }
+  .topnav .tag {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 96px 0 56px;
+    border-top: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; top: -40%; right: -10%;
+    width: 70%; height: 180%;
+    background: radial-gradient(circle, rgba(103,232,249,0.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero > .wrap { position: relative; }
+  .hero .eyebrow {
+    color: var(--cyan);
+    font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 6vw, 64px);
+    line-height: 1.08; letter-spacing: -0.025em;
+    font-weight: 800; margin: 0 0 24px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--violet) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .hero .lede {
+    font-size: 19px; color: var(--text-muted); max-width: 720px;
+    line-height: 1.55;
+  }
+  .hero .lede strong { color: var(--text); font-weight: 600; }
+  .hero .meta {
+    margin-top: 28px; display: flex; gap: 24px; flex-wrap: wrap;
+    color: var(--text-dim); font-size: 14px;
+  }
+  .hero .meta strong { color: var(--text-muted); font-weight: 500; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 20px;
+  }
+  .stat .num {
+    font-size: 30px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .stat .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Section heads */
+  h2 {
+    font-size: 32px; line-height: 1.15; letter-spacing: -0.02em;
+    font-weight: 800; margin: 0 0 8px;
+  }
+  h2 .num {
+    display: inline-block; width: 28px;
+    color: var(--text-dim); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  h2 + .subhead {
+    color: var(--text-muted); font-size: 16px; margin-bottom: 32px;
+    max-width: 720px;
+  }
+  h3 {
+    font-size: 20px; margin: 32px 0 14px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  p { margin: 0 0 18px; }
+  ul { padding-left: 20px; margin: 0 0 18px; }
+  li { margin: 6px 0; }
+  strong { color: var(--text); font-weight: 600; }
+  code {
+    background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "SF Mono", Menlo, monospace;
+    color: var(--accent-2);
+  }
+  pre code { display: block; padding: 0; background: transparent; }
+  pre {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px; margin: 16px 0;
+    overflow-x: auto; font-size: 13px; line-height: 1.55;
+    font-family: "SF Mono", Menlo, monospace;
+    color: var(--text);
+  }
+  pre .log-time { color: var(--text-dim); }
+  pre .log-cat-airplay1 { color: var(--accent-2); }
+  pre .log-cat-sonos { color: var(--cyan); }
+  pre .log-cat-app { color: var(--violet); }
+  pre .log-cat-discovery { color: var(--good); }
+
+  /* Pull quote */
+  .pullquote {
+    border-left: 3px solid var(--cyan);
+    padding: 22px 26px;
+    background: linear-gradient(90deg, rgba(103,232,249,0.06) 0%, transparent 100%);
+    margin: 28px 0;
+    font-size: 20px; line-height: 1.45; font-weight: 500;
+    border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  .pullquote strong { color: var(--cyan); font-weight: 700; }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 28px 0;
+  }
+  .pipeline-stage {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+    display: grid; grid-template-columns: 64px 1fr auto; gap: 18px; align-items: center;
+    position: relative;
+  }
+  .pipeline-stage + .pipeline-stage::before {
+    content: "↓";
+    position: absolute; top: -22px; left: 28px;
+    color: var(--text-dim); font-size: 16px; line-height: 1;
+  }
+  .pipeline-stage .icon {
+    width: 64px; height: 64px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; letter-spacing: -0.01em;
+    text-align: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .pipeline-stage.network .icon { color: var(--cyan); border-color: var(--cyan); }
+  .pipeline-stage.protocol .icon { color: var(--accent); border-color: var(--accent); }
+  .pipeline-stage.core .icon { color: var(--violet); border-color: var(--violet); }
+  .pipeline-stage.ui .icon { color: var(--good); border-color: var(--good); }
+  .pipeline-stage .title { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+  .pipeline-stage .desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .pipeline-stage .module { font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  @media (max-width: 720px) {
+    .pipeline-stage { grid-template-columns: 48px 1fr; }
+    .pipeline-stage .icon { width: 48px; height: 48px; font-size: 11px; }
+    .pipeline-stage .module { grid-column: 1 / -1; padding-top: 4px; }
+  }
+
+  /* Device list mock */
+  .menu-mock {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px; margin: 20px 0;
+    max-width: 460px;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  .menu-mock-row {
+    padding: 6px 0; display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px;
+  }
+  .menu-mock-row .proto { color: var(--text-dim); font-size: 12px; }
+  .menu-mock hr {
+    border: none; border-top: 1px solid var(--border); margin: 6px 0;
+  }
+  .menu-mock-header { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 22px 0; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { background: var(--bg-card); }
+  th {
+    text-align: left; padding: 12px 14px; font-weight: 600;
+    color: var(--text); text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 14px; vertical-align: top;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  td strong { color: var(--text); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-card); }
+
+  .v { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .v.good { background: rgba(74,222,128,0.12); color: var(--good); border: 1px solid rgba(74,222,128,0.25); }
+  .v.cyan { background: rgba(103,232,249,0.12); color: var(--cyan); border: 1px solid rgba(103,232,249,0.25); }
+  .v.warn { background: rgba(251,191,36,0.12); color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+
+  /* Wins cards */
+  .wins { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 28px; }
+  .win {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px;
+  }
+  .win h4 {
+    margin: 0 0 4px; font-size: 11px; color: var(--cyan);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  }
+  .win .title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .win .desc { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+  @media (max-width: 720px) { .wins { grid-template-columns: 1fr; } }
+
+  /* Commit timeline */
+  .commits { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .commit {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+  }
+  .commit .hash {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px;
+    color: var(--text-dim); width: 70px;
+  }
+  .commit .msg { font-size: 14px; color: var(--text); }
+  .commit .tag {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    color: var(--accent); border: 1px solid var(--accent);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  @media (max-width: 720px) { .commit { grid-template-columns: 1fr; .hash { width: auto; } } }
+
+  /* Next-up cards */
+  .next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
+  .next-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .next-card .step {
+    color: var(--accent); font-size: 11px; letter-spacing: 0.08em; font-weight: 700;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .next-card .title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .next-card .desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  @media (max-width: 720px) { .next { grid-template-columns: 1fr; } }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 36px 0; color: var(--text-dim); font-size: 13px;
+  }
+  footer p { margin: 6px 0; }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    .topnav, .hero .meta, .hero::before { display: none; }
+    section { break-inside: avoid; }
+    .stat, .pipeline-stage, .win, .commit, .next-card, .menu-mock { break-inside: avoid; border-color: #ccc; background: white; }
+    h2 .num { color: #888; }
+    pre { background: #f5f5f5; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html" class="current">Build Log</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Build Log · Phase 1 Milestone</div>
+    <h1>Three devices.<br>Two protocols.<br><em>One pipeline.</em></h1>
+    <p class="lede">
+      In one evening, SuperAudio went from "menu bar app with a hardcoded placeholder" to a live cross-protocol discovery system. <strong>Plug a speaker in, it shows up in the menu. Power-cycle it, the menu reflects that. No app restart, no manual refresh.</strong> This document is the receipt — what we built, why it works, what it proves about the architecture, and what's next.
+    </p>
+    <div class="meta">
+      <span><strong>Date:</strong> 2026-05-12</span>
+      <span><strong>Tag:</strong> <code style="color:var(--cyan); background: rgba(103,232,249,0.08);">v0.2-discovery</code></span>
+      <span><strong>Phase:</strong> 1 of 4 (discovery layer)</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="label">real devices discovered on the LAN</div>
+      </div>
+      <div class="stat">
+        <div class="num">2</div>
+        <div class="label">protocols sharing one app pipeline</div>
+      </div>
+      <div class="stat">
+        <div class="num">~3 ms</div>
+        <div class="label">from app launch to first device in the UI</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">restarts needed when a device joined or blipped</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. The receipt -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>The receipt</h2>
+    <p class="subhead">Real hardware. Real logs. Real menu bar.</p>
+
+    <h3>Cold-start discovery</h3>
+    <p>Within 3 milliseconds of <code>SuperAudio launching</code>, both protocol discoverers were emitting and the menu was populating:</p>
+
+<pre><span class="log-time">17:59:23.314898</span> [<span class="log-cat-app">app</span>]      SuperAudio launching
+<span class="log-time">17:59:23.314969</span> [<span class="log-cat-discovery">core</span>]     Registered airplay1 discoverer
+<span class="log-time">17:59:23.314979</span> [<span class="log-cat-discovery">core</span>]     Registered sonos discoverer
+<span class="log-time">17:59:23.315014</span> [<span class="log-cat-sonos">sonos</span>]    SonosDiscoverer.start — NWBrowser for _sonos._tcp
+<span class="log-time">17:59:23.318094</span> [<span class="log-cat-airplay1">airplay1</span>] AirPlay1Discoverer.start — NWBrowser for _raop._tcp
+<span class="log-time">17:59:23.318878</span> [<span class="log-cat-sonos">sonos</span>]    Sonos added: Den UDN=RINCON_347E5C777B6E01400
+<span class="log-time">17:59:23.320764</span> [<span class="log-cat-airplay1">airplay1</span>] RAOP added: Spacelab Forever Main Audio — am=A7
+<span class="log-time">17:59:23.326377</span> [<span class="log-cat-app">app</span>]      Sink added to UI list: Den (sonos)
+<span class="log-time">17:59:23.326389</span> [<span class="log-cat-app">app</span>]      Sink added to UI list: Spacelab Forever Main Audio (airplay1)</pre>
+
+    <h3>Live discovery — power-cycle resilience</h3>
+    <p>When the B&amp;W A5 was power-cycled (red-light reset), our app picked it up live with no restart. The log also shows a brief network blip handled cleanly — emitted <code>.removed</code>, then <code>.added</code> 2 seconds later when the speaker stabilized:</p>
+
+<pre><span class="log-time">18:09:00.868</span> [<span class="log-cat-airplay1">airplay1</span>] RAOP added: Spacelab Audio — am=A5
+<span class="log-time">18:09:00.868</span> [<span class="log-cat-app">app</span>]      Sink added to UI list: Spacelab Audio (airplay1)
+<span class="log-time">18:09:02.880</span> [<span class="log-cat-app">app</span>]      Sink removed from UI list: Spacelab Audio   <span class="log-time">← blip</span>
+<span class="log-time">18:09:05.162</span> [<span class="log-cat-airplay1">airplay1</span>] RAOP added: Spacelab Audio — am=A5            <span class="log-time">← back</span>
+<span class="log-time">18:09:05.162</span> [<span class="log-cat-app">app</span>]      Sink added to UI list: Spacelab Audio</pre>
+
+    <h3>The menu bar, after</h3>
+    <p>What the user actually sees when they click the menu bar icon:</p>
+
+    <div class="menu-mock">
+      <div class="menu-mock-header">SuperAudio</div>
+      <div class="menu-mock-row"><span>🎵 Den</span><span class="proto">Sonos</span></div>
+      <div class="menu-mock-row"><span>🎵 Spacelab Audio</span><span class="proto">AirPlay 1</span></div>
+      <div class="menu-mock-row"><span>🎵 Spacelab Forever Main Audio</span><span class="proto">AirPlay 1</span></div>
+      <hr>
+      <div class="menu-mock-row"><span>☐ Show all devices (incl. Macs / iPhones / iPads)</span></div>
+      <hr>
+      <div class="menu-mock-row"><span>Quit SuperAudio</span><span class="proto">⌘Q</span></div>
+    </div>
+
+    <p>The "Show all devices" toggle exists because Apple makes every Mac, iPhone, iPad, and Apple TV advertise <code>_raop._tcp</code> for receiving AirPlay from each other. Our app correctly discovers them all (it's literally working harder than Apple's own Music app, which hides those by default). The toggle lets the user choose whether to see them.</p>
+  </div>
+</section>
+
+<!-- 2. The pipeline -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>The pipeline</h2>
+    <p class="subhead">Four layers, strict dependency direction, every layer testable in isolation.</p>
+
+    <div class="pipeline">
+      <div class="pipeline-stage network">
+        <div class="icon">NETWORK</div>
+        <div>
+          <div class="title">macOS Bonjour daemon</div>
+          <div class="desc">Multicast DNS service discovery. Already running on every Mac. We talk to it via <code>NWBrowser</code>, no entitlement required, no manual sockets.</div>
+        </div>
+        <div class="module">_raop._tcp · _sonos._tcp</div>
+      </div>
+      <div class="pipeline-stage protocol">
+        <div class="icon">PROTOCOL</div>
+        <div>
+          <div class="title">Per-protocol discoverers</div>
+          <div class="desc">One <code>SinkDiscoverer</code> implementation per protocol family. Owns its own <code>NWBrowser</code>, parses its own TXT record, filters self-advertisement of the host Mac, emits events into an <code>AsyncStream&lt;SinkChange&gt;</code>.</div>
+        </div>
+        <div class="module">AirPlay1Discoverer · SonosDiscoverer</div>
+      </div>
+      <div class="pipeline-stage core">
+        <div class="icon">CORE</div>
+        <div>
+          <div class="title">SinkRegistry &amp; DiscoveredSinks</div>
+          <div class="desc">App startup registers each discoverer with the central <code>SinkRegistry</code>. A single <code>@Observable DiscoveredSinks</code> reduces every discoverer's <code>AsyncStream</code> into one live array, deduplicated, ordered.</div>
+        </div>
+        <div class="module">SuperAudioCore</div>
+      </div>
+      <div class="pipeline-stage ui">
+        <div class="icon">UI</div>
+        <div>
+          <div class="title">SwiftUI MenuBarExtra</div>
+          <div class="desc">The menu bar dropdown binds to <code>DiscoveredSinks.shared.sinks</code> via <code>@Observable</code>. When a new <code>SinkChange.added</code> propagates, the menu re-renders. <em>This is the magic that makes "live discovery" feel inevitable rather than engineered.</em></div>
+        </div>
+        <div class="module">MenuBarView.swift</div>
+      </div>
+    </div>
+
+    <h3>Dependency direction (enforced by Package.swift)</h3>
+    <ul>
+      <li><code>SuperAudioCore</code> depends on nothing project-internal. Pure Swift + Apple frameworks.</li>
+      <li><code>SuperAudioDiscovery</code> depends on Core only. Shared discovery primitives.</li>
+      <li><code>SuperAudioAirPlay1</code>, <code>SuperAudioSonos</code> each depend on Core + Discovery. <strong>They never import each other.</strong></li>
+      <li><code>SuperAudio</code> (the app) depends on everything and wires it together at startup.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 3. The event model -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>The event model — why <code>SinkChange</code> matters</h2>
+    <p class="subhead">A small data-model decision that paid off immediately.</p>
+
+    <p>Each discoverer emits a stream of <code>SinkChange</code> events:</p>
+
+<pre><code>public enum SinkChange: Sendable {
+    case added(SinkDescriptor)
+    case updated(SinkDescriptor)
+    case removed(SinkID)
+}</code></pre>
+
+    <p>The alternative — emitting full lists of "current sinks" on every change — would have been simpler to write but worse on three counts:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concern</th><th>Full-list stream</th><th>Change stream (chosen)</th></tr></thead>
+        <tbody>
+          <tr><td>UI updates</td><td>Diff a list vs the previous list every time</td><td><strong>Apply one change at a time</strong></td></tr>
+          <tr><td>Resilience</td><td>A brief blip looks like "lost everything, regained everything"</td><td><strong>Blip is a tidy <code>.removed</code> + <code>.added</code> pair</strong></td></tr>
+          <tr><td>Animation</td><td>Hard to know what actually changed for fade-in/out</td><td><strong>Free — UI sees the exact event</strong></td></tr>
+          <tr><td>Composition</td><td>List-merging across N discoverers gets tangled</td><td><strong>Each discoverer's stream is independent; reducer does the work</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pullquote">
+      The blip at <strong>18:09:02</strong> proved it. The A5 dropped off mDNS for 2 seconds, then re-announced. Our UI showed <strong>"removed"</strong>, then <strong>"added"</strong>, and the user saw it in real time. With a full-list model, this would have flickered or been hidden entirely.
+    </div>
+  </div>
+</section>
+
+<!-- 4. The wins -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>What this proves about the architecture</h2>
+    <p class="subhead">Discovery was the first place the case study's extensibility claims met real hardware.</p>
+
+    <div class="wins">
+      <div class="win">
+        <h4>Win 1</h4>
+        <div class="title">The protocol modules never import each other.</div>
+        <div class="desc"><code>SuperAudioAirPlay1</code> doesn't know <code>SuperAudioSonos</code> exists. They only share the <code>SinkDiscoverer</code> contract from Core. Future <code>SuperAudioAirPlay2</code>, <code>SuperAudioChromecast</code>, <code>SuperAudioBluetooth</code> drop in next to these without touching anything.</div>
+      </div>
+      <div class="win">
+        <h4>Win 2</h4>
+        <div class="title">Same NWBrowser pattern works for two protocols.</div>
+        <div class="desc">Both AirPlay 1 (<code>_raop._tcp</code>) and Sonos (<code>_sonos._tcp</code>) advertise via Bonjour. We initially planned SSDP for Sonos; switching to Bonjour eliminated a multicast-entitlement headache and halved the code. Cleaner outcome than the case study originally planned.</div>
+      </div>
+      <div class="win">
+        <h4>Win 3</h4>
+        <div class="title">The UI doesn't know which protocol it's showing.</div>
+        <div class="desc"><code>MenuBarView</code> reads from <code>DiscoveredSinks</code> and renders <code>SinkDescriptor</code>s. The descriptor knows its <code>protocolKind</code> for display, but the view never branches on it. Adding a protocol adds rows; it doesn't add cases.</div>
+      </div>
+      <div class="win">
+        <h4>Win 4</h4>
+        <div class="title">Filtering belongs in the UI, not the discoverer.</div>
+        <div class="desc">First pass filtered Macs/iPhones at the discoverer level. Better: discoverers emit everything they find; UI applies <code>isLikelySpeaker</code> heuristic + a <code>@AppStorage</code>-persisted toggle. Diagnostics and UX share the same data.</div>
+      </div>
+      <div class="win">
+        <h4>Win 5</h4>
+        <div class="title">Live discovery cost zero extra engineering.</div>
+        <div class="desc">We didn't build a polling loop, a periodic refresh, or a "scan now" button. The browser is always open; the stream is always live; the UI always reflects current state. <em>This is what "reactive" actually buys you.</em></div>
+      </div>
+      <div class="win">
+        <h4>Win 6</h4>
+        <div class="title">The Phase 1 gate isn't even the destination.</div>
+        <div class="desc">The official Phase 1 gate is "audio out of one B&amp;W speaker for 30 min, no drops." Tonight covered <strong>discovery only</strong>, which was scoped as one bullet in Phase 1. The fact that discovery was clean enough to deserve its own commit, its own tag (<code>v0.2-discovery</code>), and its own doc says we're building above the planned bar.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. What this lets us add next -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>What this lets us add without touching Core</h2>
+    <p class="subhead">The extensibility model isn't theoretical anymore. Here's exactly how each addon slots in.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Protocol</th><th>Module</th><th>Discovery</th><th>Hard part</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>AirPlay 2</strong></td>
+            <td><code>SuperAudioAirPlay2</code></td>
+            <td><code>_airplay._tcp</code> via Bonjour (already seen on the LAN)</td>
+            <td>HomeKit-style pairing — SRP + Curve25519</td>
+            <td><span class="v warn">2–3 weeks</span></td>
+          </tr>
+          <tr>
+            <td><strong>Chromecast</strong></td>
+            <td><code>SuperAudioChromecast</code></td>
+            <td><code>_googlecast._tcp</code> via Bonjour</td>
+            <td>Protobuf over TLS, CASTV2 protocol</td>
+            <td><span class="v warn">2–3 weeks</span></td>
+          </tr>
+          <tr>
+            <td><strong>Bluetooth A2DP</strong></td>
+            <td><code>SuperAudioBluetooth</code></td>
+            <td>Enumerate paired devices via <code>IOBluetooth</code></td>
+            <td>macOS allows only one A2DP output at a time; multi-out needs virtual-device routing</td>
+            <td><span class="v warn">2 wks single / longer multi</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>For each: a new directory under <code>Sources/</code>, one line in <code>AppDelegate.registerSinkDiscoverers()</code> gated by <code>LicenseManager.isEnabled(.airplay2)</code>, and ship. <strong>No edits to Core, no edits to other protocol modules, no edits to the UI.</strong> Same exact pattern that produced tonight's three-speaker menu.</p>
+
+    <div class="pullquote">
+      The commercial track's <strong>$5 per-protocol addon</strong> pricing model isn't wishful thinking. The architecture genuinely lets a future contributor build <code>SuperAudioChromecast</code> in isolation, license-gate it, and have it appear next to <strong>Den · Sonos</strong> in users' menus without touching a single existing file.
+    </div>
+  </div>
+</section>
+
+<!-- 6. The decisions we made tonight -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>Decisions made tonight</h2>
+    <p class="subhead">Worth recording for future-us.</p>
+
+    <h3>Bonjour over SSDP for Sonos discovery</h3>
+    <p>Original case study said Sonos uses SSDP. True — but Sonos <em>also</em> advertises via Bonjour as <code>_sonos._tcp</code> with full descriptor URL in the TXT record. Using Bonjour means:</p>
+    <ul>
+      <li>Same <code>NWBrowser</code> pattern as AirPlay 1 (one mental model, less code)</li>
+      <li>No multicast entitlement (<code>com.apple.developer.networking.multicast</code>) needed</li>
+      <li>Room name comes free in the service instance name (no XML fetch required for discovery)</li>
+      <li>SSDP code we'd written sits cleanly in git history if some future UPnP device needs it</li>
+    </ul>
+
+    <h3>Executable name rename: <code>SuperAudioApp</code> → <code>SuperAudio</code></h3>
+    <p>The bundle was registering twice in macOS Menu Bar Settings — once under the binary name (<code>SuperAudioApp</code>) and once under the SwiftUI MenuBarExtra label (<code>SuperAudio</code>). Renaming the SPM executable target and the entry-point file collapses these into a single entry. Worth doing now while the change is cheap; would be painful at v1.0 when bundle identifiers are baked into license keys.</p>
+
+    <h3>Filter belongs in the UI, not the discoverer</h3>
+    <p>First pass had AirPlay1Discoverer skipping Macs/iPhones/iPads. Cleaner: emit every device, expose <code>SinkDescriptor.isLikelySpeaker</code> as a computed property in Core, let the menu bar default to filtering but allow toggle. Diagnostics get the full list; users get the clean one. Same data, two views.</p>
+  </div>
+</section>
+
+<!-- 7. Work narrative -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>The work narrative</h2>
+    <p class="subhead">The milestones in the order they happened. <em>Git itself has been squashed to a single commit — this is the build log for posterity.</em></p>
+
+    <div class="commits">
+      <div class="commit">
+        <span class="hash">milestone 1</span>
+        <span class="msg">Project brief, decisions log, third-party notices — the rules we'd play by.</span>
+        <span></span>
+      </div>
+      <div class="commit">
+        <span class="hash">milestone 2</span>
+        <span class="msg">Day 0 capture probe — process tap works on this Mac under Personal Team signing.</span>
+        <span></span>
+      </div>
+      <div class="commit">
+        <span class="hash">milestone 3</span>
+        <span class="msg">SPM scaffold, menu bar app shell, OSLog wired across 5 modules.</span>
+        <span class="tag">v0.0.1 gate</span>
+      </div>
+      <div class="commit">
+        <span class="hash">milestone 4</span>
+        <span class="msg">SwiftUI MenuBarExtra adopted (over NSStatusItem) after multi-display visibility quirk surfaced.</span>
+        <span></span>
+      </div>
+      <div class="commit">
+        <span class="hash">milestone 5</span>
+        <span class="msg">Cross-protocol Bonjour discovery + live menu bar device list — the milestone this doc celebrates.</span>
+        <span class="tag">v0.2 gate</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Next up -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8</span>What's next</h2>
+    <p class="subhead">From "we can see speakers" to "audio comes out of one."</p>
+
+    <div class="next">
+      <div class="next-card">
+        <div class="step">Step 1 · this week</div>
+        <div class="title">RTSP <code>OPTIONS</code> handshake</div>
+        <div class="desc">First real protocol code that talks to the A7. Open a TCP socket, send <code>OPTIONS * RTSP/1.0</code>, parse the response. No audio yet — just confirming we can speak RAOP.</div>
+      </div>
+      <div class="next-card">
+        <div class="step">Step 2</div>
+        <div class="title">ALAC encoding + RTP packetization</div>
+        <div class="desc">Take the captured PCM from CoreAudio, encode to ALAC via Apple's open-source encoder, packetize into RTP with RAOP's timestamp/sequence scheme.</div>
+      </div>
+      <div class="next-card">
+        <div class="step">Step 3</div>
+        <div class="title">AES-128 session key handshake</div>
+        <div class="desc">Or skip it: the A7's TXT record advertises <code>et=0,4</code>, meaning it accepts unencrypted streams. Try clear first; only add encryption if the A7 rejects.</div>
+      </div>
+      <div class="next-card">
+        <div class="step">Step 4</div>
+        <div class="title">Audio in the speaker</div>
+        <div class="desc">The Phase 1 demo gate: Spotify playing through Spacelab Forever Main Audio for 30 minutes with no drops.</div>
+      </div>
+      <div class="next-card">
+        <div class="step">Step 5 · Phase 2</div>
+        <div class="title">Sync between A5 and A7</div>
+        <div class="desc">Master host-time, per-sink latency probe, schedule packets so both speakers hit "play sample N" at the same wall-clock moment. Walk between rooms — no flam.</div>
+      </div>
+      <div class="next-card">
+        <div class="step">Step 6 · Phase 3</div>
+        <div class="title">Den joins the group</div>
+        <div class="desc">Sonos via UPnP/SOAP, local HTTP audio server, all three speakers in sync. Phase 1 → 3 audio gate.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Reactive Discovery · Drafted 2026-05-12</p>
+    <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a>. Build log for Phase 1, discovery layer.</p>
+  </div>
+</footer>
+
+</body>
+</html>

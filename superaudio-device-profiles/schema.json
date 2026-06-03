@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/davidpuerto/superaudio-device-profiles/blob/main/schema.json",
+  "title": "SuperAudio Device Profile",
+  "description": "Schema v1 — describes how to talk to one audio device model (sink role) and how to observe its state (control role). MIT-licensed pure data, no executable content.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "displayName", "manufacturer", "model", "match", "roles"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Bumped only on breaking changes. Old consumers ignore unknown fields; new optional fields land additively without bumping this."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "description": "Stable identifier for this device profile. Convention: '<manufacturer-slug>-<model-slug>'. Used as the filename + as a join key for telemetry-free contributors-style sharing."
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable name shown in UI. e.g., 'Bowers & Wilkins A5'."
+    },
+    "manufacturer": {
+      "type": "string",
+      "description": "Manufacturer name, full form (no abbreviation)."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model designation. e.g., 'A5', 'Playbar (gen 1)'."
+    },
+    "firstRelease": {
+      "type": ["integer", "null"],
+      "description": "Year the device first shipped, if known. Helps prioritise legacy-device profiles."
+    },
+    "lastFirmware": {
+      "type": ["string", "null"],
+      "description": "Most recent firmware version this profile has been verified against, if known."
+    },
+    "match": {
+      "type": "object",
+      "description": "How the SuperAudio discovery layer recognises this device. Order of fields = order of confidence; first match wins.",
+      "additionalProperties": false,
+      "properties": {
+        "bonjourServiceType": {
+          "type": "string",
+          "description": "Bonjour/mDNS service type. e.g., '_raop._tcp' for AirPlay 1, '_sonos._tcp' for Sonos."
+        },
+        "modelHints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Substrings to look for in the device's mDNS TXT record or HTTP description. e.g., ['B&W', 'BW-A5']. Case-insensitive substring match."
+        },
+        "macOUI": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}$" },
+          "description": "Optional list of MAC OUI prefixes for the manufacturer. Tiebreaker only — never the primary match because some devices share OUIs across product lines."
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Roles this device can play in a SuperAudio session. At least one of sink/control must be non-null.",
+      "additionalProperties": false,
+      "properties": {
+        "sink": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/sinkRole" }],
+          "description": "How to send audio TO this device. Null if the device is control-only (e.g., a soundbar paired with an Audio Bridge)."
+        },
+        "control": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/controlRole" }],
+          "description": "How to observe volume/power/state events FROM this device. Null if the device is sink-only or doesn't expose events."
+        }
+      }
+    },
+    "verifiedBy": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Names or GitHub handles of contributors who verified this profile on real hardware. Empty array if seeded from public references only."
+    },
+    "verifiedDate": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "ISO 8601 date of last hardware verification, or null if never verified on physical hardware."
+    },
+    "contributedDate": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date this profile was first contributed."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-text notes for downstream consumers. Plain English. The most useful thing to fill in for legacy devices."
+    }
+  },
+  "$defs": {
+    "sinkRole": {
+      "type": "object",
+      "required": ["protocol", "codec"],
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "type": "string",
+          "enum": ["airplay1", "airplay2", "sonos", "chromecast", "bluetooth", "snapcast", "dlna"],
+          "description": "Protocol family used to send audio to this sink. Determines which SuperAudio module handles the session."
+        },
+        "codec": {
+          "type": "object",
+          "required": ["format", "sampleRate", "channels"],
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": ["alac", "aac-lc", "aac-elc", "mp3", "pcm", "opus", "flac"]
+            },
+            "sampleRate": { "type": "integer", "enum": [22050, 32000, 44100, 48000, 88200, 96000, 192000] },
+            "bitDepth": { "type": "integer", "enum": [16, 24, 32] },
+            "channels": { "type": "integer", "minimum": 1, "maximum": 8 },
+            "compressed": { "type": "boolean", "description": "False = raw PCM in container. True = compressed codec. Important for ALAC where escape=1 (verbatim) vs compressed behaves differently across receivers." },
+            "container": { "type": "string", "description": "If applicable: 'adts' for AAC over HTTP, 'm4a' for AAC in MP4 fragment, etc." }
+          }
+        },
+        "encryption": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "et": { "type": "integer", "enum": [0, 1], "description": "AirPlay 1 encryption type: 0 = unencrypted, 1 = RSA-OAEP-SHA1 with Apple AirPort Express public key. Some receivers require et=1 even though et=0 is sufficient on others." },
+            "fallback": { "type": "string", "description": "If primary encryption fails, what to try next. e.g., 'et=1' if et=0 fails." }
+          }
+        },
+        "audioLatencyMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Receiver-side buffer depth in milliseconds (the value the receiver advertises in its RECORD response's Audio-Latency header for AirPlay 1, or measured empirically for other protocols). For Sonos, this is the OBSERVABLE renderer-to-DAC delay; for AirPlay 1, the negotiated value."
+        },
+        "buffer": {
+          "type": "string",
+          "description": "Free-text description of how this sink buffers audio. e.g., 'RTP timestamp-based, ~93ms', 'Renderer buffer 0.5-4 sec variable, NOT exposed via API'."
+        },
+        "transport": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Protocol-specific transport hints (e.g., Sonos's URI scheme requirements).",
+          "properties": {
+            "scheme": { "type": "string" },
+            "metadataRequired": { "type": "boolean" },
+            "metadataNote": { "type": "string" }
+          }
+        },
+        "quirks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Free-text list of known firmware quirks. The most valuable field for downstream consumers debugging a 'why does this device behave weirdly' issue."
+        },
+        "volumeScale": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["dB", "percent", "raw"] },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "muted": { "type": ["number", "null"], "description": "Special value indicating muted (e.g., -144 for AirPlay 1 dB scale)." }
+          }
+        },
+        "knownFirmware": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Firmware versions this profile has been observed working with, if known."
+        }
+      }
+    },
+    "controlRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How to observe events FROM this device. Used when a device is the 'audio brain' of a room (typically a soundbar) and the rest of the mesh needs to follow its volume/power/source state.",
+      "properties": {
+        "volumeEventSource": {
+          "type": "string",
+          "enum": ["upnp-eventing", "homekit", "smartthings", "cec-hdmi", "ir-learned", "none"]
+        },
+        "subscriptionEndpoint": {
+          "type": "string",
+          "description": "URL path or service identifier for the event subscription endpoint. e.g., '/MediaRenderer/RenderingControl/Event' for Sonos UPnP eventing."
+        },
+        "powerEventSource": {
+          "type": "string",
+          "enum": ["upnp-eventing", "homekit", "smartthings", "cec-hdmi", "ir-learned", "polling", "none"]
+        },
+        "irCodesLearned": {
+          "type": "boolean",
+          "description": "True if this device requires IR-remote-learning to capture power/source events. False if events come over a network protocol."
+        },
+        "fallbackStrategy": {
+          "type": "string",
+          "description": "Free-text description of what to do when no event path works. e.g., 'Poll volume every 5 sec via UPnP query'."
+        }
+      }
+    }
+  }
+}

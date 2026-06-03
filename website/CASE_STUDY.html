@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — product case study. Multi-room audio for households with mixed AirPlay 1, Sonos, and stranded network speakers. Auto-sync and room tuning that works across protocols.">
+<title>SuperAudio — Product Case Study</title>
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --bg-card:   #14141c;
+    --bg-card-hover: #1a1a24;
+    --border:    #23232e;
+    --border-bright: #2e2e3c;
+    --text:      #ececf1;
+    --text-muted:#8a8a96;
+    --text-dim:  #5a5a66;
+    --accent:    #ff6a3d;
+    --accent-2:  #ffba6d;
+    --good:      #4ade80;
+    --warn:      #fbbf24;
+    --bad:       #f87171;
+    --cyan:      #67e8f9;
+    --violet:    #a78bfa;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-2); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 80px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.75);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 16px; padding-bottom: 16px;
+  }
+  .topnav .brand {
+    font-weight: 800; letter-spacing: -0.01em;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-size: 18px;
+  }
+  .topnav .tag {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 96px 0 64px;
+    border-top: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; top: -50%; right: -20%;
+    width: 80%; height: 200%;
+    background: radial-gradient(circle, rgba(255,106,61,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero > .wrap { position: relative; }
+  .hero .eyebrow {
+    color: var(--accent);
+    font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 1.05; letter-spacing: -0.025em;
+    font-weight: 800; margin: 0 0 24px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .hero .lede {
+    font-size: 20px; color: var(--text-muted); max-width: 740px;
+    line-height: 1.55;
+  }
+  .hero .lede strong { color: var(--text); font-weight: 600; }
+  .hero .meta {
+    margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap;
+    color: var(--text-dim); font-size: 14px;
+  }
+  .hero .meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero .meta strong { color: var(--text-muted); font-weight: 500; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 56px; }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 20px;
+  }
+  .stat .num {
+    font-size: 32px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .stat .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  h2 {
+    font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;
+    font-weight: 800; margin: 0 0 8px;
+  }
+  h2 .num {
+    display: inline-block; width: 32px;
+    color: var(--text-dim); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  h2 + .subhead {
+    color: var(--text-muted); font-size: 16px; margin-bottom: 40px;
+    max-width: 760px;
+  }
+  h3 {
+    font-size: 20px; margin: 40px 0 16px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  h4 {
+    font-size: 14px; margin: 24px 0 8px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); font-weight: 600;
+  }
+  p { margin: 0 0 18px; }
+  ul { padding-left: 20px; margin: 0 0 18px; }
+  li { margin: 6px 0; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  code {
+    background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "SF Mono", Menlo, monospace;
+    color: var(--accent-2);
+  }
+
+  /* Pull quote / hypothesis */
+  .pullquote {
+    border-left: 3px solid var(--accent);
+    padding: 24px 28px;
+    background: linear-gradient(90deg, rgba(255,106,61,0.06) 0%, transparent 100%);
+    margin: 32px 0;
+    font-size: 22px; line-height: 1.45; font-weight: 500;
+    border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  .pullquote strong { color: var(--accent-2); font-weight: 700; }
+
+  /* Personas */
+  .personas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+  .persona {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; transition: border-color 0.15s, transform 0.15s;
+  }
+  .persona:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .persona .name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .persona .blurb { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+  .persona dl { margin: 0; font-size: 13px; }
+  .persona dt {
+    color: var(--text-dim); text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em;
+    margin-top: 12px;
+  }
+  .persona dd { margin: 4px 0 0; color: var(--text); }
+  .persona dd.driver { color: var(--accent-2); font-style: italic; font-weight: 500; }
+  @media (max-width: 800px) { .personas { grid-template-columns: 1fr; } }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { background: var(--bg-card); }
+  th {
+    text-align: left; padding: 14px 16px; font-weight: 600;
+    color: var(--text); text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 14px 16px; vertical-align: top;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  td strong { color: var(--text); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-card); }
+
+  /* Verdict badges */
+  .v { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .v.good { background: rgba(74,222,128,0.12); color: var(--good); border: 1px solid rgba(74,222,128,0.25); }
+  .v.warn { background: rgba(251,191,36,0.12); color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+  .v.bad  { background: rgba(248,113,113,0.12); color: var(--bad);  border: 1px solid rgba(248,113,113,0.25); }
+  .v.info { background: rgba(103,232,249,0.12); color: var(--cyan); border: 1px solid rgba(103,232,249,0.25); }
+
+  /* Moat — sync layer cards */
+  .layer-stack { display: flex; flex-direction: column; gap: 12px; margin: 32px 0; }
+  .layer {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 24px; display: grid; grid-template-columns: 56px 1fr auto; gap: 20px; align-items: center;
+    transition: border-color 0.15s;
+  }
+  .layer:hover { border-color: var(--accent); }
+  .layer .badge {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color: var(--bg); font-weight: 800; font-size: 14px;
+    width: 56px; height: 56px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .layer.foundation .badge { background: linear-gradient(135deg, var(--cyan) 0%, var(--violet) 100%); }
+  .layer.moat .badge { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); }
+  .layer.future .badge { background: var(--text-dim); }
+  .layer .body .title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .layer .body .desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .layer .precision {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px;
+    color: var(--text-dim); white-space: nowrap;
+  }
+  @media (max-width: 720px) {
+    .layer { grid-template-columns: 48px 1fr; }
+    .layer .badge { width: 48px; height: 48px; font-size: 12px; }
+    .layer .precision { grid-column: 1 / -1; }
+  }
+
+  /* Tune categories — split into two columns */
+  .tune-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 32px 0; }
+  .tune-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px;
+  }
+  .tune-card h4 { margin-top: 0; color: var(--accent); }
+  .tune-card .tune-title { font-size: 18px; font-weight: 700; margin: 4px 0 8px; }
+  .tune-card .tune-desc { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+  @media (max-width: 720px) { .tune-grid { grid-template-columns: 1fr; } }
+
+  /* Big insight callout */
+  .insight {
+    background: linear-gradient(135deg, rgba(255,106,61,0.10) 0%, rgba(255,186,109,0.05) 100%);
+    border: 1px solid rgba(255,106,61,0.3);
+    border-radius: 16px; padding: 32px 36px; margin: 32px 0;
+    position: relative;
+  }
+  .insight .label {
+    color: var(--accent); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 12px;
+  }
+  .insight .body {
+    font-size: 22px; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--text); margin-bottom: 16px;
+  }
+  .insight .body em {
+    color: var(--accent-2); font-style: normal; font-weight: 700;
+  }
+  .insight .detail { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+  /* SKU grid */
+  .skus { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0; }
+  .sku {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; position: relative; transition: border-color 0.15s;
+  }
+  .sku:hover { border-color: var(--accent); }
+  .sku.featured { border-color: var(--accent); }
+  .sku.featured::before {
+    content: "SWEET SPOT";
+    position: absolute; top: -10px; left: 16px;
+    background: var(--accent); color: var(--bg);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .sku.free { border-color: var(--cyan); }
+  .sku.free::before {
+    content: "FREE";
+    position: absolute; top: -10px; left: 16px;
+    background: var(--cyan); color: var(--bg);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .sku .price {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+    margin: 8px 0 4px;
+  }
+  .sku .price-note { font-size: 12px; color: var(--text-dim); }
+  .sku .sku-name { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .sku .desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 12px; }
+  @media (max-width: 980px) { .skus { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 540px) { .skus { grid-template-columns: 1fr; } }
+
+  /* Roadmap timeline */
+  .timeline { position: relative; padding-left: 28px; margin-top: 32px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px;
+    width: 2px; background: var(--border);
+  }
+  .phase {
+    position: relative; padding: 0 0 32px 24px;
+  }
+  .phase::before {
+    content: ""; position: absolute; left: -25px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bg-card); border: 2px solid var(--border);
+  }
+  .phase.current::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,106,61,0.18); }
+  .phase.next::before { border-color: var(--accent-2); }
+  .phase.moat-phase::before { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(103,232,249,0.18); }
+  .phase .phase-label {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .phase.current .phase-label { color: var(--accent); }
+  .phase.moat-phase .phase-label { color: var(--cyan); }
+  .phase .phase-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .phase .phase-meta { font-size: 13px; color: var(--text-dim); }
+  .phase .phase-meta strong { color: var(--text-muted); font-weight: 500; }
+
+  /* Reuse cards */
+  .reuse { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
+  .reuse .item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px;
+  }
+  .reuse .item .gear { font-weight: 700; font-size: 14px; }
+  .reuse .item .what { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .reuse .item .value { font-size: 12px; color: var(--accent-2); margin-top: 8px; font-weight: 600; }
+  @media (max-width: 720px) { .reuse { grid-template-columns: 1fr; } }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0; color: var(--text-dim); font-size: 13px;
+  }
+  footer p { margin: 8px 0; }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    .topnav, .hero .meta, .hero::before { display: none; }
+    section { break-inside: avoid; }
+    .stat, .persona, .sku, .reuse .item, .layer, .tune-card, .insight { break-inside: avoid; border-color: #ccc; background: white; }
+    h2 .num { color: #888; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html" class="current">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Product Case Study</div>
+    <h1>Make every speaker in your house <em>play the same song.</em><br>In sync. Tuned to the room. Across protocols.</h1>
+    <p class="lede">
+      Multi-room audio for households with mixed AirPlay 1, Sonos, and other "stranded" network audio gear that the modern AirPlay&nbsp;2 and Sonos ecosystems quietly refuse to unify. <strong>The moat is auto-sync and room tuning that work across mixed protocols</strong> — what Sonos Trueplay does only for Sonos hardware, and what Dirac/Roon do only at $500+. Three SKUs, one codebase, $5–$80 entry points.
+    </p>
+    <div class="meta">
+      <span><strong>Drafted:</strong> 2026-05-12</span>
+      <span><strong>Author:</strong> David Puerto</span>
+      <span><strong>Status:</strong> Forward-looking; not a commitment</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">5–10M</div>
+        <div class="label">US households with stranded multi-protocol audio gear</div>
+      </div>
+      <div class="stat">
+        <div class="num">$15</div>
+        <div class="label">Mac app entry price (Airfoil sells for $35)</div>
+      </div>
+      <div class="stat">
+        <div class="num">$5</div>
+        <div class="label">Apple TV companion — for hardware they already own</div>
+      </div>
+      <div class="stat">
+        <div class="num">$1.2–6M</div>
+        <div class="label">Conservative SOM, indie-scale, years 1–3</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 0. Validation Log -->
+<section style="padding: 56px 0; background: linear-gradient(180deg, rgba(103,232,249,0.04) 0%, transparent 100%);">
+  <div class="wrap">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom: 12px;">
+      <span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color: var(--cyan);">Validation Log</span>
+      <span style="font-size:11px; color: var(--text-dim);">Updated 2026-05-24</span>
+    </div>
+    <h2 style="margin-bottom: 16px;">The architecture works on real hardware.</h2>
+    <p style="color: var(--text-muted); max-width: 740px; margin-bottom: 28px;">
+      Phase 1 began 2026-05-11. Discovery layer validated 2026-05-12. AirPlay 1 control plane and audio pipeline shipped 2026-05-13/14 — first audio out of a B&amp;W A7. Sonos audio pipeline shipped 2026-05-15. <strong>All three target speakers — B&amp;W A5, B&amp;W A7, and the Sonos Playbar Den — now play live Mac audio from one "Play All" click.</strong> Bit-exact ALAC verification passes (SHA-256 round-trip identical to source). M5 closed 2026-05-15 night — sample-accurate cross-sink sync via shared <code>AudioBroadcaster</code>. <strong>M6 sync + reliability arc closed 2026-05-17</strong> — sender-side broadcaster delay (sidesteps AP1 receivers' silent NTP-clamping behavior), handshake barrier (cross-AP1 first-audio within <strong>1 ms</strong> regardless of handshake variance), Sonos start-align defer, supervisor retry cap. <strong>M6.3 Mac-mic auto-calibration shipped 2026-05-18</strong> — chirp injection + cross-correlation + per-speaker sequential measurement + auto-applied offsets. Verified converging in real-room test from ~1000 ms residual → "playing in sync it's beautiful" in 3 passes (~90 sec). <strong>1-hour soak test passed the same day</strong> — zero audio gaps, zero health alerts, zero session restarts across 59 minutes of continuous playback. This is the M11 Path A precursor — same algorithm will drive iOS Room Tuning. <strong>M6.4 Painless auto-calibrate closed out 2026-05-24</strong> — calibration is now fully hands-off: per-environment profile persistence (so the same speaker set re-primes instantly), mid-session sink-add re-runs the calibration invisibly, MLS replaces the chirp as the default test signal (pleasant TV-static burst with mathematically perfect autocorrelation), multi-sample Sonos median (robust against Sonos's hidden buffer drifting within a session), and one-time mic-permission alert with a deep link to System Settings.
+    </p>
+
+    <div class="table-wrap" style="margin-top: 0;">
+      <table>
+        <thead><tr><th style="width:90px;">Phase</th><th>Milestone</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td><strong>0</strong></td><td>Day 0 capture probe — process tap works on this Mac under Personal Team signing</td><td><span class="v good">Done</span></td><td>2026-05-11</td></tr>
+          <tr><td><strong>0</strong></td><td>SPM scaffold — 5-module workspace, menu bar app, OSLog wired (<code>v0.0.1-scaffold</code>)</td><td><span class="v good">Done</span></td><td>2026-05-11</td></tr>
+          <tr><td><strong>1</strong></td><td>Cross-protocol discovery — A5, A7, Sonos Den all live in menu bar</td><td><span class="v good">Done</span></td><td>2026-05-12 — <a href="REACTIVE_DISCOVERY.html" style="color: var(--cyan);">see build log</a></td></tr>
+          <tr><td><strong>1</strong></td><td>RTSP <code>OPTIONS</code> handshake — A7 + A5 both reply <code>200 OK</code>, <code>Server: AirTunes/103.2</code></td><td><span class="v good">Done</span></td><td>2026-05-12</td></tr>
+          <tr><td><strong>3</strong></td><td>Sonos SOAP <code>GetTransportInfo</code> — Playbar replies <code>200 OK state=STOPPED</code></td><td><span class="v good">Done</span></td><td>2026-05-12 (Phase 3 head start)</td></tr>
+          <tr><td><strong>1</strong></td><td>RTSP <code>ANNOUNCE</code> / <code>SETUP</code> / <code>RECORD</code> / <code>TEARDOWN</code> — full session lifecycle, validated against A5 + A7 with <code>Audio-Latency: 4096</code></td><td><span class="v good">Done</span></td><td>2026-05-13</td></tr>
+          <tr><td><strong>1</strong></td><td>RAOP NTP-style timing-channel reply (PT 0xD2 → 0xD3) — the actual gate that unblocked RECORD after ~6 hours of debugging</td><td><span class="v good">Done</span></td><td>2026-05-13</td></tr>
+          <tr><td><strong>1</strong></td><td><code>et=1</code> ANNOUNCE encryption (RSA-OAEP-SHA1 with the Apple AirPort Express public key) — for broader receiver compat</td><td><span class="v good">Done</span></td><td>2026-05-13</td></tr>
+          <tr><td><strong>1</strong></td><td>BSD-socket UDP receive (replaced <code>NWListener</code> which silently swallowed inbound datagrams)</td><td><span class="v good">Done</span></td><td>2026-05-13</td></tr>
+          <tr><td><strong>3</strong></td><td>Sonos audio playback validated — <code>SetAVTransportURI</code> + <code>Play</code> against the Playbar streamed SomaFM Groove Salad audibly in &lt;3 seconds. Toggle Play/Stop working.</td><td><span class="v good">Done</span></td><td>2026-05-13 — <strong>first audio out of any speaker</strong></td></tr>
+          <tr><td><strong>1</strong></td><td><code>SystemAudioCapture</code> extracted from Day 0 probe — reusable class in Core, ready for audio pipeline</td><td><span class="v cyan">Code shipped</span></td><td>2026-05-12, not yet wired to sinks</td></tr>
+          <tr><td><strong>1</strong></td><td>Compressed ALAC + RTP packetizer + sync packets + UDP send pipeline — Mac system audio out of B&amp;W A7 (and A5)</td><td><span class="v good">Done</span></td><td>2026-05-14 — first audible audio from a B&amp;W AP1 speaker driven by SuperAudio. 30-min soak test still pending for the M3 demo gate.</td></tr>
+          <tr><td><strong>1</strong></td><td>Menu UX promoted to a real control surface — per-sink toggle, ✓ marker on active sinks, pulsing menu-bar icon, "Mute Mac speakers while playing" toggle, <strong>▶ Play All</strong> / <strong>■ Stop All</strong> group actions</td><td><span class="v good">Done</span></td><td>2026-05-14 evening</td></tr>
+          <tr><td><strong>1</strong></td><td>Graceful teardown — <code>SIGTERM</code> / <code>SIGINT</code> handlers fire RTSP <code>TEARDOWN</code> for AirPlay 1 and SOAP <code>Stop</code> for Sonos before exit. <code>killall SuperAudio</code> no longer leaves speakers stuck.</td><td><span class="v good">Done</span></td><td>2026-05-14 / 15</td></tr>
+          <tr><td><strong>1</strong></td><td><strong>Lossless Mode + bit-exact verification.</strong> Menu toggle forces Mac output to 44.1 kHz while a session is active. <code>probe/LosslessVerify</code> proves the ALAC encode → decode round-trip is <strong>SHA-256-identical to source</strong> — the foundation of the public "lossless" claim.</td><td><span class="v good">Done</span></td><td>2026-05-15 — gates the M3 lossless claim</td></tr>
+          <tr><td><strong>3</strong></td><td>Local HTTP server feeding live AAC-LC capture — Mac system audio out of Sonos via <code>SetAVTransportURI(x-rincon-mp3radio://&lt;mac-ip&gt;:7331/stream.aac)</code>. The load-bearing fix was <strong>pump-before-SOAP</strong> ordering (Sonos validates the stream by fetching bytes during the SOAP call).</td><td><span class="v good">Done</span></td><td>2026-05-15 — M4 audible-test passes</td></tr>
+          <tr><td><strong>3</strong></td><td>All three target speakers (A5 + A7 + Sonos Den) audible from one <strong>▶ Play All</strong> click — the original CLAUDE.md goal-line</td><td><span class="v good">Done</span></td><td>2026-05-15</td></tr>
+          <tr><td><strong>2</strong></td><td>Sample-accurate sync between AirPlay 1 sinks — shared <code>AudioBroadcaster</code> + per-chunk wall-time NTP anchor (one capture, fan-out to N subscribers, each session's sync packet NTP derived from <code>anchorWall + (lastChunkHostTime − anchorHost) × machToSeconds + 0.2 s</code> — deterministic across sessions encoding the same chunk, always in the near future)</td><td><span class="v good">Done</span></td><td>2026-05-15 night — A5 + A7 audibly locked, M5 closed</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Per-sink controls (M5d):</strong> volume slider (AP1 <code>SET_PARAMETER volume</code>, Sonos <code>RenderingControl::SetVolume</code>, mid-stream live updates) + Δ offset slider (0–500 ms, sync NTP shift, AP1 only — Sonos disabled with tooltip explaining the protocol limit) + Quiet Mode (18% cap, 15% kick-in, persisted)</td><td><span class="v good">Done</span></td><td>2026-05-15 night — user-validated audible sync at A7=+160 ms, A5=+250 ms with Sonos baseline</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>A7 cold-start RTSP timeout root cause</strong> — <code>RTSPClient.staticClientInstance</code> was <code>private static let</code>, sharing one identifier across every concurrent session. A7's firmware refused the cold connection treating the same Client-Instance / DACP-ID as a stale prior session. One-line fix: <code>private static let</code> → <code>private let</code>. User's hypothesis (protocol identifier collision) was correct; my initial speculation about "B&amp;W firmware quirks" was wrong.</td><td><span class="v good">Done</span></td><td>2026-05-15 night — one of the most useful debugging moments of the project</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Reliability layer</strong>: 2-attempt RTSP handshake retry with 200 ms backoff (cold-start residual) + 4-min OPTIONS keepalive (prevents idle-sleep) + 10-s mid-stream OPTIONS health monitor (network blip detection) + supervisor that auto-reconnects sessions once on detected loss + red ❌ failure UI when both attempts fail. Belt-and-braces: keepalive prevents cold starts, retry recovers from them, mid-stream monitor catches Wi-Fi blips.</td><td><span class="v good">Done</span></td><td>2026-05-15 night</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Speaker groups</strong> (M6 partial) — save/play/delete named presets ("Bedroom", "Whole house"). JSON-persisted in UserDefaults under <code>speakerGroups.v1</code>. Inline TextField form in the menu when sinks are active.</td><td><span class="v good">Done</span></td><td>2026-05-15 night</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Sender-side broadcaster delay</strong> — the key insight of the M6 sync arc. Empirically confirmed 2026-05-17: <strong>AP1 receivers (B&amp;W A5/A7) clamp far-future NTP scheduling to their internal buffer depth (~93 ms).</strong> Setting <code>manualOffsetSeconds=5.0</code> produced ZERO audible delay across slider values 0/2000/4040/5500/6000 ms. <strong>Fix:</strong> shift audio at the <em>sender</em> via <code>AudioBroadcaster.subscribe(id:delaySeconds:)</code> — defensive <code>AudioChunk.makeCopy()</code> (CoreAudio buffers recycle within ms) + <code>presentationHostTime</code> rewrite (so sync NTP lands in the present). Receiver gets RTP packets <code>delay</code> seconds after capture and plays them on arrival.</td><td><span class="v good">Done</span></td><td>2026-05-17 — the receiver-clamping discovery</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Handshake barrier</strong> — A5 finished RTSP in 750 ms while A7 took 5 sec under TCP contention. Without a barrier, broadcaster subscribes were 4 sec apart → first-audio 4 sec apart. <strong>Fix:</strong> <code>SessionState.armStartBarrier</code> / <code>markHandshakeComplete</code> / <code>awaitStartBarrier</code>. Every AP1 session completes ALL RTSP-over-TCP work (incl. <code>SET_PARAMETER</code> volume) before any sink subscribes to the broadcaster. 10 s fallback timeout. Result: <strong>cross-AP1 first-audio within 1 ms</strong> regardless of per-sink handshake variance.</td><td><span class="v good">Done</span></td><td>2026-05-17</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Sonos start-align defer + auto-align default</strong> — Sonos's natural <code>Play</code>→first-audio takes ~2.5 sec, vs. AP1's near-instant arrival after handshake barrier. <code>SessionState.currentSonosStartDeferSec</code> computed as <code>max(0, max_AP1_offset − 2.5s)</code>; Sonos waits the same barrier, then defers <code>SOAP Play</code> by the computed amount. AP1 sinks default to 2000 ms broadcaster delay when Sonos is active and user hasn't touched the slider. Sonos first-audio now lands ~200 ms within AP1's.</td><td><span class="v good">Done</span></td><td>2026-05-17</td></tr>
+          <tr><td><strong>2</strong></td><td><strong>Supervisor exit-reason enum + retry cap</strong> — Derek's MacBook Air was swept into <code>wantedActive</code> via Play All, never accepted by the brother, and the supervisor retried forever (2s → 5s → 15s → 30s → 60s → 60s → ...). Each retry consumed Wi-Fi bandwidth our real speakers needed. <strong>Fix:</strong> <code>AirPlay1Session.run</code> returns <code>SessionExitReason</code> (<code>.cleanExit</code> / <code>.networkLost</code> / <code>.failedBeforeAudio</code> / <code>.failedAfterAudio</code>). Supervisor caps at 3 consecutive <code>.failedBeforeAudio</code>, then removes from <code>wantedActive</code> entirely. Mid-stream blips retry indefinitely.</td><td><span class="v good">Done</span></td><td>2026-05-17 — killed the storm</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Reliability triple</strong> — (a) Session-race nonce guard: old session's slow async cleanup was wiping new session's setters/active-flag during rapid off→on. <code>AirPlay1Session</code> captures session nonce; defer asks <code>SessionState.endSessionIfStillCurrent</code> before mutating shared state. (b) 1.5 s TEARDOWN timeout: off→on transitions don't stall 4+ sec on cancelled sockets. (c) 250 ms volume slider debounce: rapid drags coalesce; only the settled value hits RTSP. Prevents control-plane saturation.</td><td><span class="v good">Done</span></td><td>2026-05-17</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Idempotent Play All + Restart All</strong> — Play All when audio is already playing is now a no-op (logs <em>"N sink(s) already running — skipping"</em>). New <strong>Restart All</strong> button snapshots wanted sinks → Stop → 1.5 s wait → Play All — recovers a "kick everything back in sync" affordance now that Play All is idempotent. <strong>Reconnecting badge</strong> (orange) distinguishes supervisor-retry state from the red ❌ failure state.</td><td><span class="v good">Done</span></td><td>2026-05-17</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Audio-gap telemetry</strong> — <code>AudioBroadcaster</code> tracks inter-chunk arrival gaps, logs <em>"⚠ Capture gap detected: N ms"</em> when &gt;100 ms with running count + worst-observed. Final tally on capture stop. Ground-truth instrumentation for "did audio actually drop" vs. anecdote.</td><td><span class="v good">Done</span></td><td>2026-05-17</td></tr>
+          <tr><td><strong>4</strong></td><td><strong>Empirical sync validation</strong> — user tested at slider values 2000 / 3000 / 4000 / 3800 ms by ear, settled on <code>3085 ms</code> and reported "wow, perfect." A5 + A7 first-audio within 1 ms (log-measured); Sonos within ~200 ms of AP1 first-audio. All three speakers audibly in sync. This is the real-hardware validation of the M6 architecture.</td><td><span class="v good">Done</span></td><td>2026-05-17 — the user-on-Sunday moment</td></tr>
+          <tr><td><strong>6.3</strong></td><td><strong>Real-time slider drag (#99)</strong> — broadcaster setDelay now retimes per-subscriber queue mid-stream. 250 ms debounce on slider. Big-bump (&gt;300 ms) caveat: AP1 receivers interpret the resulting RTP-timestamp jump as a sequence gap and demand retransmits (which we don't implement) → session restart handles big bumps cleanly. Small drags are live.</td><td><span class="v good">Done</span></td><td>2026-05-18</td></tr>
+          <tr><td><strong>6.3</strong></td><td><strong>Sonos-position auto-align (#104)</strong> — UPnP <code>GetPositionInfo</code> path. Works in steady state (Sonos &gt;30 sec post-Play) but inter-session variance ±600 ms in Sonos's hidden buffer limits accuracy. Used as a fast-but-coarse stop-gap; mic calibration (next row) is the real fix.</td><td><span class="v good">Done</span></td><td>2026-05-18</td></tr>
+          <tr><td><strong>6.3</strong></td><td><strong>Mac-mic auto-calibration (#98 / #105–#109) — the M11 Path A precursor shipped.</strong> 1-sec linear sweep (200 Hz → 8 kHz) injected into <code>AudioBroadcaster</code> by overwriting chunk PCM. Mic captures via <code>AVAudioEngine</code>; Accelerate vDSP FFT cross-correlation against the known chirp signal returns per-speaker arrival lag. Sequential per-speaker measurement (mute all but target, isolate, repeat). Auto-applied offsets: <code>new = current + (sonos_lag − speaker_lag)</code>. Real-room test: 3 passes converged from 1000 ms residual → ~12 ms (within mic correlation noise). Three load-bearing bugs found and documented: offset source bug, AVAudioEngine 3-sec first-init quirk, ambient-music-as-reference fails (chirps required for flat autocorrelation).</td><td><span class="v good">Done</span></td><td>2026-05-18 — <strong>the marquee win</strong></td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Painless auto-trigger (#110)</strong> — hides the Mic Calibrate button. Auto-runs full calibration ~5 sec after Sonos's SOAP Play succeeds when AP1 sinks are in the active set. Skipped on pure-Sonos sessions and recent-calibration (&lt;2 min) sessions. <code>autoCalibrateOnPlayAll</code> pref toggleable in Preferences. User experience: Press Play All → music starts → sync locks in within ~15 sec, no further input.</td><td><span class="v good">Done</span></td><td>2026-05-18</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>SNR gate + volume boost + delta clamp (M6.4 polish)</strong> — load-bearing robustness fixes after side-room test exposed A7 producing SNR=5.6 with a wild −1463ms delta. Three changes: (a) measurements below SNR 10.0 are SKIPPED (keep current offset, log warning); (b) target speaker boosted to 85% during measurement so chirps stay loud enough at the mic regardless of normal listening level; (c) per-pass delta clamped to ±1000ms to prevent runaway accumulation. Immediate result: A7's SNR jumped from 5.6 → 33.3, all three speakers measured within 190ms at listening position.</td><td><span class="v good">Done</span></td><td>2026-05-18</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>1-hour soak test passed (M3 gate finally cleared)</strong> — B&amp;W A5 + B&amp;W A7 (side room) + Sonos Playbar gen 1, continuous Spotify playback. <strong>Zero audio gaps, zero health alerts, zero session restarts</strong> across 59 minutes of post-calibration playback. ~443,000 RTP packets sent per AP1 sink at the expected ~125 pps; cross-AP1 packet drift stayed at ≤500 packets (still locked). Only event during the soak window: one mDNS-keepalive timeout against a neighbor's MacBook Pro that we never accepted — supervisor retry cap (gotcha #19) correctly kept it out of <code>wantedActive</code>. Sync held continuously throughout. This is the documented "stays in sync for an hour" empirical claim.</td><td><span class="v good">Done</span></td><td>2026-05-18</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Phase 2a — multi-sample Sonos with median (#117)</strong> — real-room testing exposed Sonos's hidden renderer buffer drifting WITHIN a session: two calibration passes 5 min apart measured Sonos lag at 0.695s and 3.454s — a 2.7-sec swing on the same hardware. Single-shot Sonos measurement was fragile against this drift. Fix: take N=3 Sonos measurements ~2 sec apart, return the median lag + median SNR. Median is robust to a single outlier in either direction without modeling "stable" a priori. AP1 stays single-shot (its broadcaster delay is deterministic Mac-side). Cost: ~6 sec added per calibration pass.</td><td><span class="v good">Done</span></td><td>2026-05-21</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Phase 2b — MLS replaces chirp as default calibration signal (#118)</strong> — user feedback: <em>"can the chirp be something pleasant to ears?"</em> The 200 Hz → 8 kHz sine sweep sounded like an alarm tone. Switched the default to MLS (maximum-length sequence — pseudorandom binary noise generated by a 16-bit LFSR with taps at bits 16/15/13/4). MLS sounds like a brief burst of TV static — non-alarming, more like a test sound than a warning. <strong>Engineering bonus on top of the UX win:</strong> MLS has mathematically optimal autocorrelation (a true delta function within the sequence period), so cross-correlation against a recorded MLS gives exactly one clean peak with zero spurious peaks anywhere else — what Smaart, REW, ARTA, and every pro audio measurement tool have used for 40+ years. Chirps approximate this; MLS achieves it. The chirp path is still available via the <code>useChirpForCalibration</code> default pref.</td><td><span class="v good">Done</span></td><td>2026-05-21</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Per-environment profile persistence</strong> — calibration results are now snapshotted keyed on the sorted active sink ID set (e.g. <code>A5+A7+SonosDen</code>) and JSON-encoded in UserDefaults. Next time the same set goes active, <code>SessionState.startAll</code> primes each sink's offset from the saved profile BEFORE any session starts — AP1 sessions pick up the right offset on their first sync packet, so audio is in approximate sync immediately, and the (auto-triggered) re-calibration refines silently. Different sink sets get different profiles automatically (Den-only ≠ Whole-house).</td><td><span class="v good">Done</span></td><td>2026-05-24</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Mid-session sink-add auto-recalibrate</strong> — closes the M6.4 demo-gate clause "re-runs invisibly if user adds a sink mid-session." <code>SessionState.toggle</code> detects the ON path while other sinks are already active and schedules a fresh <code>MicCalibrator.runFullCalibration</code> after an 8-sec settle (gated on <code>autoCalibrateOnPlayAll</code> and on both AP1+Sonos being active). The cold-start case still owns the SonosSession-triggered calibration; mid-session add now also self-tunes without the user touching a button.</td><td><span class="v good">Done</span></td><td>2026-05-24</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Calibration-specific menu bar signal</strong> — the always-on orange pulse already signals "audio is flowing" but didn't distinguish "calibration is running right now." Added <code>SessionState.isCalibrating</code> (set at the top of <code>MicCalibrator.runFullCalibration</code>, cleared in defer), drives a pulsing blue ring overlay around the orange dot in <code>MenuBarIcon</code>. Reverts to plain orange when calibration ends. Accessibility label flips to "calibrating sync" while active.</td><td><span class="v good">Done</span></td><td>2026-05-24</td></tr>
+          <tr><td><strong>6.4</strong></td><td><strong>Stop-mid-calibration cleanup + mic-permission-denied one-time alert</strong> — two robustness gates. (a) Stop All mid-pass: <code>MicCalibrator.runFullCalibration</code> checks <code>wantedActive.isEmpty</code> between iterations and throws cleanly when the user has stopped; the <code>catch</code> path restores saved per-sink volumes so the speakers don't stay muted from the previous "isolate this speaker" step. (b) Mic-permission denial used to be a silent OSLog line the user never saw — now produces a one-time NSAlert with an "Open System Settings" deep link to Privacy &amp; Security → Microphone, gated by a <code>hasShownMicPermissionAlert</code> UserDefaults flag so we never spam.</td><td><span class="v good">Done</span></td><td>2026-05-24</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- The chirp calibration journey — for blog -->
+<section style="background: linear-gradient(180deg, rgba(255,106,61,0.04) 0%, transparent 100%);">
+  <div class="wrap">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom: 12px;">
+      <span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color: var(--orange);">Engineering Notebook</span>
+      <span style="font-size:11px; color: var(--text-dim);">2026-05-18 — 8 hours of debugging in one page</span>
+    </div>
+    <h2 style="margin-bottom: 16px;">How we got AirPlay 1 and Sonos to play in sync (and how to make it painless for users)</h2>
+    <p style="color: var(--text-muted); max-width: 740px; margin-bottom: 28px;">
+      A full day of testing distilled into one engineering narrative. The TL;DR: <strong>cross-protocol sync between AirPlay 1 and Sonos is fundamentally a measurement problem, not a tuning problem.</strong> Sonos's renderer buffer is variable, hidden, and unobservable via UPnP — the only way to actually sync is to listen.
+    </p>
+
+    <h3>The journey</h3>
+    <p style="color: var(--text-muted); margin-bottom: 14px;">
+      We started thinking sync was about tuning a constant. Manual slider, pick the right number, save it. That works for one session — Sonos's <em>this-session</em> buffer state. Next session: same hardware, same network, different buffer state, audio is off by 600 ms. The manual slider isn't a solution, it's a workaround.
+    </p>
+    <p style="color: var(--text-muted); margin-bottom: 14px;">
+      We tried UPnP-based auto-alignment. Sonos exposes <code>AVTransport::GetPositionInfo</code> which returns the playback position within the current stream. Subtract from wall-time elapsed since SOAP <code>Play</code>, and you get Sonos's apparent lag. Push that into AirPlay's broadcaster delay. <strong>Works in some sessions, off by 500+ ms in others.</strong> Across 8 sessions of empirical data, measured <code>sonos_lag</code> ranged from 3.59 sec to 4.62 sec for the same hardware. <code>RelTime</code> reports the renderer queue position, not the DAC. The hidden buffer between them varies session-to-session. Software-only fix is fundamentally limited.
+    </p>
+    <p style="color: var(--text-muted); margin-bottom: 14px;">
+      Pivoted to mic-based cross-correlation. The plan was straightforward: record the Mac's mic while music plays, cross-correlate against the broadcaster's output, find each speaker's arrival lag. The Accelerate vDSP FFT engine worked perfectly on synthetic test signals — 7/7 chirps recovered within 1 ms. <strong>Then we tried it with real music. SNR locked at 20+ (statistically rock-solid) but the lag values were inconsistent with what the math said they should be.</strong>
+    </p>
+    <p style="color: var(--text-muted); margin-bottom: 14px;">
+      Diagnosis: music has rhythmic and harmonic structure that creates spurious correlation peaks. Every beat, every chord interval, every repeated phrase produces a peak. The "true" peak at the speaker's actual lag is sometimes weaker than the spurious ones. Pro audio measurement tools (Smaart, REW, ARTA) all use chirps — linear sine sweeps with near-flat autocorrelation — for exactly this reason. <strong>Chirps give one clean unambiguous peak.</strong>
+    </p>
+    <p style="color: var(--text-muted); margin-bottom: 28px;">
+      Replaced the ambient-music reference with a 1-second 200 Hz → 8 kHz sweep injected into the broadcaster. Within minutes we had the right lag values. Sequential per-speaker measurement (mute all but target, measure, repeat) handled the multi-speaker case cleanly. Three passes converged from 1000 ms residual to "playing in sync it's beautiful." <strong>That's the working algorithm.</strong>
+    </p>
+
+    <h3>Three structural insights that took 8 hours to find</h3>
+    <ul style="color: var(--text-muted); max-width: 740px; margin-bottom: 28px; line-height: 1.7;">
+      <li><strong>Ambient music is a bad reference signal.</strong> Its rhythmic and harmonic structure creates spurious correlation peaks that beat the true peak. Pro audio uses chirps for this exact reason — and we should have started there.</li>
+      <li><strong>Sonos's UPnP <code>RelTime</code> is unreliable.</strong> It reports the renderer queue position, not the DAC position. The hidden buffer between them varies ±600 ms session-to-session. Mic measurement bypasses this entirely.</li>
+      <li><strong>The system converges iteratively.</strong> Each calibration pass reduces error by ~80%. One pass: 200–500 ms residual. Two: 50–100 ms. Three: sub-perceptual.</li>
+    </ul>
+
+    <h3>How to make it painless for users</h3>
+    <p style="color: var(--text-muted); margin-bottom: 14px;">
+      The pain in today's testing was: <strong>you knew it was happening.</strong> The fix is invisibility — calibration runs silently as part of "I just want to play music." Three phases, escalating in polish:
+    </p>
+    <ul style="color: var(--text-muted); max-width: 740px; margin-bottom: 28px; line-height: 1.7;">
+      <li><strong>Phase 1 (shipped 2026-05-18):</strong> auto-trigger after Sonos's SOAP <code>Play</code> succeeds. Calibration runs during Sonos's intrinsic ~30-sec settling ramp — the period where AP1↔Sonos sync is bad anyway. By the time Sonos hits steady-state, AP1 is already re-tuned to match. User clicks Play All, hears music start, sync locks in within ~15 sec, no further input. Toggleable in Preferences (default ON).</li>
+      <li><strong>Phase 2 (planned):</strong> silent drift detection during playback. App heuristic flags when sync may have drifted (e.g., long playback gap on Sonos's HTTP stream) and schedules a brief recalibration between songs or during transitions where the chirp wouldn't be noticed.</li>
+      <li><strong>Phase 3 (M11 polish):</strong> inaudible test signals. Ultrasonic sweep (18–22 kHz, near-inaudible to most adults) or pink noise masked under music. Continuous low-cost recalibration becomes possible — every few minutes, silent re-measurement. This is what Sonos's own Trueplay does internally (mic-based pulses inaudibly masked).</li>
+      <li><strong>Phase 4 (M11 product surface):</strong> per-room profiles + iOS companion. Save calibration per environment ("Living Room", "Office"). iOS companion uses the phone's mic instead of Mac's — better positioning, can walk around the room. One-time setup ritual when adding a new speaker; lifetime of "just works" after.</li>
+    </ul>
+
+    <p style="color: var(--text-muted); max-width: 740px; margin-bottom: 28px;">
+      The structural unlock is this: <strong>we now have a measurement primitive that no other competitor in our space exposes to users.</strong> Sonos Trueplay calibrates Sonos speakers for room acoustics. Apple Spatial Audio calibrates HomePod for the room. Neither calibrates cross-protocol sync between speakers they don't own. SuperAudio does — and it works on hardware Sonos and Apple won't touch (Playbar gen 1, AirPlay 1 receivers, AirPort Express). The marketing demo is two taps: "Press Play. Hear sync."
+    </p>
+  </div>
+</section>
+
+<!-- 0. Why now — the lossless renaissance -->
+<section style="background: linear-gradient(180deg, rgba(255,106,61,0.04) 0%, transparent 100%);">
+  <div class="wrap">
+    <h2>Why now</h2>
+    <p class="subhead">A timeline of how lossless wireless audio quietly died — and why this is the moment to bring it back.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Year</th><th>Event</th><th>Lossless wireless audio</th></tr></thead>
+        <tbody>
+          <tr><td><strong>2008</strong></td><td>Apple launches AirPort Express + AirPlay 1. Protocol carries ALAC at 44.1 kHz / 16-bit.</td><td><span class="v good">Born — lossless</span></td></tr>
+          <tr><td><strong>2008–2017</strong></td><td>Premium speakers from B&amp;W, Naim, Marantz, McIntosh, Pioneer all ship AirPlay 1 receive.</td><td><span class="v good">Lossless mainstream</span></td></tr>
+          <tr><td><strong>2018</strong></td><td>Apple launches AirPlay 2 — switches transport to AAC ~256 kbps for multi-room bandwidth reasons.</td><td><span class="v bad">Lossless wireless dies in new hardware</span></td></tr>
+          <tr><td><strong>2018</strong></td><td>Apple discontinues AirPort Express. Last cheap AP1 receiver leaves shelves.</td><td><span class="v bad">Hardware availability drops</span></td></tr>
+          <tr><td><strong>2017–2020</strong></td><td>B&amp;W, Naim, Marantz, etc. EOL their AP1 product lines and ship AP2-only successors.</td><td><span class="v bad">Manufacturers retreat</span></td></tr>
+          <tr><td><strong>2020</strong></td><td>Sonos splits S1/S2; older models frozen on S1.</td><td><span class="v warn">Lock-in tightens</span></td></tr>
+          <tr><td><strong>2021</strong></td><td><strong>Apple Music Lossless launches.</strong> Cannot reach AP2 speakers losslessly — only via the original AirPlay 1 protocol on legacy hardware.</td><td><span class="v bad">The cruel joke: lossless source, no lossless wireless path on current Apple hardware</span></td></tr>
+          <tr><td><strong>2023–2026</strong></td><td>eBay prices for AirPort Express A1264 climb. ASR, Roon Labs, AVS Forum threads document the gap. Audiophiles hoard old hardware.</td><td><span class="v warn">Quiet renaissance underway</span></td></tr>
+          <tr style="background: rgba(255,106,61,0.04);"><td><strong>2026+</strong></td><td><strong>SuperAudio.</strong> Connects current music sources (Spotify, Apple Music Lossless, system audio) to AirPlay 1 speakers — bit-perfect ALAC over the wire.</td><td><span class="v" style="background: rgba(255,106,61,0.15); color: var(--accent); border: 1px solid rgba(255,106,61,0.35); font-weight: 700;">Lossless restored, on the hardware that always supported it</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 16px; font-size: 13px; color: var(--text-dim);">AirPlay 1 / 2 codec characterization per community consensus on Audio Science Review and Roon Labs forums (no Apple official confirmation; absence of denial). Apple Music Lossless launch date per Apple press release, June 2021. AirPort Express discontinuation per Apple support documentation.</p>
+
+    <div class="insight" style="margin-top: 32px;">
+      <div class="label">The framing that sells</div>
+      <div class="body">
+        SuperAudio isn't <em>"another multi-room audio app."</em> It's the software that <em>resurrects AirPlay 1</em> — the only wireless protocol Apple ever shipped that's actually lossless — and connects it to every music source you use today.
+      </div>
+      <p class="detail">Your 2014 B&amp;W A5 can play Apple Music Lossless. Your $300 HomePod cannot. We make this fact actionable.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 1. The Problem -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>The problem</h2>
+    <p class="subhead">Three vendors own modern multi-room audio. Each one assumes monoculture. None of them play the speakers most households actually own.</p>
+
+    <p>Multi-room audio in 2026 has three gatekeepers — <strong>Apple</strong> (AirPlay 2, requires every endpoint to speak AP2), <strong>Sonos</strong> (closed premium ecosystem), and <strong>Google</strong> (Chromecast, deprioritized since the Chromecast Audio discontinuation in 2019). Each assumes you bought all-in on their stack.</p>
+
+    <p>Most households didn't. A typical living room — median US household income (~$84K per 2024 ACS, released Sept 2025) all the way down to budget-conscious households — has:</p>
+    <ul>
+      <li>A pair of B&amp;W A5 or A7 speakers from 2014 — <strong>AirPlay 1 only</strong>, abandoned by AP2</li>
+      <li>A gen-1 Sonos Playbar from 2015 — <strong>Sonos UPnP only</strong>, no AirPlay support</li>
+      <li>An old Apple TV in a drawer — <strong>still works as an AP1 receiver</strong>, nobody's using it</li>
+      <li>A Bluetooth soundbar attached to a smart TV via HDMI ARC</li>
+      <li>A budget WiFi router from the ISP</li>
+    </ul>
+
+    <p>None of the three ecosystems will play these together. Replacing this hardware with all-AP2 or all-Sonos costs <strong>$500–$2,000 per room</strong>.</p>
+
+    <h3>The TV gap — the killer use case</h3>
+    <p>When the TV is on, the audio is locked: TV → soundbar via HDMI ARC. The other speakers in the house sit silent. <strong>There is no consumer product today that says "turn on your TV, hear it everywhere, no phone or app required."</strong></p>
+    <p>SuperAudio solves this three ways depending on the user's gear and budget — all share the same fan-out engine:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Approach</th><th>Works on</th><th>User effort</th><th>Price tier</th></tr></thead>
+        <tbody>
+          <tr><td><strong>HDMI ARC Hub Pro</strong> (universal)</td><td>ANY TV with HDMI ARC (~2009+)</td><td>Plug Hub between TV and soundbar; one-time QR setup</td><td>$199–249 (Phase 9)</td></tr>
+          <tr><td><strong>Optical TOSLINK Hub Stick</strong></td><td>TVs with TOSLINK / SPDIF out (~2005+)</td><td>One optical cable + one ethernet</td><td>$59–79 (Phase 7.5)</td></tr>
+          <tr><td><strong>AirPlay 2-native TV → SuperAudio Hub</strong></td><td>Samsung 2020+ / LG 2019+ / Sony 2020+ TVs</td><td>Pick "SuperAudio Hub" in TV audio settings (one-time)</td><td>Free w/ existing Hub Stick / Apple TV companion</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The HDMI ARC path is the headline.</strong> "Turn on your TV. Hear it in every room. No phone, no app, no setup beyond the day you plugged in the Hub." That's a story consumers actually understand and want.</p>
+
+    <h3>The stranded-hardware gap</h3>
+    <p>Devices that were premium purchases 5–10 years ago still work perfectly as audio receivers. They just speak <strong>protocols the modern ecosystem has chosen to ignore.</strong> SuperAudio's bet is that this hardware is worth preserving and that the household will pay a small one-time fee to keep using it.</p>
+
+    <h3>The room-tuning gap</h3>
+    <p>Even when households <em>do</em> get audio to multiple speakers (e.g., via Sonos's all-Sonos solution), each speaker plays at a different distance from the listener, in a different acoustic space, with different driver characteristics. Without per-speaker delay and EQ tuning, the result sounds smeared or hollow. <strong>Sonos Trueplay solves this for Sonos hardware. Dirac and Roon solve it for $500+.</strong> Nothing solves it for mixed-protocol households at consumer prices.</p>
+
+    <h3>Firmware posture (important context)</h3>
+    <p>B&amp;W abandoned firmware support for the A5/A7 years ago. Sonos still ships firmware updates for the Playbar gen 1. Either way, <strong>we don't depend on firmware updates from manufacturers.</strong> The protocols (RAOP / UPnP) are stable; receivers work; quirks get accommodated in our sender code, not in theirs. This insulates us from vendor-side obsolescence and means a 12-year-old B&amp;W A5 is as supportable on launch day as it was the day it shipped.</p>
+  </div>
+</section>
+
+<!-- 2. Demographics -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>Target demographics</h2>
+    <p class="subhead">Three personas, all systematically underserved by the network audio market. The product earns its keep when "use what you already own" is the headline.</p>
+
+    <div class="personas">
+      <div class="persona">
+        <div class="name">Pat the Practical</div>
+        <div class="blurb">38 · Suburban · $84K household (US median)</div>
+        <dl>
+          <dt>Gear</dt>
+          <dd>B&amp;W A5 from Craigslist, gen-1 Sonos Playbar, 4-yr-old Samsung TV, iPhone 13</dd>
+          <dt>Frustration</dt>
+          <dd>Has the gear but can't get it all playing the same song</dd>
+          <dt>Decision driver</dt>
+          <dd class="driver">"Will this work with stuff I already own?"</dd>
+        </dl>
+      </div>
+      <div class="persona" style="border-color: var(--accent);">
+        <div class="name">Audrey the Audiophile <span style="font-size: 10px; vertical-align: middle; background: var(--accent); color: var(--bg); padding: 2px 6px; border-radius: 3px; font-weight: 700; letter-spacing: 0.06em; margin-left: 4px;">ANCHOR</span></div>
+        <div class="blurb">45 · Career-shifting · $55K · hoards AirPort Expresses on eBay</div>
+        <dl>
+          <dt>Gear</dt>
+          <dd>Forum-sourced B&amp;W and NAD components driven by AirPort Express A1264 units bought used; subscribes to Apple Music Lossless; 2015 Apple TV; cable distrust</dd>
+          <dt>Frustration</dt>
+          <dd>Apple Music ships lossless audio but every wireless path on current Apple hardware (AirPlay 2, HomePod) downgrades it to AAC 256. The only way to actually play lossless wirelessly is the original AP1 protocol — which only runs on the hardware Apple stopped making.</dd>
+          <dt>Decision driver</dt>
+          <dd class="driver">"Finally — a way to keep playing lossless to the speakers I deliberately kept."</dd>
+        </dl>
+      </div>
+      <div class="persona">
+        <div class="name">Maya the Maker</div>
+        <div class="blurb">28 · Freelance · $35K · Berlin</div>
+        <dl>
+          <dt>Gear</dt>
+          <dd>Two Raspberry Pis from past projects, a pair of powered speakers</dd>
+          <dt>Frustration</dt>
+          <dd>"There should be a way to do this with what I have."</dd>
+          <dt>Decision driver</dt>
+          <dd class="driver">"Can I tinker, and what's the cheapest path?"</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3>Income brackets — US anchor + international reality</h3>
+    <p><strong>US median household income (2024 ACS, released Sept 2025): ~$84,000</strong> per US Census Bureau. That's our anchor — the literal average American household, not a low-income special case. <em>Note: this is</em> household <em>income, not individual wage. Median individual full-time wage is currently ~$60–75K depending on demographic; we track household because the product is bought once per home.</em> The market is broader than the median, both up and down:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Income tier</th><th>US households</th><th>Why they buy</th><th>Conversion to paying customer</th></tr></thead>
+        <tbody>
+          <tr><td>$30–60K</td><td>~35M</td><td>Aggressive value play — every dollar of hardware reuse counts. Won't replace gear at $250+/room.</td><td>~3–5%</td></tr>
+          <tr><td><strong>$60–120K (median+)</strong></td><td><strong>~40M</strong></td><td><strong>"I have nice speakers, why don't they all play together?" Has the gear, has the cash, frustrated by ecosystem walls.</strong></td><td><strong>~7–10%</strong></td></tr>
+          <tr><td>$120K+</td><td>~30M</td><td>Could buy all-Sonos and be done. Buys us if they're audiophile-curious, want Room Tuning, or want to keep premium hardware they already own.</td><td>~10–15%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>International is in scope from day one</h3>
+    <p>The product is universal — anyone with WiFi, mixed-protocol speakers, and a smartphone or laptop. Key markets and their median household income (2023 OECD, US-dollar PPP):</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Market</th><th>Median household (USD-PPP)</th><th>Speakers + AirPlay penetration</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>🇺🇸 US</td><td>$84,000</td><td>Very high</td><td>Primary launch market (2024 ACS)</td></tr>
+          <tr><td>🇬🇧 UK</td><td>~$48,000</td><td>High</td><td>Same English-language site/comms; minor regulatory (DSA) compliance</td></tr>
+          <tr><td>🇩🇪 Germany</td><td>~$54,000</td><td>High (B&amp;W is German-popular; Sonos strong)</td><td>VAT handling via Paddle; localized strings via String(localized:)</td></tr>
+          <tr><td>🇨🇦 / 🇦🇺 / 🇳🇿</td><td>~$60–70K</td><td>High</td><td>Effectively English-speaking US extensions</td></tr>
+          <tr><td>🇯🇵 Japan</td><td>~$33,000</td><td>Very high audiophile culture (B&amp;W, McIntosh, Denon are huge)</td><td>Worth localizing — Japan over-indexes on premium audio</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The "reuse-existing-gear" pitch translates everywhere</strong> — every country has households with stranded AP1/Sonos speakers. The localization effort is small (one Apple Localizations bundle), the marketing copy ports cleanly. <strong>SOM globally is ~3–5x the US-only figure</strong>: 150K–600K paying customers in years 1–3, blended ASP $25–30 = <strong>$3.7M–$18M lifetime revenue range</strong>. Still indie scale, but room to grow.</p>
+  </div>
+</section>
+
+<!-- 3. Existing solutions -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>Existing solutions &amp; the gap</h2>
+    <p class="subhead">What's out there now, broken into two markets we span: streaming/multi-room, and acoustic calibration / room tuning.</p>
+
+    <h3>Streaming &amp; multi-room</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Solution</th><th>Price</th><th>What it does</th><th>Where it falls short</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Airfoil for Mac</strong></td><td>$35</td><td>Mac → any AP/Sonos/Cast/BT, multi-room</td><td>Mac-source only, no TV/hub mode, premium price, no calibration</td></tr>
+          <tr><td>AirParrot</td><td>$16</td><td>Mac/PC → AP, mirroring focus</td><td>Audio secondary, single-protocol</td></tr>
+          <tr><td>TuneBlade</td><td>$20</td><td>Windows → AirPlay</td><td>Windows only, AP1 only</td></tr>
+          <tr><td>AirConnect</td><td>Free / OSS</td><td>Headless AP-in → UPnP/Cast bridge</td><td>CLI / config-file UX, technical only, no calibration</td></tr>
+          <tr><td>Sonos ecosystem</td><td>$250+/room</td><td>Polished multi-room</td><td>Won't drive non-Sonos hardware, locked-in</td></tr>
+          <tr><td>HomePod + AP2</td><td>$99–349 ea.</td><td>Apple multi-room</td><td>Requires every endpoint to be AP2</td></tr>
+          <tr><td>Apple Music multi-room</td><td>Built-in</td><td>Music.app → multiple AP1/AP2</td><td>Music.app only — not Spotify, browser, TV, system audio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Acoustic calibration &amp; room tuning</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Solution</th><th>Price</th><th>What it does</th><th>Where it falls short</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Sonos Trueplay</strong></td><td>Free w/ Sonos</td><td>Walks listening spot, mic calibration via iPhone</td><td><strong>Sonos hardware only</strong>, iOS only, can't tune your B&amp;W or AP receivers</td></tr>
+          <tr><td><strong>Dirac Live</strong></td><td>$499–$1,199</td><td>Gold-standard room correction, multi-channel</td><td>Pro-audio focus, complex, requires Dirac-ready hardware or specific AVRs</td></tr>
+          <tr><td><strong>Roon</strong></td><td>$150/yr / $700 lifetime</td><td>Audiophile streaming, room DSP, multi-room sync</td><td>Roon-ready endpoints only, music-only, $$$, doesn't address TV/system audio</td></tr>
+          <tr><td>Audyssey (AVR-built-in)</td><td>Free w/ AVR</td><td>Mic calibration via supplied microphone</td><td>Only tunes the AVR's outputs, not whole-house, AVR-locked</td></tr>
+          <tr><td>REW (Room EQ Wizard)</td><td>Free</td><td>Open-source measurement tool</td><td>Technical user only, raw output, no auto-apply to speakers</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>The gap SuperAudio fills:</strong> any source, any AP1/AP2/Sonos/Cast/BT destination, in sync, with <em>cross-protocol acoustic calibration and room tuning</em>, without ecosystem lock-in, at $15–$80 entry. There is no product that does all of this today.</p>
+  </div>
+</section>
+
+<!-- 4. Hypothesis -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>Hypothesis</h2>
+    <p class="subhead">The core bet, stated plainly.</p>
+
+    <div class="pullquote">
+      A meaningful slice of households globally — anchored on the US median ($80K) but extending all the way down to budget-conscious owners of one nice speaker, and up to audiophile-curious upper brackets — <strong>will pay $15–$200 for a product that unifies their existing heterogeneous network audio hardware, auto-syncs them, tunes them to the room, and works with their TV</strong>, if the setup story is "scan a QR code" and the value story is <strong>"your old gear plus this works better than Sonos, and the TV one is the killer feature."</strong>
+    </div>
+
+    <h3>Sub-hypotheses we'll test as we build</h3>
+    <ul>
+      <li><strong>H1 (Mac POC):</strong> solo-developer-built RAOP + Sonos + sync is technically feasible. <span class="v info">Phase 1–4 validates</span></li>
+      <li><strong>H2 (Apple TV reach):</strong> 2015+ Apple TV households are a meaningful slice; they'll buy a $5 companion app. <span class="v info">Post-launch</span></li>
+      <li><strong>H3 (Hardware entry):</strong> a $49 Hub Stick is the right entry price for households without a Mac or Apple TV. <span class="v info">After H2</span></li>
+      <li><strong>H4 (The moat — calibration):</strong> a one-time mic-based room calibration that simultaneously sets per-speaker delay and EQ is the killer feature; households will pay $5 for it and tell friends. <span class="v info">Phase 7–8</span></li>
+      <li><strong>H5 (Addon stack):</strong> $5 protocol addons drive ongoing revenue from power users. <span class="v info">Over time</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 5. THE MOAT — Auto-Sync & Tuning -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>The moat — auto-sync &amp; tuning</h2>
+    <p class="subhead">Multi-protocol streaming is table stakes. Cross-protocol acoustic calibration is the durable differentiator. This is the section investors and reviewers care about most.</p>
+
+    <h3>Auto-sync: four layers, each more sophisticated than the last</h3>
+
+    <div class="layer-stack">
+      <div class="layer foundation">
+        <div class="badge">L1</div>
+        <div class="body">
+          <div class="title">Protocol latency baseline</div>
+          <div class="desc">Query each sink's reported buffer depth via RTSP/UPnP. Measure round-trip time. Compute initial per-sink delay. This is where most competing products stop.</div>
+        </div>
+        <div class="precision">±50 ms</div>
+      </div>
+      <div class="layer foundation">
+        <div class="badge">L2</div>
+        <div class="body">
+          <div class="title">PTP-style time sync (host-time stamps)</div>
+          <div class="desc">Every audio chunk carries a presentation timestamp. Every sink schedules playback for that exact host-time. Solves the electrical sync problem at the protocol level. Already designed into the v1 architecture (CLAUDE.md).</div>
+        </div>
+        <div class="precision">±10 ms</div>
+      </div>
+      <div class="layer moat">
+        <div class="badge">L3</div>
+        <div class="body">
+          <div class="title">Acoustic calibration via microphone <span class="v good" style="margin-left:8px;">The moat</span></div>
+          <div class="desc">User stands at their listening spot, opens the SuperAudio iOS companion (or uses their Mac mic), app plays test tones through each speaker in turn, records the response, calculates the per-speaker delay from speaker-to-ear. Includes speed-of-sound through air (~3 ms per meter). This is what Sonos Trueplay does for Sonos only; ours works across <em>every</em> protocol.</div>
+        </div>
+        <div class="precision">±2 ms at listener</div>
+      </div>
+      <div class="layer future">
+        <div class="badge">L4</div>
+        <div class="body">
+          <div class="title">Continuous drift correction</div>
+          <div class="desc">Listen for sync drift cues during normal playback, micro-adjust per-sink offsets in real-time. Probably overkill for v1; reserved for Phase 9+.</div>
+        </div>
+        <div class="precision">Phase 9+</div>
+      </div>
+    </div>
+
+    <h3>Tuning: three categories, same calibration walk-through</h3>
+
+    <div class="tune-grid">
+      <div class="tune-card">
+        <h4>Tune A · Trivial</h4>
+        <div class="tune-title">Per-speaker volume matching</div>
+        <div class="tune-desc">Measure SPL at the listening spot during the calibration sweep. Normalize so every speaker plays at the same perceived loudness. Free, automatic, included in the base Room Tuning addon.</div>
+      </div>
+      <div class="tune-card">
+        <h4>Tune B · Manual</h4>
+        <div class="tune-title">Per-speaker parametric EQ</div>
+        <div class="tune-desc">3- or 5-band EQ per sink, user-adjustable in the menu UI. Useful for households who want to tame a bright Sonos Playbar or warm up a thin AP1 speaker.</div>
+      </div>
+      <div class="tune-card">
+        <h4>Tune C · The moat</h4>
+        <div class="tune-title">Room correction via mic sweep</div>
+        <div class="tune-desc">Same calibration walk-through as L3 sync. FFT analysis of recorded sweeps yields per-speaker frequency response. Generate IIR filter coefficients per speaker. Apply DSP before encoding to each sink. This is what Dirac and Roon do at $500–$1,200; ours is $5 and works across mixed protocols.</div>
+      </div>
+      <div class="tune-card">
+        <h4>Tune D · Optional</h4>
+        <div class="tune-title">Bass management</div>
+        <div class="tune-desc">Assign sub-80Hz to the speaker best suited for bass (usually the Sonos Playbar or a stereo subwoofer). Lighter speakers handle mids/highs. Reduces distortion, opens up the soundstage. Phase 8+ refinement.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <div class="label">The insight</div>
+      <div class="body">
+        <em>One calibration walk-through</em> powers both sync and tuning. The same 90-second microphone recording from the user's listening spot feeds <em>both</em> the time-domain analysis (per-speaker delay) <em>and</em> the frequency-domain analysis (per-speaker EQ correction).
+      </div>
+      <p class="detail">Sonos Trueplay does this — but only for Sonos hardware, only on iPhone. Dirac Live does this — but at $499+, with pro-audio complexity, and requires Dirac-ready endpoints. SuperAudio's version is approachable, $5, and works across <strong>every</strong> protocol we support: AirPlay 1, AirPlay 2 (addon), Sonos, Chromecast (addon), Bluetooth (addon). That cross-protocol calibration <strong>does not exist anywhere else at any price.</strong></p>
+    </div>
+
+    <h3>Competitive table — the room-tuning landscape</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Cross-protocol?</th><th>Acoustic sync?</th><th>Room EQ?</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Sonos Trueplay</strong></td><td><span class="v bad">Sonos only</span></td><td><span class="v good">Yes</span></td><td><span class="v warn">Limited</span></td><td>Free w/ Sonos hardware</td></tr>
+          <tr><td>Dirac Live</td><td><span class="v bad">Dirac-ready only</span></td><td><span class="v good">Yes (gold)</span></td><td><span class="v good">Yes (gold)</span></td><td>$499–$1,199</td></tr>
+          <tr><td>Roon</td><td><span class="v bad">Roon-ready only</span></td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>$150/yr or $700 lifetime</td></tr>
+          <tr><td>Audyssey (AVR)</td><td><span class="v bad">AVR outputs only</span></td><td><span class="v warn">Within AVR</span></td><td><span class="v good">Yes</span></td><td>Free w/ AVR</td></tr>
+          <tr><td>Airfoil</td><td><span class="v good">Yes</span></td><td><span class="v bad">No calibration</span></td><td><span class="v bad">No</span></td><td>$35</td></tr>
+          <tr><td><strong>SuperAudio + Room Tuning addon</strong></td><td><span class="v good">All supported protocols</span></td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td><strong>$5 addon on top of $15 base</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Product strategy -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>Product strategy</h2>
+    <p class="subhead">Three primary SKUs + a free iOS companion + protocol and feature addons. One codebase, many entry points.</p>
+
+    <div class="skus">
+      <div class="sku">
+        <div class="sku-name">Mac App</div>
+        <div class="price">$15–20</div>
+        <div class="price-note">Direct download · superaudio.app</div>
+        <div class="desc">For the power user with a Mac. Captures any audio source and streams to mixed-protocol speakers.</div>
+      </div>
+      <div class="sku featured">
+        <div class="sku-name">For Apple TV</div>
+        <div class="price">$5</div>
+        <div class="price-note">tvOS App Store</div>
+        <div class="desc">For anyone with a 2015+ Apple TV. Companion price. Impulse purchase. Apple's Small Business Program means we net 85%.</div>
+      </div>
+      <div class="sku">
+        <div class="sku-name">Hub Stick</div>
+        <div class="price">$49–59</div>
+        <div class="price-note">Pi Zero 2 W, preconfigured</div>
+        <div class="desc">Plug-and-play hardware for households with no Mac or Apple TV. Below $50 psychological barrier, beats Sonos entry by 5×.</div>
+      </div>
+      <div class="sku">
+        <div class="sku-name">SD Card Kit</div>
+        <div class="price">$19</div>
+        <div class="price-note">DIY · supplies their own Pi</div>
+        <div class="desc">For makers. They buy a $15 Pi on Amazon, our card + case + setup guide gets them running.</div>
+      </div>
+    </div>
+
+    <div class="skus" style="margin-top:24px;">
+      <div class="sku free" style="grid-column: 1 / -1;">
+        <div class="sku-name">iOS Companion App</div>
+        <div class="price">Free</div>
+        <div class="price-note">App Store · iPhone &amp; iPad</div>
+        <div class="desc">The iPhone's microphone is the calibration tool. The companion app handles the room-tuning walk-through (Layer 3 sync + Tune C room EQ), remote control of playback, and group/preset management. Free on purpose — its job is to amplify the value of the paid SKUs. Android companion follows in Phase 8+.</div>
+      </div>
+    </div>
+
+    <h3>Protocol &amp; feature addons (in-app purchase / license unlock)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Addon</th><th>Price</th><th>What it unlocks</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Room Tuning</strong></td><td>$5</td><td><strong>The moat.</strong> Mic-based calibration: per-speaker delay (Layer 3 sync) + frequency-response EQ correction. Requires iOS companion or Mac mic.</td></tr>
+          <tr><td>AirPlay 2 sender/receiver</td><td>$5</td><td>Drive AP2-only speakers — HomePod, post-2018 receivers</td></tr>
+          <tr><td>Chromecast Cast</td><td>$5</td><td>Drive Chromecast Audio / Cast-enabled speakers</td></tr>
+          <tr><td>Bluetooth A2DP</td><td>$5</td><td>Fan-out to BT speakers and headphones</td></tr>
+          <tr><td>Multi-zone presets</td><td>$5</td><td>"Whole House", "Kitchen", "Movie Night" — named group recall</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Average paying customer math: base Mac ($15) + Apple TV companion ($5) + Room Tuning ($5) + one protocol addon ($5) = <strong>$30 ASP.</strong> A power user buying everything = $40–50. Strong margin for an indie product.</p>
+  </div>
+</section>
+
+<!-- 7. Hardware options -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>Hardware options analyzed</h2>
+    <p class="subhead">Every Apple and non-Apple platform we considered, with the verdict.</p>
+
+    <h3>Apple devices</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model</th><th>Year</th><th>Used $</th><th>tvOS app capable?</th><th>AP1 target?</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Apple TV 1</td><td>2007</td><td>$5–15</td><td><span class="v bad">No</span></td><td><span class="v bad">No</span></td><td>Ignore — predates AirPlay</td></tr>
+          <tr><td>Apple TV 2</td><td>2010</td><td>$15–30</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
+          <tr><td>Apple TV 3</td><td>2012/13</td><td>$20–40</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
+          <tr><td><strong>Apple TV 4 (HD)</strong></td><td><strong>2015</strong></td><td><strong>$30–50</strong></td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td><strong>Sweet spot</strong> — cheapest hub-capable Apple device</td></tr>
+          <tr><td>Apple TV 4K (1st)</td><td>2017</td><td>$80–120</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Hub-capable, A10X. Also our Phase 1 test target.</td></tr>
+          <tr><td>Apple TV 4K (2nd)</td><td>2021</td><td>$80–110</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Hub-capable, A12</td></tr>
+          <tr><td>Apple TV 4K (3rd)</td><td>2022</td><td>$100–130</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Current model, A15</td></tr>
+          <tr><td>Mac mini (M1+)</td><td>2020+</td><td>$400+</td><td><span class="v good">Mac app</span></td><td><span class="v good">Yes</span></td><td>Power user fallback</td></tr>
+          <tr><td>iPhone 11+ / iPad</td><td>2019+</td><td>$150+</td><td><span class="v good">iOS companion</span></td><td><span class="v warn">Sender only</span></td><td><strong>The calibration mic.</strong> Free companion app.</td></tr>
+          <tr><td>AirPort Express</td><td>2008/12</td><td>$30–60</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Drive as AP1 receiver — old but works</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Non-Apple compute platforms</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Device</th><th>Cost</th><th>Capability</th><th>Build effort</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Raspberry Pi Zero 2 W</strong></td><td>$15</td><td>Quad-core 1GHz, 512MB, WiFi+BT</td><td>4–6 wks Linux port</td><td><span class="v good">Primary cheap-hub platform</span></td></tr>
+          <tr><td>Raspberry Pi 4</td><td>$35–55</td><td>Quad-core 1.5GHz, 1–8GB, Ethernet</td><td>Same port</td><td><span class="v info">Backup if Zero 2 W supply tight</span></td></tr>
+          <tr><td>Raspberry Pi 5</td><td>$60–80</td><td>2.4GHz quad, 4–8GB</td><td>Same port</td><td><span class="v info">Overkill but viable; possibly Hub Pro platform</span></td></tr>
+          <tr><td>Raspberry Pi Zero W (orig)</td><td>$10–15</td><td>Single-core, 512MB</td><td>Same port, tighter margin</td><td><span class="v warn">Sync margin tight, DSP load too high for Tune C</span></td></tr>
+          <tr><td>ESP32-S3</td><td>$5–10</td><td>240MHz dual, 8MB PSRAM</td><td>8–10 wks custom FW</td><td><span class="v bad">Too constrained for multi-sender + DSP</span></td></tr>
+          <tr><td>Arduino (any)</td><td>$20–40</td><td>8-bit @ 16MHz</td><td>n/a</td><td><span class="v bad">Categorically too weak</span></td></tr>
+          <tr><td>Android phone</td><td>varies</td><td>Has mic, has Bonjour, has DSP</td><td>4–6 wks Android companion</td><td><span class="v info">Android Companion App — Phase 8+</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Smart TV apps</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Maker</th><th>Audio capture?</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Tizen</td><td>Samsung</td><td><span class="v bad">No</span></td><td><span class="v bad">Reject — fragmented, no capture</span></td></tr>
+          <tr><td>webOS</td><td>LG</td><td><span class="v bad">No</span></td><td><span class="v bad">Reject</span></td></tr>
+          <tr><td>Google TV / Android TV</td><td>Sony, TCL, Hisense</td><td><span class="v warn">Pop-up only</span></td><td><span class="v warn">Defer — ugly UX</span></td></tr>
+          <tr><td>Roku OS</td><td>Roku</td><td><span class="v bad">No</span></td><td><span class="v bad">Reject</span></td></tr>
+          <tr><td>Fire TV OS</td><td>Amazon</td><td><span class="v warn">Same as Android TV</span></td><td><span class="v warn">Defer</span></td></tr>
+          <tr><td><strong>tvOS</strong></td><td>Apple</td><td><span class="v warn">App-played media only</span></td><td><span class="v good">Build this — best SDK, clean dist</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Among smart TV platforms, <strong>only tvOS is worth the engineering investment.</strong> The rest of the smart TV market is addressed by the Hub Stick instead, which sits next to (not inside) the TV.</p>
+  </div>
+</section>
+
+<!-- 8. Engineering investment -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8</span>Engineering investment</h2>
+    <p class="subhead">Per-SKU and per-feature build cost, ongoing maintenance, and code reuse from the Mac codebase.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>SKU / Feature</th><th>Initial build</th><th>Ongoing</th><th>Code reuse</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Mac app</strong> (Phases 1–4)</td><td>8–12 wks focused</td><td>macOS releases, codesigning, dist</td><td>n/a — baseline</td></tr>
+          <tr><td>iOS Companion (mic calibration + remote)</td><td>3–4 wks</td><td>iOS releases, App Store review</td><td>~70% (Core, AVAudioEngine for capture instead of CATap)</td></tr>
+          <tr><td>Apple TV companion</td><td>2–3 wks</td><td>tvOS keeps pace, App Store review</td><td>~80% (Core, AirPlay1, Sonos)</td></tr>
+          <tr><td>Hub Stick — Linux port</td><td>4–6 wks</td><td>OS image releases, hardware QA, security</td><td>~60%</td></tr>
+          <tr><td>SD Card Kit</td><td>1 wk packaging</td><td>Image updates, community support</td><td>100% from Hub Stick</td></tr>
+          <tr><td><strong>RoomTuner module</strong> (the moat)</td><td>4–6 wks DSP + UX</td><td>Mic-input handling, FFT analysis, IIR filter generation</td><td>New module; integrates with Core for per-sink offset and EQ</td></tr>
+          <tr><td>Addon: AirPlay 2 sender</td><td>4–6 wks</td><td>AP2 pairing stability</td><td>New module</td></tr>
+          <tr><td>Addon: Chromecast</td><td>2–3 wks</td><td>Cast SDK churn</td><td>New module</td></tr>
+          <tr><td>Addon: Bluetooth A2DP</td><td>2 wks</td><td>OS-level stack</td><td>New module</td></tr>
+          <tr><td>Android Companion</td><td>4–6 wks</td><td>Android releases, Play Store</td><td>~50% (cross-platform Kotlin or Flutter)</td></tr>
+          <tr><td>Hub Pro (HDMI ARC)</td><td>3–4 months</td><td>Hardware revisions</td><td>~50%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Full roadmap: <strong>18–24 months solo-developer cadence</strong>, or 6–9 months with a small team. Phase 1–4 (Mac app) is the foundation; the RoomTuner module is the highest-leverage post-launch investment because it powers both sync and tuning differentiation simultaneously.</p>
+  </div>
+</section>
+
+<!-- 8.5. Hardware economics + competitive landscape -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8.5</span>Hardware economics &amp; competitive landscape</h2>
+    <p class="subhead">Real BOM numbers, real competitors, real patent posture. No hand-waving.</p>
+
+    <h3>Bill of materials — what each hardware SKU actually costs us</h3>
+    <p>Volume pricing (~1,000 units) for components, sourced from public distributor catalogs (Adafruit, DigiKey, Mouser, Pi Hut). Margins assume direct-to-consumer + Amazon FBA mix.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>SKU</th><th>BOM line items</th><th>Total BOM</th><th>Retail target</th><th>Gross margin</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SuperAudio Hub Stick</strong> (Phase 7)</td>
+            <td>Pi Zero 2 W ($12) + microSD 32GB ($5) + plastic case ($3) + USB-C 5W PSU ($5) + USB-Ethernet ($5) + cable ($1) + packaging ($4)</td>
+            <td><strong>~$35</strong></td>
+            <td>$59 (no eth) / $69 (with eth)</td>
+            <td>~40–50%</td>
+          </tr>
+          <tr>
+            <td><strong>Optical TOSLINK Hub Stick</strong> (Phase 7.5)</td>
+            <td>Hub Stick BOM + USB optical-input adapter ($10) + 1m TOSLINK cable ($3)</td>
+            <td><strong>~$48</strong></td>
+            <td>$69–79</td>
+            <td>~35–40%</td>
+          </tr>
+          <tr>
+            <td><strong>SD Card Kit (DIY)</strong> (Phase 7)</td>
+            <td>Preconfigured microSD ($6) + case ($3) + setup card ($1) + packaging ($3)</td>
+            <td><strong>~$13</strong></td>
+            <td>$19–24</td>
+            <td>~40–50% (margin compresses on shipping)</td>
+          </tr>
+          <tr>
+            <td><strong>SuperAudio Hub Pro (HDMI ARC)</strong> (Phase 9)</td>
+            <td>Pi 5 4GB ($50) + HDMI audio extractor board ($40–70 custom, $25–40 commodity at volume) + active-cooled aluminum case ($15) + HDMI cable ($5) + 15W USB-C PSU ($8) + microSD 64GB ($10) + premium packaging ($8)</td>
+            <td><strong>~$136–166</strong></td>
+            <td>$199–249</td>
+            <td>~30–35%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Notes on the HDMI ARC Hub Pro</strong>: the BOM is high because there's no off-the-shelf "Pi HAT for HDMI ARC capture." Two paths to lower it:</p>
+    <ul>
+      <li><strong>License a commodity HDMI audio extractor chipset</strong> from an ODM (Hong Kong/Shenzhen has several) and design a custom PCB integrating the extractor + a small ARM SoC (no Pi). BOM drops to ~$60–80, retail can land at $149–179. Effort: 3–4 months engineering + hardware partner.</li>
+      <li><strong>Start with the Pi-based design</strong> as the v1 to validate market demand. Iterate to custom PCB once we're shipping 5K+ units/year.</li>
+    </ul>
+
+    <h3>Competitive landscape — where SuperAudio fits</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Price</th><th>What it does</th><th>Where SuperAudio differs</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>WiiM Pro Plus</strong></td>
+            <td>$149</td>
+            <td>WiFi streamer, AirPlay 2, multi-room within WiiM ecosystem, line-in capture, optical in</td>
+            <td>WiiM only fans out to other WiiM. Doesn't drive B&amp;W AP1 + Sonos + Cast simultaneously. Doesn't do HDMI ARC. Closed ecosystem.</td>
+          </tr>
+          <tr>
+            <td><strong>Sonos Port</strong></td>
+            <td>$449</td>
+            <td>Adds line-in / optical to Sonos network</td>
+            <td>Sonos-only output. 3x more expensive. Locked to Sonos ecosystem.</td>
+          </tr>
+          <tr>
+            <td><strong>Audioengine B-FI</strong></td>
+            <td>$79</td>
+            <td>Adds WiFi + AirPlay receiver to a speaker</td>
+            <td>Receiver only. Doesn't fan out. Single endpoint.</td>
+          </tr>
+          <tr>
+            <td><strong>Bluesound Node</strong></td>
+            <td>$599</td>
+            <td>High-end streamer, multi-room within Bluesound</td>
+            <td>Bluesound-only output, very expensive, audiophile market only.</td>
+          </tr>
+          <tr>
+            <td><strong>iFi Zen Stream</strong></td>
+            <td>$399</td>
+            <td>High-end Roon endpoint</td>
+            <td>Roon-only, no multi-room, audiophile niche.</td>
+          </tr>
+          <tr>
+            <td><strong>Apple TV (4K, used)</strong></td>
+            <td>$35–130</td>
+            <td>AirPlay 2 receiver natively; could be a hub via our $5 companion app</td>
+            <td>Not a competitor — a <em>platform</em> we ship for. Our $5 tvOS app makes Apple TV the hub.</td>
+          </tr>
+          <tr>
+            <td><strong>AirConnect (OSS)</strong></td>
+            <td>Free</td>
+            <td>Headless daemon: receives AirPlay, forwards to UPnP/Cast endpoints</td>
+            <td>CLI config file, no GUI, no Room Tuning, no HDMI ARC. Useful reference; not a consumer product.</td>
+          </tr>
+          <tr>
+            <td><strong>SuperAudio Hub Stick</strong></td>
+            <td>$59</td>
+            <td>Cross-protocol fan-out: AirPlay 1 + Sonos + (with addons) AP2 + Cast + BT, all from one box</td>
+            <td><strong>The only product at this price point that does multi-ecosystem fan-out.</strong></td>
+          </tr>
+          <tr>
+            <td><strong>SuperAudio Hub Pro</strong></td>
+            <td>$199–249</td>
+            <td>Above + HDMI ARC capture from TV</td>
+            <td><strong>The only product anywhere that does "any TV → every speaker in sync."</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Differentiation summary:</strong> nobody else does <em>cross-ecosystem</em> fan-out at consumer prices. WiiM, Sonos, and Bluesound each lock you into their walled garden. SuperAudio's value prop is being explicitly <em>not</em> a walled garden — every protocol equal-class, your old gear plus new gear, no ecosystem chosen by us.</p>
+
+    <h3>Patent posture — what we worry about and what we don't</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Patent area</th><th>Risk level</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Sonos multi-room sync patents</td>
+            <td><span class="v warn">Medium — known litigious</span></td>
+            <td>Sonos sued Google in 2020 over multi-room patents. <strong>Our defense: we don't implement our own multi-room sync algorithm</strong> — we use each protocol's native sync (RAOP timing for AirPlay, Sonos's own UPnP grouping for Sonos). We're a router, not a sync inventor. Should be clear, but worth a patent attorney's read before Hub Pro hardware ships.</td>
+          </tr>
+          <tr>
+            <td>Apple AirPlay 1 protocol</td>
+            <td><span class="v good">Very low</span></td>
+            <td>Reverse-engineered publicly in 2009. Used verbatim in shairport-sync, libraop, Airfoil, AirConnect, OwnTone, dozens of products for 16+ years with no Apple action. MFi licensing is for AP2 only.</td>
+          </tr>
+          <tr>
+            <td>Apple AirPlay 2 protocol</td>
+            <td><span class="v warn">High</span></td>
+            <td>Requires MFi licensed key for sending. <strong>Permanently out of scope</strong> for our sender path; we leave AP2 for receiver-side (Apple TVs handle it natively for us).</td>
+          </tr>
+          <tr>
+            <td>HDMI ARC audio extraction</td>
+            <td><span class="v good">Low</span></td>
+            <td>Many existing products (HDMI audio extractors, AVRs) do this. Well-trodden ground.</td>
+          </tr>
+          <tr>
+            <td>Chromecast Cast protocol</td>
+            <td><span class="v good">Low</span></td>
+            <td>Google never enforced Cast SDK reverse-engineering. Used by node-castv2, OwnTone, many other senders.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Pre-shipping action items:</strong> patent attorney does a freedom-to-operate search on the Hub Pro (HDMI ARC piece is the only novel hardware) and a defensive search on the multi-protocol fan-out architecture. Estimated cost: $3–5K. Required before mass-producing hardware; not required for Mac/tvOS app releases.</p>
+  </div>
+</section>
+
+<!-- 9. Go-to-market -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">9</span>Go-to-market</h2>
+    <p class="subhead">Positioning lives or dies on the reuse story and the "tune your whole house" hook.</p>
+
+    <div class="pullquote">
+      SuperAudio: <strong>make every speaker in your house play the same song.</strong> In sync. Tuned to the room. Including the old ones.
+    </div>
+
+    <h3>The three marketing hooks, ranked</h3>
+    <ol>
+      <li><strong>"Tune your whole house in 90 seconds."</strong> — the Room Tuning walk-through. Demo on YouTube goes viral. Showing a phone mic doing what $700 of Dirac does is genuinely surprising.</li>
+      <li><strong>"Your old AirPlay 1 speakers, your old Sonos, your old Apple TV — finally play together."</strong> — the reuse story for budget-conscious households.</li>
+      <li><strong>"$15. Or use your Apple TV for $5."</strong> — accessibility hook spanning every income bracket.</li>
+    </ol>
+
+    <h3>Reuse stories worth marketing</h3>
+    <div class="reuse">
+      <div class="item">
+        <div class="gear">Old Apple TV 2 or 3 collecting dust</div>
+        <div class="what">Drives it as an AirPlay 1 receiver via Mac or Hub</div>
+        <div class="value">+$30 of new utility from a $0 device</div>
+      </div>
+      <div class="item">
+        <div class="gear">2015 Apple TV 4</div>
+        <div class="what">Becomes the household hub via $5 tvOS companion</div>
+        <div class="value">Whole-house audio for the price of a sandwich</div>
+      </div>
+      <div class="item">
+        <div class="gear">B&amp;W A5/A7/Zeppelin</div>
+        <div class="what">Plays in sync with everything else, tuned to the room</div>
+        <div class="value">Premium audio without replacing the gear</div>
+      </div>
+      <div class="item">
+        <div class="gear">Gen-1 Sonos Beam / Play:5 / Playbar</div>
+        <div class="what">Plays alongside non-Sonos hardware, calibrated</div>
+        <div class="value">Breaks the Sonos lock-in</div>
+      </div>
+      <div class="item">
+        <div class="gear">AirPort Express in a closet</div>
+        <div class="what">Drive as AP1 endpoint</div>
+        <div class="value">Old Apple kit kept relevant a decade later</div>
+      </div>
+      <div class="item">
+        <div class="gear">Bluetooth speaker on the counter</div>
+        <div class="what">A2DP fan-out (addon)</div>
+        <div class="value">One more zone, no new gear</div>
+      </div>
+    </div>
+
+    <h3>Channels</h3>
+    <ul>
+      <li><strong>Direct sale (superaudio.app)</strong> — primary for Mac, Hub Stick, SD Card Kit. Paddle for international VAT handling.</li>
+      <li><strong>tvOS App Store</strong> — only channel for Apple TV companion. 15% cut via Small Business Program.</li>
+      <li><strong>iOS App Store</strong> — free Companion App. Driver of word-of-mouth ("download SuperAudio to tune your speakers").</li>
+      <li><strong>Amazon FBA</strong> — Hub Stick and SD Card Kit for discoverability + Prime shipping.</li>
+      <li><strong>Earned media</strong> — r/budgetaudiophile, AVS Forum, Slickdeals, YouTube budget-tech channels. The room-tuning demo is the obvious viral hook.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 10. Risks -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">10</span>Risks &amp; mitigation</h2>
+    <p class="subhead">The honest list of what could kill or wound the product.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Apple deprecates RAOP / AirPlay 1</td><td><span class="v warn">Medium (5–10y)</span></td><td><span class="v bad">Catastrophic</span></td><td>Clean-room Swift impl, retain control. Pivot to AP2.</td></tr>
+          <tr><td>macOS restricts process tap further</td><td><span class="v warn">Low–Medium</span></td><td><span class="v warn">High</span></td><td>BlackHole fallback documented.</td></tr>
+          <tr><td>Sonos closes UPnP control</td><td><span class="v warn">Medium</span></td><td><span class="v warn">Medium</span></td><td>Threatened before, reversed. UPnP / S2 fallback plan.</td></tr>
+          <tr><td>iOS mic API restrictions impact RoomTuner</td><td><span class="v good">Low</span></td><td><span class="v warn">Medium</span></td><td>AVAudioRecorder is stable; fall back to Mac mic if needed.</td></tr>
+          <tr><td>DSP quality not good enough vs Dirac</td><td><span class="v warn">Medium</span></td><td><span class="v warn">Medium</span></td><td>"Good enough" for $5; we're not competing in pro audio. Iterate on filter quality post-launch.</td></tr>
+          <tr><td>TV OEMs adopt AP2 widely</td><td><span class="v warn">Medium (slow)</span></td><td><span class="v warn">Medium</span></td><td>AP1 hardware persists in homes for 10+ years regardless.</td></tr>
+          <tr><td>Smart TV vendors add native multi-room</td><td><span class="v good">Low</span></td><td><span class="v warn">Medium</span></td><td>OEM solutions are platform-locked; we cover the gap.</td></tr>
+          <tr><td>Hardware supply chain (Pi shortages)</td><td><span class="v warn">Medium</span></td><td><span class="v warn">High</span></td><td>Multiple SKUs hedge platform risk.</td></tr>
+          <tr><td>Can't reach customers without App Store</td><td><span class="v warn">Medium</span></td><td><span class="v warn">High</span></td><td>Apple TV App Store + free iOS Companion gives reach.</td></tr>
+          <tr><td>AirConnect / OSS makes us redundant</td><td><span class="v good">Low–Medium</span></td><td><span class="v warn">Medium</span></td><td>Calibration moat doesn't exist in OSS. UX is our other moat.</td></tr>
+          <tr><td>Solo-developer burnout</td><td><span class="v bad">High</span></td><td><span class="v bad">Critical</span></td><td>Revenue diversification (addons + hardware). Scope discipline.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 11. Roadmap -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">11</span>Roadmap</h2>
+    <p class="subhead">Phase 1–4 (Mac POC) ships first. Phase 5–7 are the launch arc. Phase 8+ is the moat.</p>
+
+    <div class="timeline">
+      <div class="phase current">
+        <span class="phase-label">Current · Phase 1</span>
+        <div class="phase-title">Mac → 1 AirPlay 1 speaker, no drops</div>
+        <div class="phase-meta">Gate: hear Spotify in the B&amp;W A5 for 30 min · <strong>2–3 weeks</strong></div>
+      </div>
+      <div class="phase next">
+        <span class="phase-label">Phase 2 · Foundation Sync</span>
+        <div class="phase-title">L1 + L2 sync between both B&amp;W speakers</div>
+        <div class="phase-meta">Gate: walk between them, no flam · <strong>1–2 weeks</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 3</span>
+        <div class="phase-title">Sonos Playbar joins the group</div>
+        <div class="phase-meta">Gate: all three speakers playing · <strong>1–2 weeks</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 4</span>
+        <div class="phase-title">Polish: groups, persistence, auto-reconnect</div>
+        <div class="phase-meta">Gate: relaunch, last group resumes · <strong>1 week</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 5 · LAUNCH</span>
+        <div class="phase-title">SuperAudio Mac v1.0</div>
+        <div class="phase-meta">Direct sale live, first 100 customers · <strong>+2 weeks marketing</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 6</span>
+        <div class="phase-title">Apple TV companion ($5) + iOS Companion (free)</div>
+        <div class="phase-meta">tvOS &amp; iOS App Store approved + live · <strong>5–6 weeks dev + 1 week review</strong></div>
+      </div>
+      <div class="phase moat-phase">
+        <span class="phase-label">Phase 7 · THE MOAT</span>
+        <div class="phase-title">Room Tuning addon ($5) — L3 acoustic sync + Tune C room EQ</div>
+        <div class="phase-meta">Mic calibration walk-through via iOS or Mac mic. The viral demo phase. · <strong>4–6 weeks</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 8</span>
+        <div class="phase-title">Hub Stick + SD Card Kit hardware</div>
+        <div class="phase-meta">First 50 units sold · <strong>6–8 weeks dev + 4 weeks ops</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 9</span>
+        <div class="phase-title">Protocol addons (AP2, Cast, BT) + Android Companion</div>
+        <div class="phase-meta">Each shipped as bundle update · <strong>2–6 weeks each, parallelizable</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 10 · L4</span>
+        <div class="phase-title">Continuous drift correction + Bass management</div>
+        <div class="phase-meta">Refinement phase — pro-audio polish · <strong>open-ended</strong></div>
+      </div>
+      <div class="phase">
+        <span class="phase-label">Phase 11</span>
+        <div class="phase-title">Hub Pro with HDMI ARC</div>
+        <div class="phase-meta">"Any TV plays → every speaker" · <strong>3–4 months + hardware partner</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12. Open decisions -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">12</span>Open decisions</h2>
+    <p class="subhead">Don't need answers today; do before each milestone fires.</p>
+
+    <ul>
+      <li><strong>Room Tuning: $5 standalone or bundled with Mac?</strong> $5 standalone keeps unit economics clean; people who want sync without tuning aren't forced to pay. Leaning standalone.</li>
+      <li><strong>iOS Companion: truly free, or freemium gate?</strong> Truly free serves the "amplify paid-product value" goal. Don't gate features users need to be happy.</li>
+      <li><strong>Apple TV: $5 standalone, or free bundled with Mac?</strong> Leaning $5 standalone with occasional bundle promotions.</li>
+      <li><strong>Build Hub Stick in-house or partner?</strong> Solo-developer cadence argues for partner (Adafruit-style consignment).</li>
+      <li><strong>SD Card Kit before Hub Stick, or simultaneously?</strong> Leaning SD Card Kit first — lower ops, tests demand.</li>
+      <li><strong>Open-source the Mac app post-launch?</strong> MIT-clean codebase already supports this; community-building lever.</li>
+      <li><strong>Sales infrastructure: Paddle, Stripe, or Gumroad?</strong> Paddle handles EU VAT; Gumroad fastest to launch.</li>
+      <li><strong>EU compliance posture (DSA / GDPR).</strong> Direct sale to EU needs VAT; Paddle covers it.</li>
+      <li><strong>Room Tuning UI: walk-around vs single-spot?</strong> Sonos Trueplay's walk-around captures more spatial info but feels gimmicky. Single-spot is more typical. Test both during Phase 7.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 13. Why not pivot -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">13</span>Why we won't pivot to hardware-first</h2>
+    <p class="subhead">It's tempting; we're explicitly not doing it.</p>
+    <ul>
+      <li><strong>The Mac app validates the entire stack technically.</strong> If RAOP, sync, Sonos, capture, or DSP don't work on a Mac with full debugging, they won't work on a headless Pi.</li>
+      <li><strong>Hardware ops are a separate skill set.</strong> Fulfillment, SD-card flashing, RMAs, support — none of it scales until the software is proven.</li>
+      <li><strong>Mac-app revenue funds Hub R&amp;D.</strong> Indie cash flow has to come from somewhere.</li>
+      <li><strong>Customers can DIY today.</strong> The SD Card Kit ships before the bundled Hub Stick, giving us a stepping stone.</li>
+      <li><strong>The moat (Room Tuning) is software, not hardware.</strong> Building hardware first delays the differentiator that actually matters.</li>
+    </ul>
+    <p style="margin-top: 32px; font-size: 18px; color: var(--accent-2); font-weight: 600;">Phase 1 ships first. Room Tuning is the moat. Hardware is downstream.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Product Case Study · v0.2 · Drafted 2026-05-12 · Validation log last updated 2026-05-15 (night, after M5 closure + M6 partial)</p>
+    <p>Single canonical document. Forward-looking; not a commitment.</p>
+  </div>
+</footer>
+
+</body>
+</html>

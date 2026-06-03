@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — multi-room audio for the Mac. Every speaker in your house, in sync. Including the old ones.">
+<meta property="og:title" content="SuperAudio — every speaker, in sync">
+<meta property="og:description" content="Multi-room audio for households with AirPlay 1, Sonos, and other speakers the modern ecosystem forgot. From $15.">
+<title>SuperAudio — every speaker in your house, in sync</title>
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --bg-card:   #14141c;
+    --bg-card-2: #1a1a24;
+    --border:    #23232e;
+    --border-bright: #2e2e3c;
+    --text:      #ececf1;
+    --text-muted:#8a8a96;
+    --text-dim:  #5a5a66;
+    --accent:    #ff6a3d;
+    --accent-2:  #ffba6d;
+    --good:      #4ade80;
+    --cyan:      #67e8f9;
+    --violet:    #a78bfa;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-2); }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* Nav */
+  nav.topbar {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.78);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.topbar .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 18px; padding-bottom: 18px;
+  }
+  nav.topbar .brand {
+    font-weight: 800; letter-spacing: -0.01em;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-size: 20px;
+  }
+  nav.topbar .links { display: flex; gap: 18px; font-size: 14px; align-items: center; }
+  nav.topbar .links a { color: var(--text-muted); text-decoration: none; }
+  nav.topbar .links a:hover { color: var(--text); }
+  nav.topbar .links a.current { color: var(--accent); font-weight: 600; }
+  nav.topbar .links .nav-sep { color: var(--border); user-select: none; }
+  nav.topbar .brand { text-decoration: none; }
+  nav.topbar .cta {
+    background: var(--accent); color: var(--bg);
+    padding: 8px 16px; border-radius: 8px;
+    font-weight: 600; font-size: 14px;
+  }
+  nav.topbar .cta:hover { background: var(--accent-2); color: var(--bg); }
+  @media (max-width: 640px) {
+    nav.topbar .links { display: none; }
+  }
+
+  /* Hero */
+  header.hero {
+    padding: 120px 0 100px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; top: -40%; right: -15%;
+    width: 70%; height: 200%;
+    background: radial-gradient(circle, rgba(255,106,61,0.12) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; bottom: -30%; left: -10%;
+    width: 60%; height: 120%;
+    background: radial-gradient(circle, rgba(103,232,249,0.08) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  header.hero > .wrap { position: relative; }
+  header.hero .eyebrow {
+    color: var(--accent);
+    font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  header.hero h1 {
+    font-size: clamp(44px, 7vw, 80px);
+    line-height: 1.02; letter-spacing: -0.03em;
+    font-weight: 800; margin: 0 0 28px;
+    max-width: 920px;
+  }
+  header.hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  header.hero .lede {
+    font-size: 22px; color: var(--text-muted); max-width: 720px;
+    line-height: 1.5;
+    margin-bottom: 36px;
+  }
+  header.hero .lede strong { color: var(--text); font-weight: 600; }
+  header.hero .cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  header.hero .btn-primary {
+    background: var(--accent); color: var(--bg);
+    padding: 14px 24px; border-radius: 10px;
+    font-weight: 700; font-size: 15px;
+    transition: transform 0.1s;
+  }
+  header.hero .btn-primary:hover {
+    background: var(--accent-2); color: var(--bg);
+    transform: translateY(-1px);
+  }
+  header.hero .btn-secondary {
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 14px 24px; border-radius: 10px;
+    font-weight: 600; font-size: 15px;
+    background: var(--bg-card);
+  }
+  header.hero .btn-secondary:hover { background: var(--bg-card-2); color: var(--text); }
+  header.hero .price-tease {
+    margin-top: 28px; color: var(--text-dim); font-size: 14px;
+  }
+  header.hero .price-tease strong { color: var(--text-muted); font-weight: 600; }
+
+  /* Section base */
+  section { padding: 96px 0; border-top: 1px solid var(--border); }
+  section h2 {
+    font-size: clamp(32px, 4.5vw, 44px);
+    line-height: 1.1; letter-spacing: -0.025em;
+    font-weight: 800; margin: 0 0 14px;
+    max-width: 800px;
+  }
+  section h2 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  section .subhead {
+    color: var(--text-muted); font-size: 18px; max-width: 760px;
+    margin-bottom: 48px;
+  }
+  section h3 {
+    font-size: 22px; margin: 32px 0 14px; font-weight: 700; letter-spacing: -0.01em;
+  }
+
+  /* Problem strip */
+  .problem-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .problem-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px;
+  }
+  .problem-card .num {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--accent); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .problem-card h4 { font-size: 18px; margin: 0 0 8px; font-weight: 700; }
+  .problem-card p { font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.55; }
+  @media (max-width: 800px) { .problem-strip { grid-template-columns: 1fr; } }
+
+  /* How it works */
+  .how-flow {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 36px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+    position: relative;
+  }
+  .how-step {
+    text-align: center;
+  }
+  .how-step .num {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color: var(--bg); font-weight: 800; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .how-step h4 { font-size: 16px; margin: 0 0 6px; font-weight: 700; }
+  .how-step p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+  @media (max-width: 800px) { .how-flow { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 500px) { .how-flow { grid-template-columns: 1fr; } }
+
+  /* Devices list — what works */
+  .devices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 36px; }
+  .device {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+  }
+  .device .icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .device .name { font-weight: 600; font-size: 15px; }
+  .device .desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .device .status { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+  .device .status.live { background: rgba(74,222,128,0.15); color: var(--good); border: 1px solid rgba(74,222,128,0.3); }
+  .device .status.addon { background: rgba(103,232,249,0.15); color: var(--cyan); border: 1px solid rgba(103,232,249,0.3); }
+  @media (max-width: 700px) { .devices { grid-template-columns: 1fr; } }
+
+  /* Moat callout */
+  .moat-callout {
+    background: linear-gradient(135deg, rgba(255,106,61,0.10) 0%, rgba(255,186,109,0.05) 100%);
+    border: 1px solid rgba(255,106,61,0.3);
+    border-radius: 18px; padding: 48px;
+    margin-top: 40px;
+  }
+  .moat-callout .badge {
+    color: var(--accent); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 16px;
+  }
+  .moat-callout .title {
+    font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text); margin-bottom: 16px;
+  }
+  .moat-callout .title em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    font-weight: 800;
+  }
+  .moat-callout p { color: var(--text-muted); font-size: 16px; margin: 12px 0; max-width: 700px; }
+
+  /* Pricing */
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .price-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 32px 28px; position: relative;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .price-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+  .price-card.featured {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(255,106,61,0.06) 0%, var(--bg-card) 100%);
+  }
+  .price-card.featured::before {
+    content: "MOST POPULAR";
+    position: absolute; top: -10px; left: 24px;
+    background: var(--accent); color: var(--bg);
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+    padding: 4px 10px; border-radius: 4px;
+  }
+  .price-card .label {
+    font-size: 13px; color: var(--text-muted); margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  }
+  .price-card .price {
+    font-size: 44px; font-weight: 800; letter-spacing: -0.025em;
+    margin: 0 0 4px;
+  }
+  .price-card .price .currency { font-size: 24px; vertical-align: super; color: var(--text-muted); margin-right: 4px; }
+  .price-card .price-note { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .price-card ul {
+    list-style: none; padding: 0; margin: 0 0 24px;
+  }
+  .price-card ul li {
+    font-size: 14px; color: var(--text-muted); padding: 8px 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .price-card ul li:first-child { border-top: none; }
+  .price-card ul li::before {
+    content: "✓"; color: var(--good); font-weight: 700; flex-shrink: 0;
+  }
+  .price-card .btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 8px;
+    font-weight: 700; font-size: 14px;
+  }
+  .price-card .btn-fill {
+    background: var(--accent); color: var(--bg);
+  }
+  .price-card .btn-fill:hover { background: var(--accent-2); color: var(--bg); }
+  .price-card .btn-outline {
+    border: 1px solid var(--border-bright); color: var(--text);
+    background: transparent;
+  }
+  .price-card .btn-outline:hover { background: var(--bg-card-2); color: var(--text); }
+  @media (max-width: 900px) { .pricing { grid-template-columns: 1fr; } }
+
+  .addons-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 32px; }
+  .addon {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; text-align: center;
+  }
+  .addon .price { font-size: 18px; font-weight: 800; color: var(--accent); }
+  .addon .name { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  @media (max-width: 800px) { .addons-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 400px) { .addons-grid { grid-template-columns: 1fr; } }
+
+  /* FAQ */
+  .faq {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px 28px; margin-bottom: 12px;
+  }
+  .faq summary {
+    cursor: pointer; font-weight: 600; font-size: 16px;
+    list-style: none; padding: 0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: "+";
+    color: var(--accent); font-size: 22px; font-weight: 300;
+    transition: transform 0.2s;
+  }
+  .faq[open] summary::after { content: "−"; }
+  .faq[open] summary { margin-bottom: 14px; }
+  .faq p { margin: 0 0 12px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+  .faq p:last-child { margin-bottom: 0; }
+
+  /* CTA section */
+  .final-cta {
+    background: linear-gradient(135deg, rgba(255,106,61,0.08) 0%, rgba(167,139,250,0.06) 100%);
+    border: 1px solid var(--border-bright); border-radius: 20px;
+    padding: 56px;
+    text-align: center;
+    margin-top: 40px;
+  }
+  .final-cta h2 {
+    margin: 0 0 16px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--violet) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .final-cta p { color: var(--text-muted); max-width: 580px; margin: 0 auto 28px; font-size: 17px; }
+  .final-cta .form {
+    display: flex; gap: 10px; max-width: 480px; margin: 0 auto;
+  }
+  .final-cta input[type="email"] {
+    flex: 1;
+    background: var(--bg); border: 1px solid var(--border-bright);
+    color: var(--text); padding: 14px 16px; border-radius: 10px;
+    font-size: 15px; font-family: inherit;
+  }
+  .final-cta input[type="email"]:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .final-cta button {
+    background: var(--accent); color: var(--bg);
+    border: none; padding: 14px 22px; border-radius: 10px;
+    font-weight: 700; font-size: 15px; cursor: pointer;
+    font-family: inherit;
+  }
+  .final-cta button:hover { background: var(--accent-2); }
+  .final-cta .note { font-size: 12px; color: var(--text-dim); margin-top: 16px; }
+  @media (max-width: 640px) {
+    .final-cta { padding: 40px 24px; }
+    .final-cta .form { flex-direction: column; }
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 48px 0 36px; color: var(--text-dim); font-size: 13px;
+  }
+  footer .wrap {
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  }
+  footer .footer-links a { color: var(--text-muted); margin-right: 20px; }
+  footer .footer-links a:hover { color: var(--accent); }
+  footer .signature {
+    color: var(--text-dim);
+  }
+  footer .signature em { color: var(--accent); font-style: normal; }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="links">
+      <a href="index.html" class="current">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+    <a href="#waitlist" class="cta">Get notified</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Coming soon · macOS</div>
+    <h1>Every speaker in your house. <em>Playing the same song.</em><br>Including the old ones.</h1>
+    <p class="lede">
+      <strong>Multi-room audio</strong> for households with mixed AirPlay 1, Sonos, and other speakers the modern Apple/Sonos/Google ecosystems forgot. <strong>One Mac app. Up to 80% less than competitors.</strong> Auto-syncs every speaker to your room — across protocols, without lock-in, without subscriptions.
+    </p>
+    <div class="cta-row">
+      <a href="#waitlist" class="btn-primary">Get notified at launch</a>
+      <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+    <div class="price-tease">
+      Mac app from <strong>$15</strong> · Apple TV companion <strong>$5</strong> · Hub Stick hardware <strong>$49</strong>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <h2>You bought premium speakers <em>once.</em> Then the ecosystem moved on.</h2>
+    <p class="subhead">If your home has a mix of AirPlay 1 speakers, an older Sonos, a Bluetooth soundbar, and an old Apple TV in a drawer — none of the big-three multi-room systems will play them all together. Replacing the gear costs $500–$2,000 per room. SuperAudio doesn't make you.</p>
+
+    <div class="problem-strip">
+      <div class="problem-card">
+        <div class="num">Problem 1</div>
+        <h4>Stranded AirPlay 1 speakers</h4>
+        <p>Bowers &amp; Wilkins A5, A7, Zeppelin. AirPort Express. Old Apple TVs. Premium gear when you bought it. Now invisible to Apple's AirPlay 2 multi-room.</p>
+      </div>
+      <div class="problem-card">
+        <div class="num">Problem 2</div>
+        <h4>Stranded older Sonos</h4>
+        <p>Gen-1 Playbar. Beam. Play:5. They still work perfectly — but only with other Sonos. Locked out of every non-Sonos speaker in your house.</p>
+      </div>
+      <div class="problem-card">
+        <div class="num">Problem 3</div>
+        <h4>The TV gap</h4>
+        <p>Watch a movie, audio goes to the soundbar. The other speakers in the house sit silent. There is no consumer product that fans TV audio to every speaker in sync. Until now.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>Four steps. <em>No new hardware.</em> No subscription.</h2>
+    <p class="subhead">SuperAudio runs on the Mac you already own, discovers every speaker on your WiFi (across protocols), and routes any audio source — Spotify, Safari, Music, system audio, anything — to as many of them as you want, in sync.</p>
+
+    <div class="how-flow">
+      <div class="how-step">
+        <div class="num">1</div>
+        <h4>Install on your Mac</h4>
+        <p>Download, drag to Applications, click "Get Started." 30 seconds.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">2</div>
+        <h4>It finds your speakers</h4>
+        <p>AirPlay 1, Sonos, and (with addons) AirPlay 2, Chromecast, Bluetooth. Live — no manual setup.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">3</div>
+        <h4>Pick a group</h4>
+        <p>"Whole house." "Living room." Drag the speakers you want into a zone.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">4</div>
+        <h4>Press play</h4>
+        <p>Any audio on your Mac, every selected speaker, in sync. Done.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 64px;">Works with everything modern systems forgot</h3>
+
+    <div class="devices">
+      <div class="device">
+        <div class="icon">🔊</div>
+        <div>
+          <div class="name">AirPlay 1 speakers</div>
+          <div class="desc">B&amp;W A5/A7/Zeppelin, AirPort Express, old Apple TVs</div>
+        </div>
+        <span class="status live">Day 1</span>
+      </div>
+      <div class="device">
+        <div class="icon">🎵</div>
+        <div>
+          <div class="name">Sonos</div>
+          <div class="desc">Including gen-1 Playbar, Beam, Play:5, Connect</div>
+        </div>
+        <span class="status live">Day 1</span>
+      </div>
+      <div class="device">
+        <div class="icon">📻</div>
+        <div>
+          <div class="name">AirPlay 2 speakers</div>
+          <div class="desc">HomePod, post-2018 receivers, AP2-licensed brands</div>
+        </div>
+        <span class="status addon">+$5 addon</span>
+      </div>
+      <div class="device">
+        <div class="icon">📡</div>
+        <div>
+          <div class="name">Chromecast Audio &amp; Cast speakers</div>
+          <div class="desc">Including older Chromecast Audio devices</div>
+        </div>
+        <span class="status addon">+$5 addon</span>
+      </div>
+      <div class="device">
+        <div class="icon">📶</div>
+        <div>
+          <div class="name">Bluetooth speakers</div>
+          <div class="desc">A2DP fan-out to BT speakers and headphones</div>
+        </div>
+        <span class="status addon">+$5 addon</span>
+      </div>
+      <div class="device">
+        <div class="icon">🖥️</div>
+        <div>
+          <div class="name">Other Macs / iPads</div>
+          <div class="desc">If they have AirPlay Receiver enabled and grant permission</div>
+        </div>
+        <span class="status live">Day 1</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="moat">
+  <div class="wrap">
+    <h2>The thing nobody else does at <em>this price.</em></h2>
+    <p class="subhead">Multi-protocol streaming is table stakes. Room tuning across mixed protocols isn't done anywhere — except SuperAudio.</p>
+
+    <div class="moat-callout">
+      <div class="badge">SuperAudio Auto-Sync · base app · shipped 2026-05-18</div>
+      <div class="title">Click Play All. <em>Every speaker auto-syncs to where you're sitting.</em></div>
+      <p>Sonos Trueplay does this — for Sonos hardware only. Dirac Live does it — for $499 and a pro AVR. Roon does it — for $700 and Roon-ready endpoints.</p>
+      <p><strong>SuperAudio cross-protocol auto-sync works across every speaker we support, and it's already shipped on Mac.</strong> Your Mac's built-in microphone hears a 1-second chirp from each speaker, measures the actual arrival lag at your listening spot, and aligns AirPlay 1 to match Sonos automatically. Verified against B&amp;W A5 + B&amp;W A7 (side room) + Sonos Playbar gen 1 — three passes converge to sub-perceptual sync, no buttons. Works with the AirPlay 1 speakers you've owned since 2014.</p>
+      <p>The $5 <strong>Room Tuning addon</strong> (M11) extends this to an iPhone-mic walk-around — measure multiple listening positions, generate per-zone EQ correction. Same algorithm, more positions, frequency-domain correction on top.</p>
+      <p>This is the moat. Everyone else's room tuning is locked to their ecosystem. Ours is locked to your living room — and the cross-protocol-sync version of it shipped 2026-05-18.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <h2>Honest pricing. <em>One-time payment.</em> No subscription.</h2>
+    <p class="subhead">Three SKUs. Pick the one that matches your gear. Add-ons à la carte.</p>
+
+    <div class="pricing">
+      <div class="price-card">
+        <div class="label">For your Mac</div>
+        <div class="price"><span class="currency">$</span>15</div>
+        <div class="price-note">One-time · Direct download</div>
+        <ul>
+          <li>AirPlay 1 + Sonos speakers</li>
+          <li>Unlimited sinks in a group</li>
+          <li>Auto-sync across protocols</li>
+          <li>System audio capture (any app)</li>
+          <li>Free lifetime updates</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-outline">Notify me</a>
+      </div>
+
+      <div class="price-card featured">
+        <div class="label">Mac + Apple TV bundle</div>
+        <div class="price"><span class="currency">$</span>18</div>
+        <div class="price-note">Save $2 · Mac app + tvOS companion</div>
+        <ul>
+          <li>Everything in Mac SKU</li>
+          <li>tvOS app for any Apple TV 2015+</li>
+          <li>Make your Apple TV the household hub</li>
+          <li>Stream from iPhone → Apple TV → all your speakers</li>
+          <li>Free lifetime updates</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-fill">Notify me</a>
+      </div>
+
+      <div class="price-card">
+        <div class="label">No Mac? Hub hardware</div>
+        <div class="price"><span class="currency">$</span>49</div>
+        <div class="price-note">Includes preconfigured hardware</div>
+        <ul>
+          <li>Plug-and-play hub (Raspberry Pi-based)</li>
+          <li>Connects to your router by ethernet</li>
+          <li>Setup via QR code, ~2 minutes</li>
+          <li>AirPlay from any phone → all speakers</li>
+          <li>Free OS image updates</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-outline">Notify me</a>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 56px; text-align: center;">Optional add-ons, $5 each</h3>
+    <div class="addons-grid">
+      <div class="addon"><div class="price">$5</div><div class="name">Room Tuning</div></div>
+      <div class="addon"><div class="price">$5</div><div class="name">AirPlay 2</div></div>
+      <div class="addon"><div class="price">$5</div><div class="name">Chromecast</div></div>
+      <div class="addon"><div class="price">$5</div><div class="name">Bluetooth</div></div>
+      <div class="addon"><div class="price">$5</div><div class="name">Multi-zone presets</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>The questions everyone asks.</h2>
+    <p class="subhead">If yours isn't here, ask via the waitlist signup — we'll add it.</p>
+
+    <details class="faq">
+      <summary>How is this different from Airfoil?</summary>
+      <p>Airfoil ($35) is a 20-year-old Mac app from Rogue Amoeba. It does multi-protocol Mac→speakers streaming, and it's good at what it does. SuperAudio costs less than half, ships a tvOS companion ($5) so your Apple TV becomes a household hub, includes optional cross-protocol Room Tuning ($5) that doesn't exist in any consumer product, and explicitly supports your stranded old hardware (gen-1 Sonos, B&amp;W A5/A7, AirPort Express, old Apple TVs).</p>
+    </details>
+
+    <details class="faq">
+      <summary>Does my music actually stay in sync between rooms?</summary>
+      <p>Yes — and we measured it. AirPlay 1 receivers sync sample-accurately via our shared timing anchor; Sonos has a hidden internal buffer that we measure with your Mac's microphone and compensate for automatically. Verified 2026-05-18 against B&amp;W A5, B&amp;W A7 (side room), and Sonos Playbar gen 1: a 3-pass chirp calibration through the Mac's built-in mic measured all three speakers' arrival lag at the listening position with SNR 18–33 dB, then aligned them to sub-perceptual sync (under 50 ms). No buttons. The M11 iPhone-mic Room Tuning addon extends this with a walk-around measurement for whole-room frequency correction.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What about my old Sonos? They've been dropping support for older devices.</summary>
+      <p>SuperAudio drives any Sonos that still speaks UPnP — which is every model ever shipped, including the ones Sonos has demoted off their main app. Gen-1 Playbar, Connect, Connect:Amp, Beam, Play:5 — all supported. We don't depend on Sonos's app or cloud; if your Sonos is on the network, we drive it.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Does it work without an internet connection?</summary>
+      <p>Yes. SuperAudio is 100% LAN-based. No cloud, no telemetry, no account required. Your music never leaves your house. Required: a Mac (or our Hub Stick) and a regular WiFi router. No cloud subscription, no Apple ID dance.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What about privacy?</summary>
+      <p>No telemetry. No analytics. No "phoning home." Discovery is LAN-only via Bonjour. Audio streams stay local. We sell the software once and you own it.</p>
+    </details>
+
+    <details class="faq">
+      <summary>I don't have a Mac. Can I still use it?</summary>
+      <p>Yes — the $49 SuperAudio Hub Stick is a tiny preconfigured device that plugs into your router. Setup is one QR code on your phone. Then your iPhone, iPad, or smart TV can AirPlay to the Hub, which fans out to every speaker in your house. No Mac required.</p>
+    </details>
+
+    <details class="faq">
+      <summary>When can I get it?</summary>
+      <p>The Mac app is in beta as of summer 2026. Apple TV companion follows 4–6 weeks after. Hardware Hub Stick is 3–4 months out. <a href="#waitlist">Get on the waitlist</a> and you'll hear the moment beta opens.</p>
+    </details>
+  </div>
+</section>
+
+<section id="waitlist">
+  <div class="wrap">
+    <div class="final-cta">
+      <h2>Be there when it ships.</h2>
+      <p>Drop your email. We'll send one note when the Mac app's beta opens, and one more at the full release. Then we stop. <strong>No marketing emails, no newsletter, no nonsense.</strong></p>
+      <form class="form" onsubmit="event.preventDefault(); alert('Thanks! We\'ll be in touch when the beta opens.');">
+        <input type="email" placeholder="you@yourplace.com" required>
+        <button type="submit">Notify me</button>
+      </form>
+      <div class="note">Two emails total. Ever.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-links">
+      <a href="CASE_STUDY.html">Product case study</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Competitive landscape</a>
+      <a href="PRICING.html">Pricing derivation</a>
+      <a href="POSITIONING.html">Brand &amp; positioning</a>
+      <a href="RISK_REGISTER.html">Risk register</a>
+      <a href="REACTIVE_DISCOVERY.html">Build log</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="signature">
+      Made with <em>care</em> in 2026
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

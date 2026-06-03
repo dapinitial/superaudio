@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.davidpuerto.SuperAudio</string>
+    <key>CFBundleName</key>
+    <string>SuperAudio</string>
+    <key>CFBundleDisplayName</key>
+    <string>SuperAudio</string>
+    <key>CFBundleExecutable</key>
+    <string>SuperAudio</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.0.1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.4</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSSupportsAutomaticTermination</key>
+    <true/>
+    <key>NSSupportsSuddenTermination</key>
+    <true/>
+    <key>NSAudioCaptureUsageDescription</key>
+    <string>SuperAudio captures system audio to stream it to your network speakers.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>SuperAudio uses your Mac's microphone for one-click Room Tuning — auto-measuring each speaker's playback delay so all speakers stay in sync. The microphone is only active during calibration; never recorded, never uploaded.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>SuperAudio talks to AirPlay 1 and Sonos speakers on your home network to play audio on them.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_raop._tcp</string>
+        <string>_sonos._tcp</string>
+    </array>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 David Puerto. MIT licensed.</string>
+</dict>
+</plist>

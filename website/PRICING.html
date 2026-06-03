@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SuperAudio — how every price point ($19 / $5 / $59 / $79 / $249) was derived. Sensitivity, bundling, international, and what we will never sell.">
+<title>SuperAudio — Pricing Derivation</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* Page-specific overlays */
+  .hero::before {
+    content: ""; position: absolute; top: -40%; right: -10%;
+    width: 70%; height: 180%;
+    background: radial-gradient(circle, rgba(255,106,61,0.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: ""; position: absolute; bottom: -30%; left: -10%;
+    width: 60%; height: 140%;
+    background: radial-gradient(circle, rgba(255,186,109,0.06) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  /* SKU grid for the price defense section */
+  .sku-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 28px 0; }
+  .sku {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px;
+    display: flex; flex-direction: column;
+  }
+  .sku .sku-name { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .sku .price {
+    font-size: 44px; font-weight: 800; letter-spacing: -0.025em;
+    margin: 8px 0 8px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+  .sku .role { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .sku .derive { font-size: 12.5px; color: var(--text); border-top: 1px solid var(--border); padding-top: 14px; line-height: 1.55; }
+  .sku .derive strong { color: var(--accent-2); font-weight: 600; }
+  /* Comparison axis: a "ruler" of competitor prices */
+  .ruler { position: relative; margin: 32px 0 24px; padding: 60px 0 28px; }
+  .ruler-line { position: absolute; left: 0; right: 0; top: 78px; height: 1px; background: var(--border); }
+  .ruler-tick { position: absolute; top: 70px; width: 1px; height: 16px; background: var(--text-dim); }
+  .ruler-label { position: absolute; top: 24px; transform: translateX(-50%); white-space: nowrap; text-align: center; font-size: 12px; color: var(--text-muted); }
+  .ruler-label strong { display: block; color: var(--text); font-size: 13px; }
+  .ruler-label.us strong { color: var(--accent); }
+  .ruler-pos { position: absolute; top: 100px; transform: translateX(-50%); font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  @media (max-width: 880px) { .ruler { display: none; } /* hide the visual ruler on small screens; tables below convey the same info */ }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand">SuperAudio</a>
+    <div class="nav-links">
+      <a href="index.html">Product</a>
+      <a href="CASE_STUDY.html">Case Study</a>
+      <a href="PRICING.html" class="current">Pricing</a>
+      <a href="HUB_DESIGN.html">Hub Design</a>
+      <span class="nav-sep">·</span>
+      <a href="POSITIONING.html">Brand</a>
+      <a href="COMPETITIVE_LANDSCAPE.html">Landscape</a>
+      <a href="RISK_REGISTER.html">Risks</a>
+      <a href="REACTIVE_DISCOVERY.html">Build Log</a>
+    </div>
+    <div class="tag">Pricing</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Pricing Derivation · Defensible numbers, not guesses</div>
+    <h1>Every price has a <em>reason.</em> Here are the reasons.</h1>
+    <p class="lede">
+      $19 for the Mac app. $5 for any addon. $59 for the Hub Stick. $79 for the Optical Hub. $249 for the Hub Pro. These numbers sit on top of three principles: <strong>impulse-purchase floors</strong>, <strong>below-Sonos and below-WiiM where it matters</strong>, and <strong>one-time payments, never subscription</strong>. This document defends each price against competitor anchors, BOM realities, and sensitivity ranges.
+    </p>
+    <div class="meta">
+      <span><strong>Date:</strong> 2026-05-13</span>
+      <span><strong>Author:</strong> David Puerto</span>
+      <span><strong>Status:</strong> Pre-launch derivation; revisit before M8 ship</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">$19</div>
+        <div class="label">Mac app base price — half of Airfoil, premium over AirParrot</div>
+      </div>
+      <div class="stat">
+        <div class="num">$5</div>
+        <div class="label">Every addon. Friction floor that signals "real" without barrier.</div>
+      </div>
+      <div class="stat">
+        <div class="num">$249</div>
+        <div class="label">Hub Pro HDMI ARC — 42% of Bluesound Node ($599)</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">subscription products. Ever.</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. Philosophy -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">1</span>The pricing philosophy</h2>
+    <p class="subhead">Three rules that constrain every number below.</p>
+
+    <h3>Rule 1 — One-time purchases only</h3>
+    <p>No subscriptions, not for the app, not for the addons, not for hardware. The audience we're targeting (working households with $50–150K income, a mix of legacy speakers, mild tech-savvy) is sick of <code>$X/month</code> for software that used to be a one-time purchase. Subscription is fashionable; we differentiate by not doing it. <strong>Roon charges $150/yr or $700 lifetime; Sonos's official multi-room is bundled into hardware you already overpaid for.</strong> We position against both by being the thing you buy once.</p>
+
+    <h3>Rule 2 — Impulse-purchase floor for everything user-facing</h3>
+    <p>The Mac app at $19 and every addon at $5 sit below the "have to think about it" threshold for the target audience. Research on app pricing consistently shows a sharp drop at $10 and another at $25–30. We straddle the $20 line for the base, and put addons firmly in the impulse-buy band. <strong>Total spend for a fully-loaded software setup (base + 3 addons + Apple TV companion) = $39.</strong> That's less than dinner for two.</p>
+
+    <h3>Rule 3 — Anchor below the obvious comparison, beat the less-obvious one on capability</h3>
+    <p>For each SKU, there's a "what would I buy instead" anchor. Mac app vs Airfoil ($35) — we're at $19, half the price. Hub Stick vs WiiM Pro Plus ($149) — we're at $59, 40%. Hub Pro vs Bluesound Node ($599) — we're at $249, 42%. The deliberate gap signals "the affordable choice" without signaling "the cheap choice." Quality positioning, not budget positioning.</p>
+
+    <div class="pullquote">
+      Pricing is the moat. If we charged Airfoil's $35 we'd be Airfoil-with-fewer-protocols. If we charged $9 we'd signal "low quality" and undermine the premium-but-affordable position. <strong>$19 is the only number that says "real software, accessibly priced."</strong>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Mac app at $19 -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">2</span>The Mac app at $19</h2>
+    <p class="subhead">Half of Airfoil. Premium over AirParrot. Why this number.</p>
+
+    <div class="ruler">
+      <div class="ruler-line"></div>
+      <div class="ruler-tick" style="left: 8%;"></div>
+      <div class="ruler-label" style="left: 8%;">AirParrot<strong>$16</strong></div>
+      <div class="ruler-pos" style="left: 8%;">screen-mirror focus</div>
+      <div class="ruler-tick" style="left: 22%;"></div>
+      <div class="ruler-label us" style="left: 22%;">SuperAudio<strong>$19</strong></div>
+      <div class="ruler-pos" style="left: 22%;">our position</div>
+      <div class="ruler-tick" style="left: 35%;"></div>
+      <div class="ruler-label" style="left: 35%;">TuneBlade<strong>$20</strong></div>
+      <div class="ruler-pos" style="left: 35%;">Windows / AP1 only</div>
+      <div class="ruler-tick" style="left: 65%;"></div>
+      <div class="ruler-label" style="left: 65%;">Airfoil<strong>$35</strong></div>
+      <div class="ruler-pos" style="left: 65%;">incumbent, since 2008</div>
+      <div class="ruler-tick" style="left: 92%;"></div>
+      <div class="ruler-label" style="left: 92%;">Roon<strong>$150/yr</strong></div>
+      <div class="ruler-pos" style="left: 92%;">audiophile niche</div>
+    </div>
+
+    <h3>The derivation</h3>
+    <ul>
+      <li><strong>Airfoil is the anchor.</strong> $35 since ~2008. Has every protocol, polished UI, 17 years of trust. Doing exactly what we're doing.</li>
+      <li><strong>We deliberately undercut Airfoil by ~45%.</strong> Not because we offer less — we offer more on the addon path — but because we're new and the conversion from "another Mac audio app" to "the one I should buy" needs price as a forcing function.</li>
+      <li><strong>$19 is above AirParrot's $16 and TuneBlade's $20.</strong> Both are narrower products (AirParrot is mirroring-first, TuneBlade is Windows-only). We position as "more than them but cheaper than Airfoil."</li>
+      <li><strong>$19 is psychologically "one bill" money.</strong> A user thinking "is this $19 worth it" makes the decision in seconds. The same user thinking "is this $29 worth it" pauses, comparison-shops, and walks. Conversion-rate gap between $19 and $29 is ~2× in app-pricing literature.</li>
+    </ul>
+
+    <h3>What's included in $19</h3>
+    <p>The base license gives the buyer:</p>
+    <ul>
+      <li>Mac menu bar app with system audio capture</li>
+      <li>AirPlay 1 sender (RAOP) — drives every AirPort-Express-derived speaker built since 2008</li>
+      <li>Sonos sender (UPnP) — drives every Sonos device ever made</li>
+      <li>Multi-room sync within those two protocols, sample-accurate across AirPlay 1</li>
+      <li><strong>Cross-protocol Mac-mic auto-calibration</strong> (shipped 2026-05-18) — built-in mic measures each speaker's arrival lag at your listening spot, aligns AirPlay to match Sonos automatically. Click Play All, hear sync — no manual tuning, no calibration mic, no UI</li>
+      <li>iOS companion app (free, App Store)</li>
+      <li>All future updates to the base app, perpetual</li>
+      <li>Free Apple TV companion install (no separate cost — see "addons" below)</li>
+    </ul>
+
+    <p>What's <em>not</em> included: AirPlay 2, Chromecast, Bluetooth fan-out, iPhone-mic Room Tuning (whole-room frequency correction), multi-zone groups. Each is a $5 a-la-carte addon. Most buyers will pick 0–2. <strong>Per-speaker delay calibration is in the base $19</strong> — the addon is the iPhone-mic walk-around for frequency correction across multiple listening positions.</p>
+
+    <h3>Sensitivity</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Price</th><th>Conversion vs $19 baseline</th><th>Revenue per visitor</th><th>Position</th></tr></thead>
+        <tbody>
+          <tr><td><strong>$9</strong></td><td>+30%</td><td>-38%</td><td>"Cheap" — undermines the moat. Burns the $5 addon pricing.</td></tr>
+          <tr><td><strong>$14</strong></td><td>+10%</td><td>-19%</td><td>Viable. Below Airfoil's "junior" tier vibe.</td></tr>
+          <tr class="us-row"><td><strong>$19</strong></td><td>baseline</td><td>baseline</td><td><strong>Recommended.</strong> Quality-but-accessible.</td></tr>
+          <tr><td><strong>$24</strong></td><td>-15%</td><td>+5%</td><td>Marginal. Risks "is this worth more than Airfoil-junior?"</td></tr>
+          <tr><td><strong>$29</strong></td><td>-30%</td><td>+8%</td><td>Tempting on margins; bad on conversion. Hurts viral word-of-mouth.</td></tr>
+          <tr><td><strong>$35</strong></td><td>-50%</td><td>-8%</td><td>Same price as Airfoil — no reason to switch. Don't do this.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Conversion estimates are anchored on standard app-pricing elasticity (rule-of-thumb 1.5× elasticity in the $15–35 indie-app band). Real numbers post-M8 will inform a possible adjustment in months 3–6. <strong>We do not raise prices post-launch on existing customers</strong> (Rule 1: respect the one-time-purchase social contract).</p>
+  </div>
+</section>
+
+<!-- 3. The $5 addon floor -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">3</span>Every addon is $5</h2>
+    <p class="subhead">A flat price that does three jobs at once.</p>
+
+    <h3>Why flat</h3>
+    <p>The pricing for individual addons (AirPlay 2, Chromecast, Bluetooth, Room Tuning, Multi-zone) is uniformly $5. Three reasons:</p>
+    <ol>
+      <li><strong>Friction floor.</strong> $5 is below the threshold where users compare addons. $7 vs $9 vs $4.99 invites analysis paralysis. $5 across the board removes that cognitive load.</li>
+      <li><strong>Cumulative cap.</strong> A buyer who wants every addon spends $19 + $5×5 = $44. That's still well below Airfoil's $35-and-it-doesn't-do-Room-Tuning baseline. The all-in price stays in budget territory.</li>
+      <li><strong>Sticker effect.</strong> "Just $5" reads as inconsequential. The buyer doesn't think "do I need AirPlay 2 enough to pay $9?" They think "yeah why not, it's $5."</li>
+    </ol>
+
+    <h3>What each addon does</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Addon</th><th>Buyer profile</th><th>Engineering complexity</th><th>Estimated take rate</th></tr></thead>
+        <tbody>
+          <tr><td><strong>AirPlay 2 sender</strong></td><td>Has a HomePod or newer Apple-TV-connected speaker</td><td>High — protocol reverse-engineering work</td><td>40%</td></tr>
+          <tr><td><strong>Chromecast sender</strong></td><td>Has a Chromecast Audio, Nest Hub, or Cast-compatible TV</td><td>Medium</td><td>15%</td></tr>
+          <tr><td><strong>Bluetooth fan-out</strong></td><td>Wants to also hit a Bluetooth speaker simultaneously</td><td>Medium — OS limits A2DP devices</td><td>10%</td></tr>
+          <tr><td><strong>Room Tuning (iPhone-mic walk-around)</strong></td><td>Acoustically-aware; cares about sound quality; wants frequency correction in multiple listening positions</td><td>Medium — base-app Mac-mic auto-calibrate shipped 2026-05-18 (delay measurement); addon delivers iPhone-mic walk-around + EQ correction on top</td><td>30%</td></tr>
+          <tr><td><strong>Multi-zone</strong></td><td>Larger house, wants independent audio per zone</td><td>Low — pure UI/state on top of mixer</td><td>20%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Average buyer take rate weighted: ~$5.75 in addon revenue per base purchase. At $19 base + $5.75 average addon, blended revenue per user ≈ $24.75. We use this for the unit-economics model.</p>
+
+    <h3>The Apple TV companion is also $5</h3>
+    <p>The tvOS companion is technically an addon — same pricing band, same friction philosophy. Buyer scenario: "I have an Apple TV connected to my TV and don't want to keep my Mac on for music in the kitchen." Worth $5; buyer activates it once and forgets it. Apple TV App Store handles distribution; we collect after Apple's 15% (Small Business Program) or 30% cut.</p>
+
+    <h3>The iOS companion is free</h3>
+    <p>Remote control and Room Tuning input. Charging for it would be hostile — the customer already paid for the base app. The Room Tuning <em>addon</em> is what we charge for; the iOS app that <em>uses</em> the addon is free. <strong>Per-speaker delay calibration is already in the base $19</strong> via the Mac's built-in mic (shipped 2026-05-18); the addon adds the iPhone-mic walk-around for whole-room frequency correction.</p>
+  </div>
+</section>
+
+<!-- 4. Hardware prices -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">4</span>Hardware prices</h2>
+    <p class="subhead">Three SKUs. Each priced against the obvious competitor, defended by real BOM.</p>
+
+    <div class="sku-grid">
+      <div class="sku">
+        <div class="sku-name">Hub Stick</div>
+        <div class="price">$59</div>
+        <div class="role">Pi Zero 2 W in a preconfigured case. For households with no Mac and no Apple TV. Receives audio over LAN; fans out to AP1 + Sonos + (addon) AP2 + Cast.</div>
+        <div class="derive">
+          <strong>BOM:</strong> Pi Zero 2 W $15 · case+PCB $4 · USB-C PSU $3 · packaging $2 · cert amortization $4 = $28<br>
+          <strong>Channel:</strong> direct sale, 15% Paddle fee = $8.85<br>
+          <strong>Gross margin at $59:</strong> $22.15 (37%)<br>
+          <strong>Anchor:</strong> WiiM Pro Plus at $149. We're 40% of their price for cross-ecosystem fan-out.
+        </div>
+      </div>
+
+      <div class="sku">
+        <div class="sku-name">Optical Hub</div>
+        <div class="price">$79</div>
+        <div class="role">Same body as Hub Stick, TOSLINK optical input added. For TVs without HDMI ARC (most TVs 2005–2017).</div>
+        <div class="derive">
+          <strong>BOM:</strong> Hub Stick BOM + TOSLINK receiver chip $6 + DAC $3 = $37<br>
+          <strong>Channel cost:</strong> $11.85<br>
+          <strong>Gross margin at $79:</strong> $30.15 (38%)<br>
+          <strong>Anchor:</strong> nothing exactly comparable. Audioengine B-FI at $79 is single-room; we're multi-room cross-protocol at the same price.
+        </div>
+      </div>
+
+      <div class="sku featured" style="border-color: var(--accent); background: linear-gradient(180deg, rgba(255,106,61,0.08) 0%, var(--bg-card) 100%);">
+        <div class="sku-name">Hub Pro (HDMI ARC)</div>
+        <div class="price">$249</div>
+        <div class="role">Sits between TV and soundbar via HDMI ARC. Captures all TV audio (Netflix, broadcast, every smart-TV app) and fans out to wireless speakers. The headline "every TV → every speaker" product — and the only product anywhere that gives you <strong>lossless wireless from your TV to your old AirPlay 1 speakers</strong>, end-to-end.</div>
+        <div class="derive">
+          <strong>BOM v1 (Pi + HDMI extractor combo):</strong> Pi CM4 $35 · HDMI audio extractor $25 · case+PCB $15 · power $5 · packaging $5 · cert amortization $25 = $110<br>
+          <strong>Channel cost:</strong> $37.35<br>
+          <strong>Gross margin at $249:</strong> $101.65 (41%)<br>
+          <strong>Anchor:</strong> Bluesound Node at $599. We're 42% of their price for a strict superset of capability (they're BluOS-only; we're cross-protocol AND we do lossless to AP1 which they can't).<br>
+          <strong>Sound-quality justification:</strong> HDMI ARC carries PCM 2.0 up to 192 kHz / 24-bit. Hub Pro → ALAC (lossless compression) → AP1 receiver = bit-perfect end-to-end. No other consumer product offers this path.
+        </div>
+      </div>
+    </div>
+
+    <h3>Why margins matter at these prices</h3>
+    <p>Hardware margins of 37–41% are healthy for a low-volume, direct-sale electronics product. They cover: 4–8 week certification delays, warranty replacements (industry standard ~2% return rate), and the inevitable BOM creep when an ODM swap happens. For a venture-funded competitor, these margins would be unviable. For us — bootstrapped, no investor pressure to scale beyond what the founder can support — they're plenty.</p>
+
+    <h3>Volume scenarios at first-year hardware launch (M13)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Scenario</th><th>Hub Stick units</th><th>Hub Pro units</th><th>Gross revenue (hardware only)</th><th>Gross profit</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Modest</strong> — word of mouth + a niche launch post</td><td>200</td><td>50</td><td>$24,250</td><td>$9,460</td></tr>
+          <tr><td><strong>Realistic</strong> — solid launch post + AVS Forum / r/audiophile coverage</td><td>800</td><td>250</td><td>$109,450</td><td>$42,840</td></tr>
+          <tr><td><strong>Optimistic</strong> — a Wirecutter or Verge mention</td><td>3000</td><td>1200</td><td>$475,800</td><td>$185,460</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Hardware is the upside, not the floor. The realistic scenario adds ~$43K in hardware-only gross profit on top of software revenue. The optimistic one funds a year of full-time founder work.</p>
+  </div>
+</section>
+
+<!-- 5. Bundling math -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">5</span>Bundling math</h2>
+    <p class="subhead">What "good deal" looks like — and what bundles we offer.</p>
+
+    <p>We deliberately do NOT bundle aggressively. Bundles are a tax on the customer's attention ("which one should I pick?") and a tax on our marketing copy ("which one are we featuring?"). The default is à la carte. Three bundles, no more:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Bundle</th><th>Contents</th><th>Sum of parts</th><th>Bundle price</th><th>Savings</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Mac Starter</strong></td>
+            <td>Mac app + 1 addon of choice</td>
+            <td>$24</td>
+            <td>$22</td>
+            <td>$2 (~8%)</td>
+          </tr>
+          <tr class="us-row">
+            <td><strong>Whole House</strong></td>
+            <td>Mac app + Room Tuning + AP2 + Multi-zone + Apple TV companion</td>
+            <td>$39</td>
+            <td>$35</td>
+            <td>$4 (~10%)</td>
+          </tr>
+          <tr>
+            <td><strong>Couch Potato</strong></td>
+            <td>Hub Pro + Mac app + Room Tuning</td>
+            <td>$273</td>
+            <td>$259</td>
+            <td>$14 (~5%)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The savings are modest by design. We're not Steam-sale-discounting; we're saying "if you know you want all this stuff, here's a small thank-you for committing up front." The Mac Starter bundle is the most popular projected configuration. The Couch Potato bundle is for the TV-anchored household which we believe is the largest market segment.</p>
+  </div>
+</section>
+
+<!-- 6. International -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">6</span>International pricing</h2>
+    <p class="subhead">USD-anchored. Paddle handles VAT. No regional gouging.</p>
+
+    <p>Many indie shops region-price aggressively — €19 + 19% VAT becomes €22.61, then they round up to €24, an effective 25% markup on European buyers. <strong>We don't do this.</strong> Paddle (our Merchant of Record) computes VAT on top of the USD price at checkout. A €19 base displays as "€18 + €3.42 VAT = €21.42" to a German buyer. Honest, transparent, no surprise.</p>
+
+    <h3>Currency display strategy</h3>
+    <ul>
+      <li><strong>Default display:</strong> USD with a note "VAT/GST added at checkout for your country."</li>
+      <li><strong>Geo-detected display:</strong> if the visitor is in EU/UK/AU/CA/JP, show their local currency at the current FX rate, computed from the USD anchor. Refresh weekly.</li>
+      <li><strong>Never:</strong> charge regional premium pricing. The Bluesound Node is $599 in the US, £549 in the UK, €699 in Germany — that's 17% gouging on European customers. We don't.</li>
+    </ul>
+
+    <h3>Estimated international price points at launch (FX as of mid-2026)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Market</th><th>Mac app</th><th>Each addon</th><th>Hub Stick</th><th>Hub Pro</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>🇺🇸 US</td><td>$19</td><td>$5</td><td>$59</td><td>$249</td><td>Anchor market</td></tr>
+          <tr><td>🇬🇧 UK</td><td>£15 + VAT</td><td>£4 + VAT</td><td>£47 + VAT</td><td>£199 + VAT</td><td>VAT 20% at checkout</td></tr>
+          <tr><td>🇪🇺 EU</td><td>€18 + VAT</td><td>€4.60 + VAT</td><td>€55 + VAT</td><td>€229 + VAT</td><td>VAT 19–25% at checkout</td></tr>
+          <tr><td>🇨🇦 Canada</td><td>$26 CAD</td><td>$7 CAD</td><td>$80 CAD</td><td>$339 CAD</td><td>GST/HST at checkout</td></tr>
+          <tr><td>🇦🇺 Australia</td><td>$29 AUD</td><td>$7.50 AUD</td><td>$89 AUD</td><td>$379 AUD</td><td>GST 10% at checkout</td></tr>
+          <tr><td>🇯🇵 Japan</td><td>¥2,900</td><td>¥780</td><td>¥9,000</td><td>¥38,000</td><td>Consumption tax 10% at checkout</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>These are the displayed pre-tax anchors. Paddle handles compliance, refunds, and VAT MOSS filing on our behalf for the entire EU. Their fee (~5% + $0.50 per transaction) replaces ~30 hours/yr of legal + accounting work we don't have to do.</p>
+  </div>
+</section>
+
+<!-- 7. What we will never sell -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">7</span>What we will never sell</h2>
+    <p class="subhead">Pricing decisions are also product decisions. These are the lines.</p>
+
+    <ul>
+      <li><strong>A subscription tier.</strong> Not for the app, not for cloud features (we don't have any), not for "Pro" features.</li>
+      <li><strong>A free trial that becomes a charge.</strong> Either it's a one-time purchase or a free download. No surprise billing.</li>
+      <li><strong>Ad-supported "free" tier.</strong> Privacy stance is non-negotiable.</li>
+      <li><strong>"Hardware unlocked by software fee."</strong> If you buy a Hub Stick, every protocol the hardware can drive is unlocked. The $5 addons gate <em>features</em> (Room Tuning, AP2), not hardware capabilities.</li>
+      <li><strong>Cross-grades or sidegrades.</strong> The Mac app and the Hub Stick are different products. We don't trade one for the other.</li>
+      <li><strong>"Family" or "household" licensing complexity.</strong> One purchase = one household, defined loosely. We don't run an audit team.</li>
+      <li><strong>Affiliate deals or referral commissions.</strong> Direct customer relationship; no middleman incentives.</li>
+    </ul>
+
+    <div class="pullquote">
+      Pricing is the easiest place to compromise the product. <strong>The harder we hold these lines, the more durable the brand.</strong>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Conclusion -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">8</span>Strategic takeaway</h2>
+
+    <div class="wedge">
+      <div class="label">Pricing as positioning</div>
+      <div class="title">$19 says <em>"real but accessible."</em> $5 says <em>"why not."</em> $249 says <em>"premium without paying tax."</em></div>
+      <p>Every number above is defensible against a specific competitor anchor. We're not the cheapest, and we shouldn't be. We're not the premium choice, and we shouldn't be. We sit in the gap between "free OSS that needs CLI" and "subscription audiophile lock-in," and we charge prices that say "this is for people who want it to just work, in their actual house, without becoming an expert."</p>
+      <p>The total spend for a fully-equipped household (Mac app + 3 addons + iOS companion + Apple TV companion + Hub Pro + Hub Stick + Room Tuning) is <strong>~$355</strong>. The Sonos-or-Bluesound equivalent is $1,200–2,500. <strong>That ratio is the moat.</strong></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>SuperAudio · Pricing Derivation · Drafted 2026-05-13</p>
+    <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a> (full strategy), <a href="COMPETITIVE_LANDSCAPE.html">COMPETITIVE_LANDSCAPE.html</a> (competitors + patents), and <a href="POSITIONING.html">POSITIONING.html</a> (brand voice). Sensitivity figures are estimates anchored on standard indie-app price-elasticity rules-of-thumb; revisit with real conversion data after M8 launch.</p>
+  </div>
+</footer>
+
+</body>
+</html>

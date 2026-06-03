@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "apple-airport-express",
+  "displayName": "Apple AirPort Express (gen 1)",
+  "manufacturer": "Apple",
+  "model": "AirPort Express (gen 1, A1264)",
+  "firstRelease": 2008,
+  "lastFirmware": null,
+  "match": {
+    "bonjourServiceType": "_raop._tcp",
+    "modelHints": ["AirPort", "Apple"],
+    "macOUI": ["00:1F:F3", "00:25:00", "00:26:08", "20:C9:D0", "28:E0:2C", "60:33:4B", "F8:1E:DF"]
+  },
+  "roles": {
+    "sink": {
+      "protocol": "airplay1",
+      "codec": {
+        "format": "alac",
+        "sampleRate": 44100,
+        "bitDepth": 16,
+        "channels": 2,
+        "compressed": true
+      },
+      "encryption": {
+        "et": 1,
+        "fallback": "et=0"
+      },
+      "audioLatencyMs": 88,
+      "buffer": "RTP timestamp-based, ~88ms negotiated. Spec-original receiver — B&W A5/A7 and other AirPort-Express-derived hardware match this wire behavior.",
+      "quirks": [
+        "Reference implementation of the AirPlay 1 RAOP protocol. Other AirPort-Express-derived hardware (B&W A5/A7, Marantz NA-series, Pioneer N-50, etc.) reuses the same wire format with minor firmware differences.",
+        "Some firmware revisions reject et=0 unencrypted ANNOUNCE — historically Apple has flip-flopped on this. Try et=1 (RSA-OAEP-SHA1 with the public AirPort Express RSA key) if et=0 fails.",
+        "Same sync-packet source-port constraint as all AirPort-Express-derived hardware: sync packets must come from the source port advertised in the SETUP Transport header."
+      ],
+      "volumeScale": {
+        "type": "dB",
+        "min": -30.0,
+        "max": 0.0,
+        "muted": -144.0
+      },
+      "knownFirmware": ["7.6.x", "7.7.x"]
+    },
+    "control": null
+  },
+  "verifiedBy": [],
+  "verifiedDate": null,
+  "contributedDate": "2026-05-18",
+  "notes": "SEED PROFILE — derived from public reverse-engineering references (shairport-sync, libraop, chevil/raop2_play). NOT verified on physical hardware. The B&W A5 / A7 profiles in this repo are the verified members of the AirPort-Express-derived family; this profile is included as the reference root."
+}

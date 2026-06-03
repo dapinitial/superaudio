@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "sonos-playbar-gen1",
+  "displayName": "Sonos Playbar (gen 1)",
+  "manufacturer": "Sonos",
+  "model": "Playbar (gen 1)",
+  "firstRelease": 2013,
+  "lastFirmware": null,
+  "match": {
+    "bonjourServiceType": "_sonos._tcp",
+    "modelHints": ["Sonos", "PLAYBAR", "ZP120"],
+    "macOUI": ["00:0E:58", "94:9F:3E"]
+  },
+  "roles": {
+    "sink": {
+      "protocol": "sonos",
+      "codec": {
+        "format": "aac-lc",
+        "sampleRate": 44100,
+        "channels": 2,
+        "container": "adts",
+        "compressed": true
+      },
+      "audioLatencyMs": null,
+      "buffer": "Renderer buffer 0.5–4 sec, variable session-to-session, NOT exposed via UPnP. AVTransport::GetPositionInfo reports the queue position, not the DAC position; the hidden buffer between them shifts ±600ms across sessions on the same hardware.",
+      "transport": {
+        "scheme": "x-rincon-mp3radio",
+        "metadataRequired": false,
+        "metadataNote": "Empty metadata required. Sending DIDL-Lite metadata returns UPnP error 714."
+      },
+      "quirks": [
+        "x-rincon-mp3radio:// URI scheme tells Sonos to treat the stream as continuous internet radio (no seekable track). Required for live capture; using a generic http:// URI puts the Playbar in 'fetching media metadata' mode that takes 30+ sec to resolve.",
+        "Pump-before-SOAP ordering required. Sonos's SetAVTransportURI handler opens the HTTP URL during the SOAP call and expects audio bytes within ~5 sec. Start the audio pump BEFORE issuing SetAVTransportURI or both sides time out (chicken-and-egg).",
+        "Sonos playback timing is encrypted at the wire level — there's NO public API to shift Sonos playback forward/backward. The Sonos Android app's 75–2000ms 'line-in delay' slider uses encrypted UPnP traffic that the most thorough public reverse-engineering project (svrooij/node-sonos-ts) explicitly gave up on. See node-sonos-ts#139.",
+        "GetPositionInfo.RelTime is unreliable for sync math. It reports the renderer queue position, not the DAC position. The hidden buffer between them varies ~600ms session-to-session on the same hardware. Mic-based calibration (chirp + cross-correlation) bypasses this entirely — measures actual sound at the listening position.",
+        "Inter-session variance: Sonos's effective playback lag varies session-to-session even on the same hardware. A calibration that worked perfectly in one Play All can be off by 600ms in the next. Per-session re-calibration via mic chirp is the only reliable cross-protocol sync mechanism."
+      ],
+      "volumeScale": {
+        "type": "percent",
+        "min": 0,
+        "max": 100,
+        "muted": null
+      },
+      "knownFirmware": []
+    },
+    "control": {
+      "volumeEventSource": "upnp-eventing",
+      "subscriptionEndpoint": "/MediaRenderer/RenderingControl/Event",
+      "powerEventSource": "none",
+      "irCodesLearned": false,
+      "fallbackStrategy": "Poll RenderingControl::GetVolume on demand; Sonos doesn't have a 'powered off' state via UPnP (it's always-on standby until commanded)."
+    }
+  },
+  "verifiedBy": ["David Puerto"],
+  "verifiedDate": "2026-05-15",
+  "contributedDate": "2026-05-18",
+  "notes": "Original Playbar without AirPlay 2 support. Lives behind the 'older Sonos hardware that the modern ecosystem forgot' use case — exactly the kind of device SuperAudio exists for. M4 audible-test passing device. Documented inter-session buffer variance is the reason the chirp-based mic calibration matters for cross-protocol sync."
+}
