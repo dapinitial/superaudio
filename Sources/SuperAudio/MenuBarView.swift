@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 import SwiftUI
 import AVFoundation

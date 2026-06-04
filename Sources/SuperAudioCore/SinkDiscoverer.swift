@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 /// Each protocol module ships one of these. Registered with `SinkRegistry`
 /// at app startup, gated by `LicenseManager.isEnabled(...)` for addon modules.

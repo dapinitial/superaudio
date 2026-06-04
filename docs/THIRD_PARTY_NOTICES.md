@@ -93,7 +93,7 @@ These projects were read to understand wire formats and protocol behavior. **No 
 
 Repeated from CLAUDE.md so this file stands on its own:
 
-- SuperAudio's own code is intended to be MIT-licensable. No GPL code is copied into the binary.
+- SuperAudio's own code is **proprietary — all rights reserved** (see `LICENSE.md`). The no-GPL-copying hygiene below is independent of that and still binding: no GPL code is copied into the binary, regardless of how the app itself is licensed.
 - "Reading" GPL projects to learn protocols is fine. "Copying" code is not.
 - Every dependency in the in-binary list above must have a permissive license (MIT, BSD, Apache, ISC) or be explicitly carved out as a runtime-only dependency (like BlackHole).
 - This file is updated in the same commit that adds the dependency to `Package.swift` or vendored sources.

@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 /// The stable contract every protocol module implements for an active,
 /// connected device. Returned from `SinkDiscoverer.createSink(for:)`.

@@ -400,7 +400,7 @@
       <div class="comp-card us">
         <div class="vendor">SuperAudio</div>
         <div class="name">Hub Pro (HDMI ARC)</div>
-        <div class="price">$199–249</div>
+        <div class="price">$249</div>
         <div class="desc">Sits between TV and soundbar via HDMI ARC. Captures all TV audio (Netflix, cable, broadcast, every smart-TV app) and fans out to every wireless speaker. Phase 9.</div>
         <div class="win">✓ The only "any TV → every speaker" product anywhere</div>
       </div>
@@ -491,13 +491,13 @@
         <div class="price">$59</div>
         <div class="desc">Pi Zero 2 W in a case. Receives AP1/AP2/Cast from any LAN device, fans out to all other discovered speakers. For households with no Mac and no Apple TV.</div>
         <div class="lock">None — vendor-neutral by design.</div>
-        <div class="win">3.7× cheaper than WiiM Pro Plus, ~12× cheaper than Bluesound NODE, ~8× cheaper than Sonos Port — and the only one that <em>fans out to many existing speakers</em> rather than just being one more endpoint.</div>
+        <div class="win">~2.5× cheaper than WiiM Pro Plus, ~10× cheaper than Bluesound NODE, ~8× cheaper than Sonos Port — and the only one that <em>fans out to many existing speakers</em> rather than just being one more endpoint.</div>
       </div>
 
       <div class="comp-card">
         <div class="vendor">WiiM (Linkplay)</div>
         <div class="name">WiiM Pro Plus</div>
-        <div class="price">$219</div>
+        <div class="price">$149</div>
         <div class="desc">Receives AP2 + Bluetooth + Spotify Connect + DLNA. Outputs analog (RCA) + digital (optical/coax) + USB. Most-praised entry in this category; commonly compared head-to-head with Sonos in reviews.</div>
         <div class="lock">⚠ Single-source-to-single-output. Bridges one stream to one connected speaker — not multi-room fan-out from a Mac source.</div>
         <div class="win">SuperAudio captures from <em>any</em> Mac source app (Spotify, Music, system audio incl. Slack/YouTube) and fans to N existing speakers. WiiM is one box per zone.</div>
@@ -506,10 +506,10 @@
       <div class="comp-card">
         <div class="vendor">Bluesound (Lenbrook)</div>
         <div class="name">NODE</div>
-        <div class="price">$749</div>
+        <div class="price">$599</div>
         <div class="desc">BluOS streamer + DAC. Hi-res audio, multi-room within BluOS, AirPlay 2, MQA support. Premium audiophile positioning.</div>
         <div class="lock">⚠ BluOS-walled multi-room. AP2 inbound only. Not bridging Mac source → mixed-vendor outputs.</div>
-        <div class="win">Different segment. We're $19 software + $59 hardware (~$78 total) vs $749. Audiophile niche is real but small; we play the mainstream.</div>
+        <div class="win">Different segment. We're $19 software + $59 hardware (~$78 total) vs $599. Audiophile niche is real but small; we play the mainstream.</div>
       </div>
 
       <div class="comp-card">
@@ -533,7 +533,7 @@
     </div>
 
     <div class="pullquote" style="margin-top: 32px;">
-      The universal-bridge category averages <strong>$489</strong> across these four hardware products. Our Hub Stick at $59 is the cheapest entry by 3.7×, AND it's the only one that <strong>fans out from one source to multiple existing speakers</strong>. Every commercial box above is "one source → one output" by design.
+      The universal-bridge category averages <strong>$416</strong> across these three commercial hardware products. Our Hub Stick at $59 is the cheapest entry — ~2.5× below the next-cheapest (WiiM Pro Plus at $149) — AND it's the only one that <strong>fans out from one source to multiple existing speakers</strong>. Every commercial box above is "one source → one output" by design.
     </div>
   </div>
 </section>
@@ -680,7 +680,7 @@
     </div>
 
     <div class="pullquote" style="margin-top: 24px;">
-      The honest competitive truth from a 2026 GitHub sweep: <strong>compositional stacks, not single systems.</strong> Every well-maintained project handles one slice — Snapcast does sync (in its own ecosystem), shairport-sync is a receiver, AirConnect is a one-direction bridge, OwnTone is a media server. SuperAudio sits one layer above them: composes the slices into a unified product, then adds the pieces that don't exist anywhere yet (cross-protocol sample-accurate sync via per-chunk wall-time NTP, per-sink mid-stream controls, cross-protocol Room Tuning, AI-assisted Claude Skill device onboarding). See <a href="POSITIONING.html" style="color: var(--cyan);">POSITIONING.html § Technical framing</a> for the investor/partner-grade pitch this implies.
+      The honest competitive truth from a 2026 GitHub sweep: <strong>compositional stacks, not single systems.</strong> Every well-maintained project handles one slice — Snapcast does sync (in its own ecosystem), shairport-sync is a receiver, AirConnect is a one-direction bridge, OwnTone is a media server. SuperAudio sits one layer above them: composes the slices into a unified product, then adds the pieces that don't exist anywhere yet (cross-protocol sample-accurate sync via per-chunk wall-time NTP, per-sink mid-stream controls, cross-protocol Room Tuning, and a planned guided device-onboarding Claude Skill, M6.5). See <a href="POSITIONING.html" style="color: var(--cyan);">POSITIONING.html § Technical framing</a> for the investor/partner-grade pitch this implies.
     </div>
   </div>
 </section>
@@ -908,7 +908,7 @@
               <td class="no">$150/yr or $700</td>
               <td class="partial">w/ hardware</td>
               <td class="yes">free</td>
-              <td class="yes"><strong>$15–249</strong></td>
+              <td class="yes"><strong>$19–249</strong></td>
             </tr>
             <tr class="us-row">
               <td><strong>Hardware Hub product</strong></td>
@@ -960,9 +960,9 @@
             <td>Trueplay tunes only Sonos. Apple's HomePod calibration tunes only HomePods. Dirac tunes whatever you feed it but lives at $400+ and doesn't fan out. Same business reason as cross-protocol fan-out above: a calibration that improves a B&amp;W Zeppelin makes Sonos's wall less valuable. We can do this because we own the audio pipeline pre-encoder for every protocol we support — the EQ/delay slot lives in our mixer (see DECISIONS.md 2026-05-15 M11 architecture entry + 2026-05-18 chirp shipping entry). Verified working 2026-05-18 against B&amp;W A5, A7, Sonos Playbar gen 1 with SNR 18–33 dB and sub-perceptual sync.</td>
           </tr>
           <tr>
-            <td><strong>Crowdsourced device support via Claude Skill onboarding</strong><br><span style="color: var(--text-dim); font-size: 13px;">Community-contributed JSON device profiles + an AI skill that probes unknown speakers, drafts the profile, and opens a PR</span></td>
-            <td><span class="v good">Structural</span></td>
-            <td>Sonos, Apple, Google sell the "we control the ecosystem" promise. Accepting community profiles for competitor devices contradicts that promise — they can't crowdsource without admitting they don't control the universe of devices their users care about. Our architecture is protocol-agnostic from day one, so our supported-hardware list is <strong>not gated by our headcount.</strong> The "database" is a public MIT-licensed GitHub repo (Homebrew-style); the Claude Skill runs locally on the user's machine and opens a PR via <code>gh</code> only when the user explicitly submits — preserving the LAN-only / no-telemetry stance. See DECISIONS.md 2026-05-15, Device Profile System + Claude Skill entry.</td>
+            <td><strong>Crowdsourced device support via guided onboarding</strong> <span style="color: var(--text-dim); font-size: 13px;">(planned, M6.5)</span><br><span style="color: var(--text-dim); font-size: 13px;">Community-contributed JSON device profiles + a planned Claude Skill that helps a user probe an unknown speaker, drafts the profile, and opens a PR</span></td>
+            <td><span class="v warn">Structural · planned</span></td>
+            <td>Sonos, Apple, Google sell the "we control the ecosystem" promise. Accepting community profiles for competitor devices contradicts that promise — they can't crowdsource without admitting they don't control the universe of devices their users care about. Our architecture is protocol-agnostic from day one, so our supported-hardware list is <strong>not gated by our headcount.</strong> The "database" is a public MIT-licensed GitHub repo (Homebrew-style); the planned (M6.5) Claude Skill runs locally on the user's machine and opens a PR via <code>gh</code> only when the user explicitly submits — preserving the LAN-only / no-telemetry stance. <em>Not yet shipped</em>; the structural argument holds once it lands. See DECISIONS.md 2026-05-15, Device Profile System + Claude Skill entry.</td>
           </tr>
           <tr>
             <td><strong>Lossless AP1 renaissance</strong><br><span style="color: var(--text-dim); font-size: 13px;">ALAC 44.1/16 to AirPort-Express-era hardware, while AirPlay 2 forces AAC 256</span></td>
@@ -1002,7 +1002,7 @@
     </div>
 
     <div class="pullquote">
-      The real moat is three capabilities — <strong>cross-protocol fan-out</strong>, <strong>cross-protocol Room Tuning</strong>, and <strong>community-crowdsourced device support via Claude Skill onboarding</strong> — that incumbents cannot ship without firing their own lock-in business model. Everything else on our differentiation list is a head start, not a wall.
+      The real moat is three capabilities — <strong>cross-protocol fan-out</strong>, <strong>cross-protocol Room Tuning</strong>, and <strong>community-crowdsourced device support via the planned (M6.5) guided onboarding Skill</strong> — that incumbents cannot ship without firing their own lock-in business model. The first two have shipped; the third is planned. Everything else on our differentiation list is a head start, not a wall.
     </div>
 
     <h3 style="margin-top: 40px;">Half-life — what changes the picture</h3>
@@ -1053,10 +1053,10 @@
       <div>
         <div class="title">Apple AirPlay 2 protocol</div>
         <div class="body">
-          <p>AirPlay 2 sending requires Apple's MFi (Made for iPhone/iPad) licensing program. Implementing an AirPlay 2 <em>sender</em> outside MFi has not been done publicly at scale; Apple has not enforced against reverse-engineered implementations (pyatv, etc.), but enforcement is theoretically possible.</p>
+          <p>AirPlay 2 sending requires Apple's MFi (Made for iPhone/iPad) licensing program. Implementing an AirPlay 2 <em>sender</em> outside MFi has not been done publicly at scale; Apple has not enforced against open-source implementations (pyatv, etc.) for many years, but enforcement is theoretically possible.</p>
         </div>
         <div class="defense">
-          <strong>Our defense:</strong> <strong>permanently out of scope.</strong> SuperAudio does not implement an AirPlay 2 sender. AirPlay 2 receiving (which Apple TVs and HomePods do natively) is handled by their hardware, not our code. Our $5 "AirPlay 2" addon would only enable scenarios where the speaker is already an AP2-licensed receiver and our code uses standard public discovery.
+          <strong>Our defense:</strong> the planned AirPlay 2 sender (M12) is built on the MIT-licensed <code>pair_ap</code> pairing library and standard, publicly-documented protocols — the same posture as our AirPlay 1, Sonos, and Cast paths. AirPlay 2 <em>receiving</em> (which Apple TVs and HomePods do natively) stays on their hardware; our $5 AirPlay 2 addon sends to speakers that are already AP2-licensed receivers, using standard public discovery. We pair and stream over published protocols; we don't ship Apple's proprietary code.
         </div>
       </div>
     </div>

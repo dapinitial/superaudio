@@ -131,7 +131,7 @@
       Positioning is what differentiates us in one sentence; brand voice is the tone that keeps every marketing surface (landing page, App Store description, press copy, support replies) coherent. This document captures both — the five message pillars that should appear everywhere, the antithesis test that prevents drift, and the visual identity. <strong>If a piece of copy fails the tests on this page, rewrite it.</strong>
     </p>
     <div class="meta">
-      <span><strong>Date:</strong> 2026-05-13 · revised 2026-05-16 (Technical framing section added) · same-night sharpening: "AI-driven device adaptation, not hardware-per-vendor" pullquote captures the M6.5 Claude Skill's universal-adapter role across heterogeneous households</span>
+      <span><strong>Date:</strong> 2026-05-13 · revised 2026-05-16 (Technical framing section added) · same-night sharpening: "software adapts to your gear, not hardware-per-vendor" pullquote captures the planned (M6.5) device-onboarding Skill's universal-adapter role across heterogeneous households</span>
       <span><strong>Author:</strong> David Puerto</span>
       <span><strong>Status:</strong> Pre-launch · binding for all marketing surfaces</span>
     </div>
@@ -201,14 +201,14 @@
     <div class="pillar-grid">
       <div class="pillar" style="border-color: var(--accent); background: linear-gradient(180deg, rgba(255,106,61,0.06) 0%, var(--bg-card) 100%);">
         <div class="num">1</div>
-        <div class="headline">Lossless to AirPlay 1, by default</div>
-        <div class="body">AirPlay 1 carries lossless ALAC at 44.1/16, bit-perfect over the wire. AirPlay 2 transcodes to AAC ~256 kbps. Your old AirPort-Express-era speakers are the only wireless path Apple ever shipped that's actually lossless — and we're the way to send Apple Music Lossless, Spotify, or any audio source to them. <strong>Your 2014 B&amp;W A5 plays Apple Music Lossless. Your $300 HomePod doesn't.</strong></div>
+        <div class="headline">Cross-ecosystem multi-room, in sync</div>
+        <div class="body">Your AirPlay 1, your Sonos, your HomePod — playing the same song at the same time, automatically synced to your room. <strong>Nobody else does this.</strong> Sonos won't drive your B&amp;W. Apple won't drive your Sonos. We do both.</div>
       </div>
 
       <div class="pillar">
         <div class="num">2</div>
-        <div class="headline">Cross-ecosystem multi-room</div>
-        <div class="body">Your AirPlay 1, your Sonos, your HomePod — playing the same song at the same time. <strong>Nobody else does this.</strong> Sonos won't drive your B&amp;W. Apple won't drive your Sonos. We do both.</div>
+        <div class="headline">Sends the original stream to AirPlay 1</div>
+        <div class="body">AirPlay 1 carries lossless ALAC at 44.1/16. AirPlay 2 transcodes to AAC ~256 kbps. Your old AirPort-Express-era speakers are the only wireless path Apple ever shipped that's actually lossless — and we send the original ALAC stream from Apple Music Lossless, Spotify, or any audio source to them. <strong>Your 2014 B&amp;W A5 plays Apple Music Lossless. Your $300 HomePod doesn't.</strong></div>
       </div>
 
       <div class="pillar">
@@ -254,12 +254,12 @@
     <h3>Three-line elaboration</h3>
     <ul style="font-size: 16px; line-height: 1.7; color: var(--text-muted); max-width: 820px;">
       <li><strong>The market has fragments.</strong> Snapcast does multi-room sync but in its own ecosystem (Snapclient on every endpoint). Shairport-sync is an AirPlay receiver. AirConnect is a one-direction protocol bridge. OwnTone is a Linux media server. Each handles one slice — none combine. (See <a href="COMPETITIVE_LANDSCAPE.html#open-source" style="color: var(--cyan);">COMPETITIVE_LANDSCAPE.html § 3 open-source matrix</a> for the full landscape.)</li>
-      <li><strong>SuperAudio is the layer above.</strong> Composes those fragments into a unified product, then adds the pieces that don't exist anywhere yet: cross-protocol sample-accurate sync via per-chunk wall-time NTP anchor, per-sink mid-stream controls, <strong>cross-protocol Mac-mic auto-calibration (shipped 2026-05-18)</strong> + iPhone-mic Room Tuning (M11 extension), and — load-bearing — <strong>AI-driven device adaptation</strong> via the M6.5 Claude Skill that onboards any audio device (speaker, soundbar, AVR, smart-TV-as-source) in 10 minutes of guided setup, contributing the profile back to the public MIT repo for every other user.</li>
+      <li><strong>SuperAudio is the layer above.</strong> Composes those fragments into a unified product, then adds the pieces that don't exist anywhere yet: cross-protocol sample-accurate sync via per-chunk wall-time NTP anchor, per-sink mid-stream controls, <strong>cross-protocol Mac-mic auto-calibration (shipped 2026-05-18)</strong> + iPhone-mic Room Tuning (M11 extension), and — planned (M6.5) — a <strong>guided device-onboarding Claude Skill</strong> that walks a user through onboarding any audio device (speaker, soundbar, AVR, smart-TV-as-source) in about 10 minutes, contributing the profile back to the public MIT <code>superaudio-device-profiles</code> repo for every other user.</li>
       <li><strong>The technical value is not the user-facing app</strong> — that's the consumer surface. The technical value is the synchronization model + device abstraction layer + latency correction system + interoperability framework underneath. Those are the parts that could one day license to OEMs, integrate into Home Assistant, ship as an SDK, or anchor a platform business if M8 launch validates the core hypothesis. (Deferred decision; see <code>docs/DECISIONS.md</code> 2026-05-16 "Platform boundary" entry.)</li>
     </ul>
 
     <div class="pullquote" style="border-left-color: var(--cyan); margin: 28px 0;">
-      <strong>AI-driven device adaptation, not hardware-per-vendor.</strong> Every walled-garden incumbent (Sonos, Apple, Google) solves heterogeneity by trying to <em>be</em> the whole household — buy our hardware end-to-end and we'll make it work together. SuperAudio inverts that: the AI Skill <em>adapts to whatever audio gear you already own</em> — Sony soundbar with B&amp;W AP1 speakers and a Bluetooth Bose in the guest room — by onboarding each device's specific quirks and writing a per-device profile. The Skill is the universal adapter; the hardware SKUs ($29–$279) exist only for the capture / orchestration layer where software alone isn't enough.
+      <strong>Software adapts to your gear, not hardware-per-vendor.</strong> Every walled-garden incumbent (Sonos, Apple, Google) solves heterogeneity by trying to <em>be</em> the whole household — buy our hardware end-to-end and we'll make it work together. SuperAudio inverts that: the software <em>adapts to whatever audio gear you already own</em> — Sony soundbar with B&amp;W AP1 speakers and a Bluetooth Bose in the guest room — by onboarding each device's specific quirks and writing a per-device profile. The planned (M6.5) guided device-onboarding Skill is the universal adapter; the hardware SKUs ($19–$249, per <a href="PRICING.html" style="color: var(--cyan);">PRICING.html</a>) exist only for the capture / orchestration layer where software alone isn't enough.
     </div>
 
     <h3 style="margin-top: 32px;">When to use this language</h3>
@@ -346,7 +346,7 @@
         <div class="arrow">→</div>
         <div class="us">
           <strong>WE'RE THIS</strong>
-          Keep your old AirPlay 1 speakers — the only wireless path Apple ever shipped that's actually lossless — and we'll send Apple Music Lossless to them bit-perfect.
+          Keep your old AirPlay 1 speakers — the only wireless path Apple ever shipped that's actually lossless — and we'll send Apple Music Lossless to them as the original ALAC stream.
         </div>
       </div>
 
@@ -518,7 +518,7 @@
 
 <footer>
   <div class="wrap">
-    <p>SuperAudio · Positioning &amp; Brand · Drafted 2026-05-13 · Technical framing section added 2026-05-16 · "AI-driven device adaptation, not hardware-per-vendor" pullquote 2026-05-16 (same night)</p>
+    <p>SuperAudio · Positioning &amp; Brand · Drafted 2026-05-13 · Technical framing section added 2026-05-16 · "software adapts to your gear, not hardware-per-vendor" pullquote 2026-05-16 (same night)</p>
     <p>Companion to <a href="CASE_STUDY.html">CASE_STUDY.html</a> (strategy), <a href="COMPETITIVE_LANDSCAPE.html">COMPETITIVE_LANDSCAPE.html</a> (competitors + patents), <a href="PRICING.html">PRICING.html</a> (numbers), and <a href="RISK_REGISTER.html">RISK_REGISTER.html</a> (what could go wrong). This document is binding for all public marketing surfaces.</p>
   </div>
 </footer>

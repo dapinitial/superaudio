@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 //
 // LosslessVerify — bit-exact ALAC round-trip test that gates the public
 // "lossless to AirPlay 1" marketing claim (per RISK_REGISTER risk T8 and

@@ -209,7 +209,7 @@
       <table>
         <thead><tr><th>Addon</th><th>Buyer profile</th><th>Engineering complexity</th><th>Estimated take rate</th></tr></thead>
         <tbody>
-          <tr><td><strong>AirPlay 2 sender</strong></td><td>Has a HomePod or newer Apple-TV-connected speaker</td><td>High — protocol reverse-engineering work</td><td>40%</td></tr>
+          <tr><td><strong>AirPlay 2 sender</strong> <span style="color: var(--text-dim); font-weight: 400;">(planned, M12)</span></td><td>Has a HomePod or newer Apple-TV-connected speaker</td><td>High — pairing + timing work, built on the MIT <code>pair_ap</code> library and standard protocols</td><td>40%</td></tr>
           <tr><td><strong>Chromecast sender</strong></td><td>Has a Chromecast Audio, Nest Hub, or Cast-compatible TV</td><td>Medium</td><td>15%</td></tr>
           <tr><td><strong>Bluetooth fan-out</strong></td><td>Wants to also hit a Bluetooth speaker simultaneously</td><td>Medium — OS limits A2DP devices</td><td>10%</td></tr>
           <tr><td><strong>Room Tuning (iPhone-mic walk-around)</strong></td><td>Acoustically-aware; cares about sound quality; wants frequency correction in multiple listening positions</td><td>Medium — base-app Mac-mic auto-calibrate shipped 2026-05-18 (delay measurement); addon delivers iPhone-mic walk-around + EQ correction on top</td><td>30%</td></tr>
@@ -261,13 +261,13 @@
       <div class="sku featured" style="border-color: var(--accent); background: linear-gradient(180deg, rgba(255,106,61,0.08) 0%, var(--bg-card) 100%);">
         <div class="sku-name">Hub Pro (HDMI ARC)</div>
         <div class="price">$249</div>
-        <div class="role">Sits between TV and soundbar via HDMI ARC. Captures all TV audio (Netflix, broadcast, every smart-TV app) and fans out to wireless speakers. The headline "every TV → every speaker" product — and the only product anywhere that gives you <strong>lossless wireless from your TV to your old AirPlay 1 speakers</strong>, end-to-end.</div>
+        <div class="role">Sits between TV and soundbar via HDMI ARC. Captures all TV audio (Netflix, broadcast, every smart-TV app) and fans out to wireless speakers. The headline "every TV → every speaker" product — and the only product anywhere that <strong>sends your TV's audio to your old AirPlay 1 speakers as the original ALAC stream</strong> (lossless over AirPlay 1).</div>
         <div class="derive">
           <strong>BOM v1 (Pi + HDMI extractor combo):</strong> Pi CM4 $35 · HDMI audio extractor $25 · case+PCB $15 · power $5 · packaging $5 · cert amortization $25 = $110<br>
           <strong>Channel cost:</strong> $37.35<br>
           <strong>Gross margin at $249:</strong> $101.65 (41%)<br>
-          <strong>Anchor:</strong> Bluesound Node at $599. We're 42% of their price for a strict superset of capability (they're BluOS-only; we're cross-protocol AND we do lossless to AP1 which they can't).<br>
-          <strong>Sound-quality justification:</strong> HDMI ARC carries PCM 2.0 up to 192 kHz / 24-bit. Hub Pro → ALAC (lossless compression) → AP1 receiver = bit-perfect end-to-end. No other consumer product offers this path.
+          <strong>Anchor:</strong> Bluesound Node at $599. We're 42% of their price for a strict superset of capability (they're BluOS-only; we're cross-protocol AND we send the original ALAC stream to AP1, which they can't).<br>
+          <strong>Sound-quality justification:</strong> HDMI ARC carries PCM 2.0 up to 192 kHz / 24-bit. Hub Pro encodes to ALAC (lossless compression) and sends it to the AP1 receiver over AirPlay 1. No other consumer product offers this path.
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 public extension SinkDescriptor {
     /// Heuristic: is this device a dedicated audio receiver (vs. a general-purpose

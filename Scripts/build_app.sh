@@ -1,5 +1,5 @@
 #!/bin/bash
-# SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+# SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 #
 # Wraps the SPM-built SuperAudioApp executable in a proper macOS .app bundle
 # so the menu bar item renders correctly and process-tap entitlements apply.

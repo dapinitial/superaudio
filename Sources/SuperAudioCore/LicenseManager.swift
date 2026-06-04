@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 /// Per-protocol / per-feature addons. Anticipates the commercial track's
 /// pricing model: base app ships AirPlay 1 + Sonos; everything else is a

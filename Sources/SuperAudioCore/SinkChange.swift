@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 /// Discovery emits a stream of these. Consumers (menu bar UI, etc.) reduce
 /// the stream into the current set of known sinks.

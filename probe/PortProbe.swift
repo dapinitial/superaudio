@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 //
 // PortProbe — fan out UDP probes to a list of ports on a target host and
 // classify each one as open / closed / filtered based on ICMP feedback.

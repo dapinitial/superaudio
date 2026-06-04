@@ -4,8 +4,8 @@
 
 This file is the single source of truth for "where are we, what's next." [../CLAUDE.md](../CLAUDE.md) is the architectural brief (load-bearing principles, module layout, working norms). [DECISIONS.md](DECISIONS.md) is the append-only record of "why we chose X over Y."
 
-Latest milestone reached: **M6 multi-sink sync + reliability arc — DONE 2026-05-17.** Single-day push that flipped the entire sync story: sender-side broadcaster delay, handshake barrier (cross-AP1 first-audio within 1 ms), Sonos start-align defer, supervisor retry cap, session-race nonce guard, volume debounce, TEARDOWN timeout, Mac-mute fix, audio-gap telemetry, Sonos Δ slider rip, idempotent Play All, Restart All. Empirically dialed in A5 + A7 + Sonos to ~100 ms sync at user-tuned 3085 ms slider. See commit `8a8849c`.
-Currently working on: **M6.3 Sync UX** — real-time slider drag, Mac-mic auto-calibration (M11 Path A precursor), rotary knob UI, Re-sync now button, in-app diagnostics panel. After M6.3: M5.5 Device Profile System substrate → M6.5 Claude Skill alpha → M7 launch prep → M8.
+Latest result: **Cross-protocol sync PROVEN on real hardware — 2026-06-03.** Mic Calibrate (auto) brought a B&W A5 (AirPlay 1) into audible sync with a Sonos Playbar **and** a Sonos One SL — first confirmed cross-ecosystem harmonization on real speakers. Direction is AirPlay → Sonos (you can only ever *add* delay, so the slowest sink is the reference). `PassiveSyncMonitor` (passive content-based continuous sync — chirp-anchor once, then track from live music) is built and passively measuring. See DECISIONS.md 2026-06-03 entries.
+Currently working on: **M12 AirPlay 2 sender (committed V1 hero)** + the **passive-sync / GCC-PHAT thread** (make the continuous loop hold reliably). AP2 hardware (Sonos One SL, Apple TV 4K) is on the LAN; the AP2 sender is not built yet. GCC-PHAT is the #1 next lever for passive sync; interim is periodic chirp re-anchor; silent endgame is a per-speaker ultrasonic pilot. After this: M5.5 Device Profile System substrate → M6.5 Claude Skill alpha → M7 launch prep → M8.
 
 **Strategic resequence — 2026-05-15.** The roadmap is reshaped to make the **Device Profile System** and the **Claude Skill onboarding wrapper** committed milestones rather than open threads. The substrate (M5.5) lands before public beta; the Skill is the **M8 launch hook**, not an M14 polish feature. Partnership outreach (B&W, Naim, KEF) and Anthropic Skills outreach run as parallel tracks alongside M7. See `docs/DECISIONS.md` 2026-05-15 entries for the framing and the four strategy threads (now committed).
 
@@ -29,9 +29,10 @@ The wedge: cross-ecosystem fan-out at consumer prices, with cross-protocol room 
 
 ---
 
-## Progress snapshot — 2026-05-18
+## Progress snapshot — 2026-06-03
 
 ### Done
+- **Cross-protocol sync PROVEN on real hardware** (2026-06-03) — Mic Calibrate (auto) brought a B&W A5 (AirPlay 1) into audible sync with a Sonos Playbar **and** a Sonos One SL. First confirmed cross-ecosystem harmonization on real speakers. Direction is AirPlay → Sonos (slowest sink is the reference; you can only ADD delay). `PassiveSyncMonitor` (passive content-based continuous sync) built + passively measuring; GCC-PHAT is the #1 next lever. See M6.8 + DECISIONS.md 2026-06-03.
 - **M1 Foundation** — Day 0 capture probe (process tap, 48 kHz f32, 234 callbacks/5s on macOS 26.4.1); 5-module SPM workspace; menu bar app via `MenuBarExtra`; OSLog subsystems wired; `AudioSink` / `SinkRegistry` / `LicenseManager` contracts; reusable `SystemAudioCapture`; cross-protocol Bonjour discovery (RAOP + Sonos) live.
 - **M2 RAOP control plane** — full handshake against A5 and A7 (OPTIONS → ANNOUNCE et=1 → SETUP → NTP timing reply → RECORD → SET_PARAMETER volume → TEARDOWN). `AppleAirPortRSA` session-key wrapper. **NTP timing channel via BSD sockets** was the gate that unblocked RECORD.
 - **M3 RAOP audio pipeline + Lossless Mode** — compressed ALAC via `AVAudioConverter`, source-port-matched sync packets, audio out of A5/A7 (2026-05-14). Lossless Mode toggle + bit-exact verification (SHA-256 round-trip identical). SIGTERM/SIGINT handlers + Sonos `Stop` on app quit. **Open**: 30-min soak test, et=1 + compressed ALAC verification.
@@ -55,7 +56,7 @@ The wedge: cross-ecosystem fan-out at consumer prices, with cross-protocol room 
 - **M6.6b (single-shot safety nets) + M6.7 (closed-loop continuous tracking)** — **DEFERRED TO V1.1**. M6.6b only relevant if going back to single-shot model (we won't). M6.7 serves the pure-legacy cohort in v1.1. Hardware-validation gate already PASSED on 2026-05-30.
 
 **Hardware to acquire for v1 work**: one AP2-capable Sonos (Beam gen 2 ~$499 or Era 100 ~$250) for the test bench — required to validate the SonosNet auto-grouping feature against the existing Playbar gen 1.
-- **M6.3 remaining** — rotary knob UI (#100), in-app diagnostics panel (#102). #101 Re-sync now mostly superseded by working `Mic Calibrate (auto)`.
+- **M6.3 remaining** — in-app diagnostics panel (#102). Rotary knob UI (#100) **REMOVED/cancelled** — the linear slider (now 25 ms steps) plus auto-calibration covers tuning; the bespoke knob isn't worth the build. #101 Re-sync now mostly superseded by working `Mic Calibrate (auto)`.
 - **M3 hardening (2/N)** — 30-min soak test (trivially passive now that M6 reliability holds) + et=1 + compressed ALAC verification. Can run alongside M6.4.
 - **M6 polish remaining** — per-source app picker (#58), preferences window, real menu bar icon. Independent of sync.
 - **M5.5 Device Profile System substrate** — after M6.4. JSON schema + public MIT repo for community-crowdsourced device support.
@@ -253,7 +254,7 @@ M6 nailed the *architecture* of multi-sink sync. M6.3 nails the *UX of tuning it
   - Verified converging in real-room test: pass 1 = 1000ms residual, pass 2 = 200ms, pass 3 = ~12ms (within mic correlation noise).
   - Three gotchas documented in code: (a) `offset(for:)` not `sinkOffsetsMs[id]` for current offset, (b) 500ms AVAudioEngine warmup throwaway prevents 3-sec first-measurement quirk, (c) chirps required — ambient music too periodic for clean correlation.
   - See commit `4fe40fd`.
-- [ ] **Rotary knob UI** (#100) — replace the linear 0→6000 ms slider with a rotary knob: full revolution ≈ 500 ms; ⌥-modifier rotate = fine mode (~10 ms per click); double-click = reset to auto-aligned default. Pairs with a live "drift meter" once auto-calibration ships (mic-measured needle vs current setting). ~1 evening.
+- [~] **Rotary knob UI** (#100) — **REMOVED/cancelled 2026-06-03.** Was: replace the linear slider with a rotary knob (full revolution ≈ 500 ms; ⌥-rotate fine mode; double-click reset). Dropped — the linear AirPlay delay slider, now stepping in **25 ms increments** (was 5 ms over 0–6000 ms), plus auto-calibration covers tuning without a bespoke knob. The "drift meter" idea is folded into the passive-sync work and the in-app diagnostics panel (#102). See DECISIONS.md 2026-06-03.
 - [ ] **"Re-sync now" button** (#101) — manual one-click stop-gap that runs auto-calibration without a full session restart. Lives in the menu. Used when something drifts mid-session. ~1 evening. **Partially superseded by the working `Mic Calibrate (auto)` button (#109) — keep #101 as a polish iteration if the auto path proves too heavy for routine use.**
 - [ ] **In-app diagnostics panel** (#102) — promote the most diagnostic OSLog lines (handshake duration, barrier wait, first-audio delta per sink, capture gap count, supervisor retry count) into an in-app "Diagnostics" tab. Plus a "Copy diagnostic bundle to clipboard" button so support requests stop requiring `log show` over the shoulder. Replaces terminal-grep dependence. ~1.5 evenings.
 
@@ -369,6 +370,28 @@ Pro audio measurement rigs solve the cross-protocol sync problem the same way: c
 For each: play music for 30 minutes, audible sync holds the entire time without user intervention, no detectable drift between protocols at any moment.
 
 The legacy-only configuration is the moat-validation case — if M6.7 can sync Playbar gen 1 with AP1, no competitor can match it (their only options are buying new hardware or giving up). The Beam gen 2 should be added to the test bed alongside the Playbar (not as a replacement) so we have known-good AP2 path *and* known-hard legacy-Sonos path running in parallel during development.
+
+---
+
+### M6.8 — `PassiveSyncMonitor`: passive content-based continuous sync **← new 2026-06-03; cross-protocol PROVEN on hardware**
+
+The bridge between M6.4's one-shot chirp calibration and M6.7's inaudible-pilot endgame. SuperAudio already knows the exact waveform sent to each speaker (the broadcaster reference tap), so cross-correlating the Mac mic against that reference recovers each speaker's true playback lag **from ordinary music — no repeated test tone.** Chirp-anchor once for a coarse fix, then track continuously from live content and nudge the controllable sink's delay to hold sync as receivers drift.
+
+**Governing principle:** *you can only ever ADD delay.* You cannot un-buffer a receiver, and Sonos timing can't be pulled forward (gotcha #17). So **the slowest sink is the reference**, and every faster *controllable* sink (AirPlay) is delayed up to match it. Direction is **AirPlay → Sonos**: legacy Sonos is the immovable anchor; the AirPlay sink slides onto it.
+
+**Cross-protocol sync PROVEN on real hardware (2026-06-03).** Mic Calibrate (auto) brought a B&W A5 (AirPlay 1) into audible sync with a Sonos Playbar **and** a Sonos One SL (two Sonos zones) — from ~1.3 s out to a barely-perceptible residual. First confirmed cross-ecosystem harmonization on real speakers. The two Sonos stay locked to each other via SonosNet; the A5 is the controllable sink. The residual is Sonos drift over minutes — which is exactly the argument for *continuous* correction. See DECISIONS.md 2026-06-03 (both entries).
+
+- [x] **`PassiveSyncMonitor`** primitive built + passively measuring on hardware. New `AudioCorrelation` helpers: `topCorrelatedLags` (top-N peaks + non-max suppression), `strongestPeak(in:)`. Controller medians per-round error, gates on SNR, clamps the step, deadbands, and settles past the receiver's silent catch-up gap after a shift. Two modes via `passiveSyncArmed` (observe / armed-via-`SessionState.setOffset`).
+- [x] **Motion-based sink identification** — nudge a controllable sink's delay by a known amount, detect which correlation peak moved by that amount; stationary peaks are reference-class. Makes the corrector agnostic to hidden receiver buffers.
+- [ ] **GCC-PHAT (phase-transform cross-correlation) — #1 next lever.** Whitens the signal so peaks stay sharp on music + reverb. This is what makes the continuous passive loop hold reliably on real content. Top priority.
+- [ ] **Periodic chirp re-anchor (interim fallback)** — ~60–90 s re-anchor when passive confidence drops on quiet/periodic content. Bridges until GCC-PHAT is solid.
+- [ ] **Continuous Sonos feed-delay** — prepend silence / hold HTTP writes so legacy Sonos can be a *follower*, not only the reference (needed when the slowest sink is AirPlay and Sonos is faster).
+- [ ] **Silent endgame — per-speaker ultrasonic pilot** — folds into M6.7: each speaker gets its own inaudible ~18–19 kHz carrier (FDM design validated 2026-05-30), so tracking runs with zero audible test signal.
+- [ ] **Armed end-to-end correction confirmed on hardware** — passive measurement is verified; armed continuous correction holding over a long session is the remaining gate.
+
+**Gate:** armed `PassiveSyncMonitor` holds AP1 + Sonos audibly in sync from live music for 30 min without a chirp re-anchor, tracking Sonos drift continuously. AP2 (M12) makes this shine — AP2 sinks are low-latency *and* fully delay-controllable, so they slot into the delay-to-slowest model cleanly with legacy Sonos as the anchor.
+
+**Strategic value:** passive, continuous, cross-protocol harmonization of consumer speakers across ecosystems doesn't exist as a product — the consumer application of what Smaart / REW / ARTA do in pro audio.
 
 ---
 
@@ -683,4 +706,4 @@ Headline: **~$3–5K FTO patent search budget** required before M13 (first hardw
 
 ---
 
-*Last updated: 2026-05-17 (Sunday) — M6 sync arc DONE (sender-side broadcaster delay, handshake barrier, Sonos start-align defer, supervisor retry cap, session-race nonce guard, volume debounce, TEARDOWN timeout, Mac-mute fix, audio-gap telemetry, Sonos Δ slider rip, idempotent Play All, Restart All); M3 signal-handler item marked done; new M6.3 Sync UX milestone added with 5 tasks (#98–#102) including Mac-mic auto-calibration as M11 Path A precursor; M11 reframed to acknowledge Path A ships in M6.3. Earlier 2026-05-16 (night, same-night expansion) — M5.5 schema gains dual roles (sink + control); M6.5 Claude Skill scope expanded to onboard soundbars + control-layer devices alongside speakers; M15 Optical Hub gains IR remote-learning hardware ($0.50 BOM addition); 5-SKU lineup; M14 ↔ M15 reorder under consideration. Earlier 2026-05-16 update: M13/M14 hardware sizing + LATAM mfg strategy. Earlier 2026-05-15 (night) — M5 done + M6 partial.*
+*Last updated: 2026-06-03 — cross-protocol sync PROVEN on real hardware (B&W A5 + Sonos Playbar + Sonos One SL); new M6.8 `PassiveSyncMonitor` milestone (passive content-based continuous sync; GCC-PHAT = #1 next lever, chirp re-anchor interim, ultrasonic pilot endgame); rotary knob UI (#100) marked REMOVED/cancelled (AirPlay delay slider now 25 ms steps); current frontier = M12 AP2 sender (committed V1 hero, hardware on the LAN) + the passive-sync/GCC-PHAT thread. Earlier 2026-05-17 (Sunday) — M6 sync arc DONE (sender-side broadcaster delay, handshake barrier, Sonos start-align defer, supervisor retry cap, session-race nonce guard, volume debounce, TEARDOWN timeout, Mac-mute fix, audio-gap telemetry, Sonos Δ slider rip, idempotent Play All, Restart All); M3 signal-handler item marked done; new M6.3 Sync UX milestone added with 5 tasks (#98–#102) including Mac-mic auto-calibration as M11 Path A precursor; M11 reframed to acknowledge Path A ships in M6.3. Earlier 2026-05-16 (night, same-night expansion) — M5.5 schema gains dual roles (sink + control); M6.5 Claude Skill scope expanded to onboard soundbars + control-layer devices alongside speakers; M15 Optical Hub gains IR remote-learning hardware ($0.50 BOM addition); 5-SKU lineup; M14 ↔ M15 reorder under consideration. Earlier 2026-05-16 update: M13/M14 hardware sizing + LATAM mfg strategy. Earlier 2026-05-15 (night) — M5 done + M6 partial.*

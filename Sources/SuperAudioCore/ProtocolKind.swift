@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 /// Identifies the wire protocol a sink speaks. New protocols added to this enum
 /// also need a corresponding SPM module and `SinkDiscoverer` implementation.

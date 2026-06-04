@@ -1,3 +1,4 @@
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 // Day0Capture.swift
 //
 // SuperAudio Day 0 capture probe.

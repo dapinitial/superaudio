@@ -48,7 +48,7 @@ superaudio/
 - **[website/RISK_REGISTER.html](website/RISK_REGISTER.html)** — what could kill this project, with mitigations and trigger-to-act per risk.
 - **[website/REACTIVE_DISCOVERY.html](website/REACTIVE_DISCOVERY.html)** — build log artifact for the discovery milestone.
 
-## Status — 2026-05-18
+## Status — 2026-06-03
 
 - ✅ **M1 — Foundation.** Scaffolding, capture, discovery, menu bar app.
 - ✅ **M2 — RAOP control plane.** Full RTSP handshake to B&W A5 and A7 with NTP timing-channel replies.
@@ -60,17 +60,20 @@ superaudio/
 - ✅ **M6 — Multi-sink sync + reliability arc** (2026-05-17). The big architecture push: sender-side broadcaster delay (sidesteps AP1 receivers' NTP-clamping behavior), handshake barrier (cross-AP1 first-audio within 1 ms regardless of handshake variance), Sonos start-align defer, supervisor retry cap (kills retry storms on un-acceptable receivers), session-race nonce guard, idempotent Play All, Restart All, audio-gap telemetry. **A user empirically dialed in `slider=3085 ms` and said "wow, perfect" with all three speakers audibly in sync.** See [docs/DECISIONS.md](docs/DECISIONS.md) 2026-05-17 entry for the three core architectural decisions.
 - ✅ **M6.3 — Mac-mic auto-calibration shipped (M11 Path A precursor)** (2026-05-18). The marquee win: chirp injection + Accelerate vDSP FFT cross-correlation + per-speaker sequential measurement + auto-applied offsets. Real-room test converged 3 passes from 1000ms residual → "playing in sync it's beautiful" (~12ms, within mic correlation noise). Three load-bearing bugs documented as CLAUDE.md gotchas 20–22 (ambient music can't be reference → use chirps; AVAudioEngine 3-sec first-init quirk → 500ms warmup; persisted offsets live in UserDefaults not the in-memory dict). See [docs/DECISIONS.md](docs/DECISIONS.md) 2026-05-18 entry.
 - ✅ **M6.4 — Painless auto-trigger Phase 1** (2026-05-18). Mic Calibrate (auto) button now runs automatically ~5 sec after Sonos's SOAP Play succeeds. User experience: click Play All → music starts → sync locks in within ~15 sec, no further input. `autoCalibrateOnPlayAll` pref toggleable.
+- ✅ **Cross-protocol sync PROVEN on real hardware** (2026-06-03). Mic Calibrate (auto) brought a B&W A5 (AirPlay 1) into audible sync with a Sonos Playbar **and** a Sonos One SL — first confirmed cross-ecosystem harmonization on real speakers. Direction is AirPlay → Sonos: you can only ever *add* delay, so the slowest sink is the reference and the controllable AirPlay sink slides onto it.
+- ✅ **`PassiveSyncMonitor` — passive content-based continuous sync.** Chirp-anchor once, then track each speaker's lag continuously from live music (mic vs. broadcaster reference, no repeated test tone). Next lever is **GCC-PHAT** (phase-transform correlation); interim fallback is periodic chirp re-anchor; silent endgame is a per-speaker ultrasonic pilot. See [docs/DECISIONS.md](docs/DECISIONS.md) 2026-06-03 entries.
+- 🟡 **M12 — AirPlay 2 sender (committed V1 hero).** AP2 is now in V1 scope, not a non-goal. AP2 hardware (Sonos One SL, Apple TV 4K) is on the LAN for the test bench; the AP2 sender itself is not built yet. Vendors `pair_ap` (MIT) + `swift-opus`, fresh Swift for PTP/RTSP/RTP.
 - 🟡 **M3 hardening (2/N).** 30-min soak test still owed — trivially testable now that multi-sink is reliable. et=1 + compressed ALAC verification also still pending.
 - 🟡 **M6 polish remaining.** Per-source app picker, preferences window, real menu bar icon. Independent of sync — can land any time before M8.
-- 🟡 **M6.3 / M6.4 remaining polish.** Rotary knob UI (#100), in-app diagnostics panel (#102), inaudible test signals (M11 polish). The Calibrate-Now button becomes the M8 launch demo alongside the Claude Skill.
+- 🟡 **M6.3 / M6.4 remaining polish.** In-app diagnostics panel (#102), inaudible test signals (M11 polish). The rotary knob UI (#100) was **removed** — the linear slider (now 25 ms steps) plus auto-calibration covers tuning. The Calibrate-Now button becomes the M8 launch demo alongside the Claude Skill.
 
-Full milestone map (M6.3 → M5.5 → M6.5 → M7 → M8 → M9–M15) in [docs/ROADMAP.md](docs/ROADMAP.md).
+Full milestone map (M12 AP2 + passive-sync/GCC-PHAT → M5.5 → M6.5 → M7 → M8 → M9–M15) in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Build & run
 
 ```sh
 swift build
-swift run SuperAudioApp
+swift run SuperAudio
 ```
 
 Look for the speaker icon in the menu bar. Click it to see discovered speakers. Click any speaker name to start a session (AirPlay 1 runs the full RAOP handshake; Sonos toggles Play/Stop with a test stream). Logs stream to the unified logging system:
@@ -85,7 +88,7 @@ log stream --predicate 'subsystem == "com.davidpuerto.SuperAudio"' --level debug
 SuperAudio/
 ├── Package.swift
 ├── Sources/
-│   ├── SuperAudioApp/           # Menu bar app, AppDelegate, wiring
+│   ├── SuperAudio/              # Menu bar app, AppDelegate, wiring
 │   ├── SuperAudioCore/          # AudioSink, SinkRegistry, LicenseManager — contracts
 │   ├── SuperAudioDiscovery/     # Bonjour / SSDP primitives
 │   ├── SuperAudioAirPlay1/      # AirPlay 1 (RAOP) sink + RTSPClient + AppleAirPortRSA
@@ -99,7 +102,7 @@ Future protocol modules (`SuperAudioAirPlay2`, `SuperAudioChromecast`, `SuperAud
 
 | SKU | Price | Role |
 |---|---|---|
-| **SuperAudio for Mac** | $19 | The current build. Captures any Mac audio, fans out to AP1 + Sonos. Addons: AP2, Cast, BT, Room Tuning, Multi-zone — $5 each. |
+| **SuperAudio for Mac** | $19 | The current build. Captures any Mac audio, fans out to AirPlay 1 + AirPlay 2 (V1 hero, M12) + Sonos. Addons: Cast, BT, Room Tuning, Multi-zone — $5 each. |
 | **Apple TV companion** | $5 addon | tvOS app — same fan-out from an Apple TV. Removes the "Mac must stay on" requirement. |
 | **Hub Stick** | $59 | Pi Zero 2 W in a case. For households with no Mac and no Apple TV. |
 | **Hub Pro (HDMI ARC)** | $249 | Sits between TV and soundbar. Every TV → every wireless speaker, regardless of source app. |
@@ -108,4 +111,4 @@ Direct sale (notarized, not App Store). Privacy: LAN-only discovery, no telemetr
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md). The codebase is MIT-clean by design (no GPL code copied; see [docs/DECISIONS.md](docs/DECISIONS.md) 2026-05-11 on license hygiene).
+Proprietary — all rights reserved; see [LICENSE.md](LICENSE.md). The codebase keeps **no-GPL-copying hygiene** (no GPL code copied into the binary; in-binary deps are permissive — MIT/BSD/Apache — or runtime-only carve-outs; GPL projects are read-only protocol references). The separate `superaudio-device-profiles` repo is intentionally MIT. See [docs/DECISIONS.md](docs/DECISIONS.md) 2026-06-03 on the license flip and the kept hygiene rule.

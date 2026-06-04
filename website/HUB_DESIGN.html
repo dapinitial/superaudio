@@ -169,6 +169,18 @@
   </div>
 </header>
 
+<!-- Canonical-pricing banner -->
+<section style="padding: 28px 0; background: linear-gradient(180deg, rgba(103,232,249,0.06) 0%, transparent 100%);">
+  <div class="wrap">
+    <div style="border: 1px solid var(--border-bright); border-left: 4px solid var(--cyan); border-radius: 12px; padding: 20px 24px; background: var(--bg-card);">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px;">Exploratory · forward-looking</div>
+      <p style="margin: 0; font-size: 14.5px; color: var(--text-muted); line-height: 1.6;">
+        The 5-SKU lineup below (Audio Bridge, Hub Stick Mini, Hub Stick, Optical Hub, Hub Pro Dongle/Box, spanning $29–$279) is an <strong>exploratory, forward-looking design study — not committed pricing or BOM</strong>. The canonical hardware lineup is <strong>three SKUs — Hub Stick ($59), Optical Hub ($79), Hub Pro ($249)</strong>. <a href="PRICING.html" style="color: var(--cyan);">PRICING.html</a> is the single source of truth for all prices and remains canonical until the M13 hardware launch, at which point this lineup will be reconciled against shipping reality.
+      </p>
+    </div>
+  </div>
+</section>
+
 <!-- 1. The vision -->
 <section>
   <div class="wrap">
@@ -342,7 +354,7 @@
       Real-world households don't have homogeneous audio gear. Your TV is LG OLED; your soundbar is Sonos Playbar; your other speakers are B&amp;W AP1; the guest bedroom has a Bose Bluetooth speaker. <strong>The TV remote already controls the soundbar's volume — via the soundbar's IR receiver or HDMI-CEC integration.</strong> Why would we ask the user to replace that working chain?
     </p>
     <p style="color: var(--text-muted);">
-      Instead, <strong>SuperAudio software leverages the existing soundbar as the control layer</strong>. The M6.5 Claude Skill — originally scoped for unsupported-speaker onboarding — expands to cover any audio device in the household, including the soundbar acting as control surface. The Skill identifies the soundbar's make/model, probes for API/event endpoints, and writes a per-soundbar profile that the public <code>superaudio-device-profiles</code> repo contributes back to the community.
+      Instead, <strong>SuperAudio software leverages the existing soundbar as the control layer</strong>. The planned (M6.5) Claude Skill — originally scoped for unsupported-speaker onboarding — would expand to cover any audio device in the household, including the soundbar acting as control surface. As designed, the Skill identifies the soundbar's make/model, probes for API/event endpoints, and writes a per-soundbar profile that the public <code>superaudio-device-profiles</code> repo contributes back to the community.
     </p>
 
     <table class="remote-table">
@@ -396,7 +408,7 @@
     </p>
 
     <div class="pullquote" style="border-left-color: var(--cyan); margin-top: 28px;">
-      The pitch sharpens to: <em>"Keep your soundbar. Keep your TV-remote habits. Our software (plus an optional $29 dongle if needed) extends the experience to every other speaker you own — and our AI Skill figures out your specific gear's quirks in 10 minutes of guided setup."</em> AI-driven device adaptation, not hardware-per-vendor.
+      The pitch sharpens to: <em>"Keep your soundbar. Keep your TV-remote habits. Our software (plus an optional dongle if needed) extends the experience to every other speaker you own — and our planned (M6.5) guided onboarding Skill helps figure out your specific gear's quirks in about 10 minutes of setup."</em> Software adapts to your gear, not hardware-per-vendor.
     </div>
   </div>
 </section>

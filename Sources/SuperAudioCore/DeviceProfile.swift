@@ -1,4 +1,4 @@
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 //
 // Device profiles themselves (the JSON data in superaudio-device-profiles/)
 // are MIT-licensed pure data — see that repo's LICENSE file. This Swift

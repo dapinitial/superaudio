@@ -1683,6 +1683,14 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-03 (later) — License flip to PROPRIETARY; rotary-knob UI removed; AirPlay delay slider now 25 ms steps
+
+**Decision (a) — license:** SuperAudio's app and source code are now **proprietary — all rights reserved** (see `LICENSE.md`). This **supersedes** the 2026-05-11 "MIT-clean codebase / option to open-source" framing: we are no longer reserving the option to release the app under permissive terms. What carries over unchanged is the **no-GPL-copying hygiene** — no GPL code is copied into the binary, in-binary deps stay permissive (MIT/BSD/Apache) or runtime-only carve-outs, and GPL projects remain read-only protocol references. The `superaudio-device-profiles` subrepo stays **MIT** (it is intentionally open, per the Tailscale substrate-open/app-paid model in the 2026-05-15 thread-4 entry). Every source header was swept from "MIT licensed" to "Proprietary"; README / CLAUDE.md / THIRD_PARTY_NOTICES.md updated to match.
+
+**Decision (b) — sync UX:** The **rotary-knob UI (ROADMAP #100) is removed/cancelled** — the linear slider plus auto-calibration covers the tuning need; a bespoke knob isn't worth the build. The AirPlay delay slider now steps in **25 ms increments** (was 0–6000 ms at 5 ms steps); 25 ms is fine-grained enough for by-ear tuning without the finicky drag that motivated the abandoned knob.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

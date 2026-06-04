@@ -6,22 +6,11 @@
 
 ---
 
-## Progress snapshot — 2026-05-17
+## Progress snapshot
 
-- ✅ **M1 — Foundation.** SPM scaffolding, capture probe (Plan A), menu bar app via `MenuBarExtra`, OSLog wired, `AudioSink`/`SinkRegistry`/`LicenseManager` contracts, reusable `SystemAudioCapture`, live Bonjour discovery (RAOP + Sonos) with A5/A7/Sonos Den in the menu bar.
-- ✅ **M2 — RAOP control plane.** Full handshake to B&W A5 and A7: OPTIONS → ANNOUNCE → SETUP → RECORD → SET_PARAMETER volume → TEARDOWN. **NTP timing-channel replies via BSD sockets** were the gate that unblocked RECORD.
-- ✅ **M3a — First audio from B&W A5 and A7** (2026-05-14). Three findings unblocked this — see DECISIONS.md 2026-05-14: (1) AirPlay 1 requires compressed ALAC; (2) sync packets must come from the BSD socket bound to our advertised local control port; (3) `et=0` is sufficient as default.
-- ✅ **Menu UX as real control surface.** Per-sink toggle, ✓ marker, pulsing menu-bar icon, Play All / Stop All / Restart All group actions, Mute Mac toggle.
-- ✅ **M3 hardening pass 1** (2026-05-14/15). `killall SuperAudio` now sends RTSP TEARDOWN + Sonos SOAP Stop cleanly via `DispatchSourceSignal` → `NSApp.terminate` → `applicationWillTerminate`.
-- ✅ **M3c — Lossless Mode + bit-exact verification** (2026-05-15). Menu toggle forces Mac output to 44.1 kHz while a session is active. `probe/LosslessVerify` proves ALAC encode→decode is SHA-256-identical. Public "lossless" claim is defensible.
-- ✅ **M4 — Sonos audio pipeline** (2026-05-15). `AACEncoder` + `SonosStreamServer` + `SonosSession` with **pump-before-SOAP** ordering. All three speakers confirmed audible from one Play All click.
-- ✅ **M5 — Multi-sink fan-out + sync + per-sink controls** (2026-05-15 night). Shared `AudioBroadcaster` (one capture, fan-out to N subscribers). Per-chunk wall-time NTP for sample-accurate cross-AP1 sync. Per-sink volume slider (live mid-stream). Per-sink Δ offset slider. **A7 cold-start root cause fixed** — `Client-Instance` / `DACP-ID` headers per-RTSPClient instance. 2-attempt RTSP handshake retry + 4-min OPTIONS keepalive (idle sinks) + failure UI.
-- ✅ **M6 — Multi-sink sync + reliability arc** (2026-05-17). Sender-side broadcaster delay (sidesteps AP1 receivers' silent NTP-clamping behavior — see gotcha #16). Handshake barrier (cross-AP1 first-audio within **1 ms** despite handshake variance — see gotcha #18). Sonos start-align defer + auto-align default. Supervisor exit-reason enum + retry cap (kills retry storms on un-acceptable receivers — see gotcha #19). Session-race nonce guard. Idempotent Play All + Restart All. 1.5 s TEARDOWN timeout. 250 ms volume debounce. UDP timing-packet-presence health monitor (replaced OPTIONS-over-TCP). Audio-gap telemetry. Mac mute default-mismatch fix. Sonos Δ slider rip (Sonos timing encrypted at UPnP — see gotcha #17). Quiet Mode removed; replaced with `defaultVolumePercent = 15`. Slider range bumped to 0–6000 ms. **User empirically dialed in `slider=3085 ms`** with all three speakers audibly in sync. See DECISIONS.md 2026-05-17.
-- 🟡 **M3 hardening pass 2.** 30-min soak test + `et=1` compressed ALAC verification — still pending. Now trivially passive thanks to M6 reliability.
-- 🟡 **M6.3 — Sync UX** (NEXT). Mac-mic auto-calibration (M11 Path A precursor), real-time slider drag, rotary knob UI, "Re-sync now" button, in-app diagnostics panel. The Calibrate-Now button becomes the M8 launch demo alongside the Claude Skill.
-- 🟡 **M5.5 — Device Profile System substrate.** JSON schema + loader + public MIT-licensed `superaudio-device-profiles` GitHub repo. Foundation for the M6.5 Claude Skill onboarding which becomes the M8 launch hook.
+This snapshot used to live here and rotted. **The single source of truth for "where are we, what's next" is [docs/ROADMAP.md](docs/ROADMAP.md)** — read its "Progress snapshot" + "Currently working on" sections, not a copy here.
 
-Full milestones in [docs/ROADMAP.md](docs/ROADMAP.md).
+Frontier as of 2026-06-03: M1–M6 done (foundation → RAOP → Sonos → multi-sink fan-out + reliability arc); Mac-mic auto-calibration shipped; **cross-protocol sync PROVEN on real hardware** (B&W A5 + Sonos Playbar + Sonos One SL); `PassiveSyncMonitor` (passive content-based continuous sync) built and passively measuring. Current build targets: **M12 AirPlay 2 sender** (committed V1 hero, hardware on the LAN, not built yet) and the **passive-sync / GCC-PHAT** thread. See ROADMAP.md for the full milestone map and DECISIONS.md 2026-06-03 for the sync work.
 
 ---
 
@@ -49,7 +38,7 @@ This is an experimental prototype, **but written as if it could grow into a comm
 
 - Clean module separation per the SPM layout (Core, AirPlay1, Sonos, Discovery, App)
 - The `AudioSink` protocol and `SinkRegistry` as the stable contracts
-- Public APIs only, MIT-clean codebase, attribution discipline
+- Public APIs only, no-GPL-copying hygiene (codebase is proprietary — see License hygiene), attribution discipline
 - `String(localized:)` for all user-facing strings
 - A `LicenseManager` stub from day one so addon-gating wiring already exists
 
@@ -57,9 +46,10 @@ Phase gates remain binary (audio out the speaker, no drops). We don't ship a hal
 
 ---
 
+> **AirPlay 2 is no longer a non-goal (2026-06-03).** It moved from "punt" to **committed V1 hero — milestone M12 (AP2 sender)**. AP2 hardware (Sonos One SL, Apple TV 4K) is now physically on the LAN test bench; the AP2 sender itself is not built yet. The old "wrap `pyatv` via XPC + Python runtime" framing is dead — the chosen path vendors `pair_ap` (MIT) for pairing + `swift-opus` for the codec, with fresh Swift for PTP/RTSP/RTP (see ROADMAP.md M12 + DECISIONS.md 2026-05-29 evening). AP2 unlocks HomePods, modern Sonos, Bluesound, and modern AVRs — and, being low-latency *and* fully delay-controllable, it slots cleanly into the passive "delay-to-slowest-sink" sync model.
+
 ## Non-goals
 
-- **AirPlay 2.** None of the target hardware supports it. Adding it would mean wrapping `pyatv` via XPC subprocess, implementing the HomeKit-style pairing flow (SRP + Curve25519), and managing a Python runtime dependency. Not worth it for this scope. If we ever add a HomePod, we revisit.
 - Cross-platform — Mac only, Swift + AppKit.
 - DRM-protected content. We capture system audio; if Apple Music or whatever refuses to play to virtual outputs, that's their problem.
 - A polished consumer UI. Menu bar + a single preferences window. Function over form for v1.
@@ -159,7 +149,7 @@ public final class SinkRegistry {
 }
 ```
 
-In `SuperAudioApp` startup, every linked protocol module registers itself:
+In the `SuperAudio` app-module startup, every linked protocol module registers itself:
 
 ```swift
 SinkRegistry.shared.register(AirPlay1Discoverer())
@@ -185,14 +175,14 @@ public enum LicenseManager {
 }
 ```
 
-The stub keeps the call sites in `SuperAudioApp` shaped correctly from day one. Swapping the implementation later is a one-file change, not an architectural refactor.
+The stub keeps the call sites in the `SuperAudio` app module shaped correctly from day one. Swapping the implementation later is a one-file change, not an architectural refactor.
 
 ### Module dependency rules (enforced by `Package.swift`)
 
 - `SuperAudioCore` depends on **nothing project-internal** — pure Swift + Apple frameworks. It defines the contracts.
 - `SuperAudioDiscovery` depends on `SuperAudioCore` only. Provides shared Bonjour / SSDP primitives used by protocol modules.
 - Per-protocol modules (`SuperAudioAirPlay1`, `SuperAudioSonos`, ...) depend on `SuperAudioCore` and `SuperAudioDiscovery` only. **They never import each other.**
-- `SuperAudioApp` depends on everything and wires it together at startup.
+- `SuperAudio` (the app module) depends on everything and wires it together at startup.
 
 Anyone proposing a dependency edge that violates these rules has to update CLAUDE.md and DECISIONS.md first. The rules exist so future addons can be added (or removed, for a free-tier build) without breaking the rest.
 
@@ -202,7 +192,7 @@ When AP2 or Chromecast lands, the recipe is:
 
 1. Create `Sources/SuperAudioAirPlay2/` with a `Package.swift` product line.
 2. Implement `AudioSink` for AP2 devices and `SinkDiscoverer` for AP2 discovery (mDNS for AP2 uses `_airplay._tcp`).
-3. Add the `SinkRegistry.shared.register(...)` call in `SuperAudioApp` startup, gated by `LicenseManager.isEnabled(.airplay2)`.
+3. Add the `SinkRegistry.shared.register(...)` call in the `SuperAudio` app-module startup, gated by `LicenseManager.isEnabled(.airplay2)`.
 4. No edits to Core, no edits to other protocol modules.
 
 If any of those steps requires touching code outside the new module, the abstractions are wrong and we revisit Core.
@@ -219,7 +209,7 @@ These are committed for the POC. Revisit only if a phase gate exposes a real blo
 | UI | SwiftUI + AppKit (menu bar via `NSStatusItem`) | Standard for menu bar apps |
 | Min target | macOS 14.4 | CoreAudio process tap API requires this |
 | Audio capture | `CATapDescription` / process taps (Plan A); BlackHole virtual device (Plan B) | Apple's blessed replacement for kexts; BlackHole is the documented fallback if Personal Team signing blocks the tap |
-| AirPlay 1 | Fresh Swift impl, written from scratch | Owned MIT-clean code; libraop & shairport-sync are reference reading only |
+| AirPlay 1 | Fresh Swift impl, written from scratch | Owned proprietary code, no GPL copied; libraop & shairport-sync are reference reading only |
 | Sonos | Custom UPnP/SOAP client + local HTTP audio server | Standard approach; lift SOAP envelopes from SoCo (MIT) |
 | Discovery | `NWBrowser` (Bonjour) + custom SSDP for Sonos | Native, no deps |
 | Encoding | Apple ALAC encoder (Apache 2.0) for AirPlay; `AVAudioConverter` AAC-LC for Sonos | Built-in / permissively licensed |
@@ -227,9 +217,9 @@ These are committed for the POC. Revisit only if a phase gate exposes a real blo
 | Signing | Ad-hoc local signing under Free Apple ID / Personal Team | Cheapest path; upgrade only if entitlements force it |
 | Tests | Deferred to v2. Logging is the only verification layer for v1. | POC; "audio out the speaker" is the test |
 
-### License hygiene (decided 2026-05-11)
+### License hygiene (decided 2026-05-11; license flipped proprietary 2026-06-03)
 
-SuperAudio stays **MIT-clean** so we retain the option to share or open-source later under permissive terms.
+SuperAudio's app and source code are **proprietary — all rights reserved** (see `LICENSE.md`). The 2026-05-11 "MIT-clean / option to open-source" framing is superseded — we are no longer reserving that option. What remains binding is the **no-GPL-copying hygiene** below; it is independent of how the app is licensed and exists so no GPL terms ever attach to our binary. (The separate `superaudio-device-profiles` subrepo stays MIT — it is intentionally open.)
 
 - **Do not copy code** from GPL sources: libraop (effectively GPLv2 via chevil/raop2_play), shairport-sync (GPLv3), OwnTone (GPLv2).
 - **Reading is fine.** Read those projects to understand wire formats and protocol sequencing. The wire format itself is a fact and cannot be copyrighted.
@@ -249,7 +239,7 @@ SuperAudio stays **MIT-clean** so we retain the option to share or open-source l
 SuperAudio/
 ├── Package.swift
 ├── Sources/
-│   ├── SuperAudioApp/           # UI, AppDelegate, menu bar
+│   ├── SuperAudio/              # UI, AppDelegate, menu bar (the app module)
 │   ├── SuperAudioCore/          # Capture, mixer, timeline, sink protocol
 │   ├── SuperAudioAirPlay1/      # RAOP sender, ALAC, RTSP
 │   ├── SuperAudioSonos/         # UPnP client, local HTTP streamer
@@ -359,7 +349,7 @@ Practices to follow from the first commit:
 - **`UserDefaults` for persistence**, no writes outside sandbox-allowed locations. Already standard.
 - **`Network.framework` for sockets**, not POSIX. Already in the brief.
 - **`THIRD_PARTY_NOTICES.md` maintained from day one.** Add an entry every time a dependency lands.
-- **MIT license header on every file we author.** Trivial to start, annoying to add to 200 files later.
+- **Proprietary license header on every file we author** (`// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.`). Trivial to start, annoying to add to 200 files later.
 - **Module boundaries that allow swapping implementations.** Capture-via-tap should be swappable for capture-via-BlackHole without rewriting consumers. Already implied by the module layout.
 - **Privacy stance baked in.** LAN-only discovery, no telemetry, no analytics. Already in the brief.
 
