@@ -18,12 +18,14 @@ A multi-room audio system for the half of households whose speakers don't all sp
 | SKU | Price | Role |
 |---|---|---|
 | **SuperAudio for Mac** | $19 | Captures Mac audio (any app), fans out to AP1 + Sonos + (addons: AP2, Cast, BT). Phase-1 build target. |
-| **Apple TV companion** | $5 (one-time addon) | tvOS app — same fan-out from an Apple TV instead of a Mac. Removes "Mac must stay on" requirement. |
-| **Hub Stick** | $59 | Pi Zero 2 W in a preconfigured case. For households with no Mac and no Apple TV. |
+| ~~**Apple TV companion**~~ | ~~$5~~ | **NOT VIABLE — tvOS capture restriction.** tvOS has no system-audio / process-tap API and forbids capturing other apps' / DRM (FairPlay) audio, so a tvOS app can only fan out the audio it plays *itself* — never Netflix/Apple TV+/Disney+/etc. The "TV → all speakers" use case is delivered by the **hardware hub** instead (Hub Stick / Optical Hub / Hub Pro, below), which captures the TV's actual audio output downstream of the sandbox + DRM. See DECISIONS.md 2026-06-04. |
+| **Hub Stick** | $59 | Pi Zero 2 W in a preconfigured case. For households with no Mac. |
 | **Optical Hub** | $79 | TOSLINK input version of Hub Stick. For older TVs. |
-| **Hub Pro (HDMI ARC)** | $249 | Sits between TV and soundbar via HDMI ARC. Captures all TV audio and fans out to wireless speakers. The "every TV → every speaker" product. |
+| **Hub Pro (HDMI ARC)** | $249 | Sits between TV and soundbar via HDMI ARC. Captures all TV audio and fans out to wireless speakers. The "every TV → every speaker" product — and the *real* path for the living-room/TV use case (an Apple TV companion app can't do this; see the struck-through row above). |
 
 Plus **$5 protocol addons** sold a la carte: AirPlay 2, Chromecast, Bluetooth A2DP fan-out, Room Tuning, multi-zone groups.
+
+> **Premise correction (2026-06-04).** An earlier version of this lineup listed an "Apple TV companion ($5, tvOS) — same fan-out from an Apple TV instead of a Mac." That premise is **invalid**: tvOS cannot capture system audio, other apps' audio, or DRM/FairPlay content (Netflix, Apple TV+, Disney+, etc.), so a tvOS app could only re-broadcast media it plays itself — a non-starter for the streaming services people actually use. For all-AirPlay-2 homes the Apple TV already fans its own audio to every AP2 speaker natively (no third party needed); SuperAudio's value is the **heterogeneous / legacy** case (old AirPlay 1 like a B&W A5, legacy Sonos), which a tvOS app can't serve either. **The TV → all-speakers job is done by hardware on the TV's audio output (HDMI ARC / optical), not by a tvOS app.** See DECISIONS.md 2026-06-04.
 
 The wedge: cross-ecosystem fan-out at consumer prices, with cross-protocol room tuning. **Nobody else does this** — see [../website/COMPETITIVE_LANDSCAPE.html](../website/COMPETITIVE_LANDSCAPE.html).
 
@@ -474,17 +476,21 @@ This is the moment SuperAudio becomes a product. Everything after this is paid e
 
 ---
 
-### M9 — Apple TV companion, $5 addon (est. 2–3 weeks)
+### M9 — ~~Apple TV companion, $5 addon~~ **CANCELLED — not buildable on tvOS (2026-06-04)**
 
-tvOS app that receives audio from the Mac app over LAN and drives speakers from the Apple TV. **Removes the "Mac must stay on" requirement for TV-anchored households.**
+> **CANCELLED 2026-06-04 — built on a false premise.** The original idea was a tvOS app that fans audio out from an Apple TV "instead of a Mac," removing the "Mac must stay on" requirement. **tvOS cannot do this.** There is no tvOS system-audio / process-tap API, and the platform forbids capturing other apps' audio; DRM/FairPlay content (Netflix, Apple TV+, Disney+, etc.) is untouchable. A tvOS app could only fan out audio it plays *itself* (its own media player) — useless for the streaming services people actually watch. The original "Mac sends to Apple TV, Apple TV re-fans-out" plan below does *not* solve this either: receiving the Mac's audio over AP2 just relays the Mac's audio; it does nothing for content the Apple TV itself is playing (which is the whole point of a TV-anchored household). See DECISIONS.md 2026-06-04.
+>
+> **The TV → all-speakers use case is delivered by the hardware hub, not a tvOS app.** A hub on the TV's audio output (HDMI ARC = **M14 Hub Pro**; optical = **M15 Optical Hub**) captures the actual audio signal downstream of the sandbox + DRM, then fans out + syncs across protocols. That's the technically-sound path. For all-AirPlay-2 homes the Apple TV already fans its own audio to every AP2 speaker natively — no third party needed; SuperAudio's value is the heterogeneous / legacy case (AirPlay 1, legacy Sonos), which the hub serves and a tvOS app cannot.
+>
+> The "Mac must stay on" concern that motivated this SKU is instead answered by the **Hub Stick (M13)** for non-Mac sourcing and by the hubs for the living room. The cross-protocol acoustic sync engine (the novel IP) is unaffected — it's the shared brain reused by both the Mac app and the hubs.
 
-- [ ] tvOS target in SPM (`SuperAudioTV`)
-- [ ] Apple TV runs `AirPlay 2 receiver` natively → SuperAudio Mac sends to it via AP2 receive
-- [ ] tvOS app then runs the same RAOP + Sonos sender code we already wrote (sharing `SuperAudioAirPlay1` + `SuperAudioSonos`)
-- [ ] tvOS app published in tvOS App Store
-- [ ] Mac app gains "Use Apple TV as hub" toggle
+*Original spec preserved below for the record (the approach does not work — see cancellation note above):*
 
-**Gate:** Mac shuts down (or sleeps). Apple TV alone keeps fanning audio out to A5 + A7 + Sonos. iPhone controls play/pause/group via the iOS companion.
+- ~~tvOS target in SPM (`SuperAudioTV`)~~
+- ~~Apple TV runs `AirPlay 2 receiver` natively → SuperAudio Mac sends to it via AP2 receive~~
+- ~~tvOS app then runs the same RAOP + Sonos sender code we already wrote (sharing `SuperAudioAirPlay1` + `SuperAudioSonos`)~~
+- ~~tvOS app published in tvOS App Store~~
+- ~~Mac app gains "Use Apple TV as hub" toggle~~
 
 ---
 
@@ -497,7 +503,7 @@ Remote control + the dedicated UI for Room Tuning.
 - [ ] Free with base app (license is per-household, not per-device)
 - [ ] App Store distribution
 
-**Gate:** phone controls a Mac-anchored or Apple-TV-anchored SuperAudio system from across the house.
+**Gate:** phone controls a Mac-anchored or hub-anchored SuperAudio system from across the house.
 
 ---
 
@@ -551,7 +557,7 @@ Order by demand. Each is a new SPM module per the Extensibility model in CLAUDE.
 
 ### M13 — Hub Stick, $59 hardware (est. 3 months)
 
-Pi Zero 2 W in a preconfigured case. Solves the "no Mac, no Apple TV" households. **Full design vision + hardware-sizing analysis + manufacturing strategy in [`website/HUB_DESIGN.html`](../website/HUB_DESIGN.html).**
+Pi Zero 2 W in a preconfigured case. Solves the "no Mac" households (and is the answer to the "Mac must stay on" concern that the cancelled tvOS companion was meant to address — see M9). **Full design vision + hardware-sizing analysis + manufacturing strategy in [`website/HUB_DESIGN.html`](../website/HUB_DESIGN.html).**
 
 - [ ] Pi OS image build pipeline (Buildroot or Raspberry Pi OS Lite — decision deferred)
 - [ ] Port `SuperAudioCore` + protocol modules to Linux (Swift on Linux is solid for our use case; Network.framework alternatives like SwiftNIO; audio capture via PipeWire or PulseAudio loopback instead of CoreAudio process tap)
@@ -665,7 +671,7 @@ Committed 2026-05-15 from strategy threads 2 and 3 in `docs/DECISIONS.md`. These
 
 A household with:
 - A Mac (or Hub Stick) for sourcing audio
-- A TV (with Hub Pro on the HDMI ARC port)
+- A TV (with Hub Pro on the HDMI ARC port — this, not a tvOS app, is what captures TV audio downstream of the sandbox + DRM and fans it out)
 - Any mix of speakers: AP1, AP2, Sonos, Chromecast, Bluetooth
 - An iPhone for control + Room Tuning
 
@@ -679,7 +685,7 @@ The Sonos / Bluesound / Apple equivalent: **$800–2,000+** in vendor-locked har
 
 (See full list in [../CLAUDE.md](../CLAUDE.md) Non-goals)
 
-- App Store distribution (Mac and Hub — sandbox incompatible; tvOS and iOS use App Store standardly)
+- App Store distribution (Mac and Hub — sandbox incompatible; iOS companion uses App Store standardly). *tvOS app dropped entirely — see M9 cancellation (tvOS can't capture system/other-app/DRM audio).*
 - DRM-protected content (Apple Music FairPlay output is silent through the tap — expected)
 - Cross-platform Mac apps for Windows or Linux (Windows is the only one that'd move the needle; deferred to post-M14)
 - A cloud service of any kind (LAN-only, no telemetry, no analytics — this is a competitive differentiator)

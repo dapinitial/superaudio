@@ -230,7 +230,8 @@ final class PassiveSyncMonitor {
         // 2. Peaks + gate.
         let allPeaks = AudioCorrelation.topCorrelatedLags(
             reference: ref.samples, observed: micSamples, sampleRate: ref.sampleRate,
-            maxLagSeconds: maxLagSec, peakCount: peakCount, minSeparationSeconds: minPeakSeparationSec
+            maxLagSeconds: maxLagSec, peakCount: peakCount, minSeparationSeconds: minPeakSeparationSec,
+            phat: true
         )
         let peaks = allPeaks.filter { $0.snr >= snrGate }
         let geom = allPeaks.map { "\(String(format: "%.3f", $0.lagSeconds))s(SNR \(String(format: "%.1f", $0.snr)))" }.joined(separator: " · ")
@@ -246,7 +247,7 @@ final class PassiveSyncMonitor {
         let expected = currentOffsetSec + (airplayBufferSec ?? 0)
         let airHit = AudioCorrelation.strongestPeak(
             reference: ref.samples, observed: micSamples, sampleRate: ref.sampleRate,
-            loSeconds: max(0, expected - trackTolSec), hiSeconds: expected + trackTolSec)
+            loSeconds: max(0, expected - trackTolSec), hiSeconds: expected + trackTolSec, phat: true)
         guard let airHit, airHit.snr >= trackGate else {
             lostCount += 1
             if lostCount >= lostThreshold {

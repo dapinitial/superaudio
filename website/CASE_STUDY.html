@@ -405,8 +405,8 @@
         <div class="label">Mac app entry price (Airfoil sells for $35)</div>
       </div>
       <div class="stat">
-        <div class="num">$5</div>
-        <div class="label">Apple TV companion — for hardware they already own</div>
+        <div class="num">$249</div>
+        <div class="label">Hub Pro — TV → every speaker, via HDMI ARC (in development)</div>
       </div>
       <div class="stat">
         <div class="num">$1.2–6M</div>
@@ -595,7 +595,7 @@
         <tbody>
           <tr><td><strong>HDMI ARC Hub Pro</strong> (universal)</td><td>ANY TV with HDMI ARC (~2009+)</td><td>Plug Hub between TV and soundbar; one-time QR setup</td><td>$249 (Phase 9)</td></tr>
           <tr><td><strong>Optical TOSLINK Hub Stick</strong></td><td>TVs with TOSLINK / SPDIF out (~2005+)</td><td>One optical cable + one ethernet</td><td>$59–79 (Phase 7.5)</td></tr>
-          <tr><td><strong>AirPlay 2-native TV → SuperAudio Hub</strong></td><td>Samsung 2020+ / LG 2019+ / Sony 2020+ TVs</td><td>Pick "SuperAudio Hub" in TV audio settings (one-time)</td><td>Free w/ existing Hub Stick / Apple TV companion</td></tr>
+          <tr><td><strong>AirPlay 2-native TV → SuperAudio Hub</strong></td><td>Samsung 2020+ / LG 2019+ / Sony 2020+ TVs</td><td>Pick "SuperAudio Hub" in TV audio settings (one-time)</td><td>Free w/ existing Hub Stick</td></tr>
         </tbody>
       </table>
     </div>
@@ -742,8 +742,8 @@
     <h3>Sub-hypotheses we'll test as we build</h3>
     <ul>
       <li><strong>H1 (Mac POC):</strong> solo-developer-built RAOP + Sonos + sync is technically feasible. <span class="v info">Phase 1–4 validates</span></li>
-      <li><strong>H2 (Apple TV reach):</strong> 2015+ Apple TV households are a meaningful slice; they'll buy a $5 companion app. <span class="v info">Post-launch</span></li>
-      <li><strong>H3 (Hardware entry):</strong> a $59 Hub Stick is the right entry price for households without a Mac or Apple TV. <span class="v info">After H2</span></li>
+      <li><strong>H2 (TV use case via hardware):</strong> the "TV → every speaker" job must be done by a hub on the TV's audio output (HDMI ARC / optical), not a tvOS app — a tvOS app can't capture system / DRM audio. Households with a TV-anchored setup will buy a Hub Pro for the magic-moment experience. <span class="v info">Post-launch · supersedes the original "Apple TV companion app" hypothesis (see DECISIONS.md 2026-06-04)</span></li>
+      <li><strong>H3 (Hardware entry):</strong> a $59 Hub Stick is the right entry price for households without a Mac. <span class="v info">After H2</span></li>
       <li><strong>H4 (The moat — calibration):</strong> a one-time mic-based room calibration that simultaneously sets per-speaker delay and EQ is the killer feature; households will pay $5 for it and tell friends. <span class="v info">Phase 7–8</span></li>
       <li><strong>H5 (Addon stack):</strong> $5 protocol addons drive ongoing revenue from power users. <span class="v info">Over time</span></li>
     </ul>
@@ -857,16 +857,16 @@
         <div class="desc">For the power user with a Mac. Captures any audio source and streams to mixed-protocol speakers.</div>
       </div>
       <div class="sku featured">
-        <div class="sku-name">For Apple TV</div>
-        <div class="price">$5</div>
-        <div class="price-note">tvOS App Store</div>
-        <div class="desc">For anyone with a 2015+ Apple TV. Companion price. Impulse purchase. Apple's Small Business Program means we net 85%.</div>
+        <div class="sku-name">Hub Pro (TV → every speaker)</div>
+        <div class="price">$249</div>
+        <div class="price-note">HDMI ARC hardware · in development</div>
+        <div class="desc">Plugs into the TV's HDMI ARC and captures <em>all</em> TV audio — downstream of the app sandbox and DRM — then fans it out to every speaker in sync. This is the living-room product. <em>(A tvOS "Apple TV companion" app was the original plan here; it isn't buildable — tvOS can't capture system / other-app / DRM audio. See DECISIONS.md 2026-06-04.)</em></div>
       </div>
       <div class="sku">
         <div class="sku-name">Hub Stick</div>
         <div class="price">$59</div>
         <div class="price-note">Pi Zero 2 W, preconfigured</div>
-        <div class="desc">Plug-and-play hardware for households with no Mac or Apple TV. Well under $100, beats Sonos entry by ~5×.</div>
+        <div class="desc">Plug-and-play hardware for households with no Mac. Well under $100, beats Sonos entry by ~5×.</div>
       </div>
       <div class="sku">
         <div class="sku-name">SD Card Kit</div>
@@ -899,7 +899,7 @@
       </table>
     </div>
 
-    <p>Average paying customer math: base Mac ($19) + Apple TV companion ($5) + Room Tuning ($5) + one protocol addon ($5) = <strong>$34 ASP.</strong> A power user buying everything = $44–54. Strong margin for an indie product.</p>
+    <p>Average paying customer math: base Mac ($19) + Room Tuning ($5) + one protocol addon ($5) = <strong>$29 ASP.</strong> A power user buying everything (plus hardware) is far higher. Strong margin for an indie product.</p>
   </div>
 </section>
 
@@ -912,15 +912,15 @@
     <h3>Apple devices</h3>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Model</th><th>Year</th><th>Used $</th><th>tvOS app capable?</th><th>AP1 target?</th><th>Verdict</th></tr></thead>
+        <thead><tr><th>Model</th><th>Year</th><th>Used $</th><th>Role for us</th><th>AP1 target?</th><th>Verdict</th></tr></thead>
         <tbody>
-          <tr><td>Apple TV 1</td><td>2007</td><td>$5–15</td><td><span class="v bad">No</span></td><td><span class="v bad">No</span></td><td>Ignore — predates AirPlay</td></tr>
-          <tr><td>Apple TV 2</td><td>2010</td><td>$15–30</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
-          <tr><td>Apple TV 3</td><td>2012/13</td><td>$20–40</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
-          <tr><td><strong>Apple TV 4 (HD)</strong></td><td><strong>2015</strong></td><td><strong>$30–50</strong></td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td><strong>Sweet spot</strong> — cheapest hub-capable Apple device</td></tr>
-          <tr><td>Apple TV 4K (1st)</td><td>2017</td><td>$80–120</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Hub-capable, A10X. Also our Phase 1 test target.</td></tr>
-          <tr><td>Apple TV 4K (2nd)</td><td>2021</td><td>$80–110</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Hub-capable, A12</td></tr>
-          <tr><td>Apple TV 4K (3rd)</td><td>2022</td><td>$100–130</td><td><span class="v good">Yes</span></td><td><span class="v good">Yes</span></td><td>Current model, A15</td></tr>
+          <tr><td>Apple TV 1</td><td>2007</td><td>$5–15</td><td><span class="v bad">None</span></td><td><span class="v bad">No</span></td><td>Ignore — predates AirPlay</td></tr>
+          <tr><td>Apple TV 2</td><td>2010</td><td>$15–30</td><td><span class="v good">AP1 receiver</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
+          <tr><td>Apple TV 3</td><td>2012/13</td><td>$20–40</td><td><span class="v good">AP1 receiver</span></td><td><span class="v good">Yes</span></td><td>Free value-add — drive as AP1 receiver</td></tr>
+          <tr><td>Apple TV 4 (HD)</td><td>2015</td><td>$30–50</td><td><span class="v good">AP2 receiver / endpoint</span></td><td><span class="v good">Yes</span></td><td>A speaker endpoint, not a hub — a tvOS app can't capture TV/DRM audio</td></tr>
+          <tr><td>Apple TV 4K (1st)</td><td>2017</td><td>$80–120</td><td><span class="v good">AP2 receiver / endpoint</span></td><td><span class="v good">Yes</span></td><td>Endpoint only. Also our Phase 1 AP2 test target.</td></tr>
+          <tr><td>Apple TV 4K (2nd)</td><td>2021</td><td>$80–110</td><td><span class="v good">AP2 receiver / endpoint</span></td><td><span class="v good">Yes</span></td><td>Endpoint only, A12</td></tr>
+          <tr><td>Apple TV 4K (3rd)</td><td>2022</td><td>$100–130</td><td><span class="v good">AP2 receiver / endpoint</span></td><td><span class="v good">Yes</span></td><td>Endpoint only, A15</td></tr>
           <tr><td>Mac mini (M1+)</td><td>2020+</td><td>$400+</td><td><span class="v good">Mac app</span></td><td><span class="v good">Yes</span></td><td>Power user fallback</td></tr>
           <tr><td>iPhone 11+ / iPad</td><td>2019+</td><td>$150+</td><td><span class="v good">iOS companion</span></td><td><span class="v warn">Sender only</span></td><td><strong>The calibration mic.</strong> Free companion app.</td></tr>
           <tr><td>AirPort Express</td><td>2008/12</td><td>$30–60</td><td><span class="v bad">No</span></td><td><span class="v good">Yes</span></td><td>Drive as AP1 receiver — old but works</td></tr>
@@ -954,12 +954,12 @@
           <tr><td>Google TV / Android TV</td><td>Sony, TCL, Hisense</td><td><span class="v warn">Pop-up only</span></td><td><span class="v warn">Defer — ugly UX</span></td></tr>
           <tr><td>Roku OS</td><td>Roku</td><td><span class="v bad">No</span></td><td><span class="v bad">Reject</span></td></tr>
           <tr><td>Fire TV OS</td><td>Amazon</td><td><span class="v warn">Same as Android TV</span></td><td><span class="v warn">Defer</span></td></tr>
-          <tr><td><strong>tvOS</strong></td><td>Apple</td><td><span class="v warn">App-played media only</span></td><td><span class="v good">Build this — best SDK, clean dist</span></td></tr>
+          <tr><td><strong>tvOS</strong></td><td>Apple</td><td><span class="v bad">App-played media only — no system / other-app / DRM capture</span></td><td><span class="v bad">Reject — can't capture TV/streaming audio. Use the Hub Pro instead.</span></td></tr>
         </tbody>
       </table>
     </div>
 
-    <p>Among smart TV platforms, <strong>only tvOS is worth the engineering investment.</strong> The rest of the smart TV market is addressed by the Hub Stick instead, which sits next to (not inside) the TV.</p>
+    <p><strong>No smart-TV platform — tvOS included — is worth the engineering investment.</strong> The "audio capture?" column tells the story: every one of them, Apple's tvOS among them, can only re-broadcast media the app itself plays, never the streaming services (Netflix, Apple TV+, Disney+) or other apps the user is actually watching. We originally planned to "build tvOS" as the exception; that was wrong (see <a href="../docs/DECISIONS.md">DECISIONS.md 2026-06-04</a>). The entire TV/living-room market is addressed by the <strong>Hub Pro</strong> instead — hardware on the TV's HDMI ARC output that captures the real audio signal downstream of the sandbox and DRM, then fans it out across protocols.</p>
   </div>
 </section>
 
@@ -975,7 +975,7 @@
         <tbody>
           <tr><td><strong>Mac app</strong> (Phases 1–4)</td><td>8–12 wks focused</td><td>macOS releases, codesigning, dist</td><td>n/a — baseline</td></tr>
           <tr><td>iOS Companion (mic calibration + remote)</td><td>3–4 wks</td><td>iOS releases, App Store review</td><td>~70% (Core, AVAudioEngine for capture instead of CATap)</td></tr>
-          <tr><td>Apple TV companion</td><td>2–3 wks</td><td>tvOS keeps pace, App Store review</td><td>~80% (Core, AirPlay1, Sonos)</td></tr>
+          <tr><td><s>Apple TV companion</s> — cancelled (tvOS can't capture system/DRM audio)</td><td>n/a</td><td>n/a</td><td>n/a — TV use case moves to Hub Pro</td></tr>
           <tr><td>Hub Stick — Linux port</td><td>4–6 wks</td><td>OS image releases, hardware QA, security</td><td>~60%</td></tr>
           <tr><td>SD Card Kit</td><td>1 wk packaging</td><td>Image updates, community support</td><td>100% from Hub Stick</td></tr>
           <tr><td><strong>RoomTuner module</strong> (the moat)</td><td>4–6 wks DSP + UX</td><td>Mic-input handling, FFT analysis, IIR filter generation</td><td>New module; integrates with Core for per-sink offset and EQ</td></tr>
@@ -1081,8 +1081,8 @@
           <tr>
             <td><strong>Apple TV (4K, used)</strong></td>
             <td>$35–130</td>
-            <td>AirPlay 2 receiver natively; could be a hub via our $5 companion app</td>
-            <td>Not a competitor — a <em>platform</em> we ship for. Our $5 tvOS app makes Apple TV the hub.</td>
+            <td>AirPlay 2 receiver natively — a speaker endpoint we drive, not a hub (a tvOS app can't capture TV/DRM audio)</td>
+            <td>Not a competitor — a speaker endpoint we fan out to. The TV-hub role belongs to the Hub Pro, not a tvOS app.</td>
           </tr>
           <tr>
             <td><strong>AirConnect (OSS)</strong></td>
@@ -1143,7 +1143,7 @@
       </table>
     </div>
 
-    <p><strong>Pre-shipping action items:</strong> patent attorney does a freedom-to-operate search on the Hub Pro (HDMI ARC piece is the only novel hardware) and a defensive search on the multi-protocol fan-out architecture. Estimated cost: $3–5K. Required before mass-producing hardware; not required for Mac/tvOS app releases.</p>
+    <p><strong>Pre-shipping action items:</strong> patent attorney does a freedom-to-operate search on the Hub Pro (HDMI ARC piece is the only novel hardware) and a defensive search on the multi-protocol fan-out architecture. Estimated cost: $3–5K. Required before mass-producing hardware; not required for Mac / iOS app releases.</p>
   </div>
 </section>
 
@@ -1173,8 +1173,8 @@
       </div>
       <div class="item">
         <div class="gear">2015 Apple TV 4</div>
-        <div class="what">Becomes the household hub via $5 tvOS companion</div>
-        <div class="value">Whole-house audio for the price of a sandwich</div>
+        <div class="what">Drives it as an AirPlay 2 speaker endpoint (a tvOS app can't make it a capture hub)</div>
+        <div class="value">Another speaker in the synced mesh, at $0 extra hardware</div>
       </div>
       <div class="item">
         <div class="gear">B&amp;W A5/A7/Zeppelin</div>
@@ -1201,7 +1201,6 @@
     <h3>Channels</h3>
     <ul>
       <li><strong>Direct sale (superaudio.app)</strong> — primary for Mac, Hub Stick, SD Card Kit. Paddle for international VAT handling.</li>
-      <li><strong>tvOS App Store</strong> — only channel for Apple TV companion. 15% cut via Small Business Program.</li>
       <li><strong>iOS App Store</strong> — free Companion App. Driver of word-of-mouth ("download SuperAudio to tune your speakers").</li>
       <li><strong>Amazon FBA</strong> — Hub Stick and SD Card Kit for discoverability + Prime shipping.</li>
       <li><strong>Earned media</strong> — r/budgetaudiophile, AVS Forum, Slickdeals, YouTube budget-tech channels. The room-tuning demo is the obvious viral hook.</li>
@@ -1227,7 +1226,7 @@
           <tr><td>TV OEMs adopt AP2 widely</td><td><span class="v warn">Medium (slow)</span></td><td><span class="v warn">Medium</span></td><td>AP1 hardware persists in homes for 10+ years regardless.</td></tr>
           <tr><td>Smart TV vendors add native multi-room</td><td><span class="v good">Low</span></td><td><span class="v warn">Medium</span></td><td>OEM solutions are platform-locked; we cover the gap.</td></tr>
           <tr><td>Hardware supply chain (Pi shortages)</td><td><span class="v warn">Medium</span></td><td><span class="v warn">High</span></td><td>Multiple SKUs hedge platform risk.</td></tr>
-          <tr><td>Can't reach customers without App Store</td><td><span class="v warn">Medium</span></td><td><span class="v warn">High</span></td><td>Apple TV App Store + free iOS Companion gives reach.</td></tr>
+          <tr><td>Can't reach customers without App Store</td><td><span class="v warn">Medium</span></td><td><span class="v warn">High</span></td><td>Direct download (Mac) + free iOS Companion + hardware retail gives reach.</td></tr>
           <tr><td>AirConnect / OSS makes us redundant</td><td><span class="v good">Low–Medium</span></td><td><span class="v warn">Medium</span></td><td>Calibration moat doesn't exist in OSS. UX is our other moat.</td></tr>
           <tr><td>Solo-developer burnout</td><td><span class="v bad">High</span></td><td><span class="v bad">Critical</span></td><td>Revenue diversification (addons + hardware). Scope discipline.</td></tr>
         </tbody>
@@ -1270,8 +1269,8 @@
       </div>
       <div class="phase">
         <span class="phase-label">Phase 6</span>
-        <div class="phase-title">Apple TV companion ($5) + iOS Companion (free)</div>
-        <div class="phase-meta">tvOS &amp; iOS App Store approved + live · <strong>5–6 weeks dev + 1 week review</strong></div>
+        <div class="phase-title">iOS Companion (free)</div>
+        <div class="phase-meta">iOS App Store approved + live · <strong>3–4 weeks dev + 1 week review</strong> · <em>(the once-planned tvOS companion is cancelled — tvOS can't capture system/DRM audio; the TV use case is served by the Hub Pro in Phase 9-class hardware)</em></div>
       </div>
       <div class="phase moat-phase">
         <span class="phase-label">Phase 7 · THE MOAT</span>

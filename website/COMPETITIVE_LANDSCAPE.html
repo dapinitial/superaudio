@@ -463,9 +463,9 @@
         <div class="vendor">Apple</div>
         <div class="name">Apple TV 4K</div>
         <div class="price">$129–149 new<br>$35–130 used</div>
-        <div class="desc">Native AirPlay 2 receiver. Multi-room within AP2.</div>
+        <div class="desc">Native AirPlay 2 receiver. Multi-room within AP2. (A tvOS app can't capture TV/streaming audio — no system-audio API, DRM-locked — so an Apple TV can't be turned into a cross-ecosystem fan-out hub by software.)</div>
         <div class="lock">⚠ AP2 only natively. Same gap as HomePod.</div>
-        <div class="win">SuperAudio: ships a $5 tvOS companion that turns it into a multi-ecosystem hub</div>
+        <div class="win">SuperAudio: the Hub Pro on the TV's HDMI ARC captures all TV audio (downstream of the sandbox + DRM) and fans it out to every speaker — the thing an Apple TV app structurally can't do</div>
       </div>
 
       <div class="comp-card">
@@ -553,7 +553,7 @@
         <div class="price">$35</div>
         <div class="desc">20-year veteran. Captures any Mac audio, sends to AirPlay (1 + 2), Sonos, Chromecast, Bluetooth. Solid multi-room sync.</div>
         <div class="lock">⚠ Mac-only. No hardware story. No Room Tuning. Premium price for software-only.</div>
-        <div class="win">SuperAudio: less than half the price, ships hardware path, adds Room Tuning, supports tvOS</div>
+        <div class="win">SuperAudio: less than half the price, ships a hardware path (Hub Stick / Hub Pro) for the TV and no-Mac cases, adds cross-protocol Room Tuning</div>
       </div>
 
       <div class="comp-card">
@@ -1122,7 +1122,7 @@
     </div>
 
     <div class="pullquote">
-      <strong>Total patent-related budget before hardware ships: ~$3–5K</strong> for a freedom-to-operate search by a patent attorney specializing in audio / consumer electronics. Required before mass-production of any hardware SKU. <strong>Not required for Mac, tvOS, or iOS app releases</strong> — software through App Store / direct download is in well-trodden ground.
+      <strong>Total patent-related budget before hardware ships: ~$3–5K</strong> for a freedom-to-operate search by a patent attorney specializing in audio / consumer electronics. Required before mass-production of any hardware SKU. <strong>Not required for Mac or iOS app releases</strong> — software through App Store / direct download is in well-trodden ground.
     </div>
   </div>
 </section>
@@ -1145,8 +1145,8 @@
           </tr>
           <tr>
             <td><strong>tvOS App Store</strong></td>
-            <td>Required for tvOS distribution. ~1 week review. Apple Small Business Program drops cut from 30% to 15% under $1M/yr.</td>
-            <td>Target this for the $5 Apple TV companion. Apple's standard process.</td>
+            <td>Would be required for a tvOS app — but a tvOS app can't capture system / other-app / DRM audio, so the once-planned Apple TV companion isn't buildable. The TV use case is served by the Hub Pro hardware instead. See DECISIONS.md 2026-06-04.</td>
+            <td>Not targeting — no tvOS app ships.</td>
           </tr>
           <tr>
             <td><strong>iOS App Store</strong></td>

@@ -199,17 +199,17 @@
       Obvious question: most households already have an Apple TV, Roku, Fire TV Stick, or Chromecast plugged into their HDMI. Why can't we ship as a tvOS / Roku / Fire TV app and skip the hardware entirely?
     </p>
     <p style="color: var(--text-muted);">
-      Honest answer: <strong>only Apple TV's developer platform is open enough to host our orchestrator</strong>. We <em>do</em> ship a tvOS companion (M9, $5 addon) for households that already own an Apple TV 4K — for that ~30% of US households, the Apple TV becomes our Hub Pro equivalent for free. The other 70% need our hardware because:
+      Honest answer: <strong>no streaming-stick app — Apple TV included — can capture the audio you'd want to fan out.</strong> The job for the living room is "take whatever the TV is playing (Netflix, Apple TV+, Disney+, broadcast, a console) and send it to every speaker in sync." A TV-platform app structurally cannot do that:
     </p>
     <ul style="color: var(--text-muted); margin: 14px 0; padding-left: 22px;">
+      <li><strong>Apple TV / tvOS</strong> — <em>this was originally our plan, and it doesn't work.</em> tvOS has no system-audio / process-tap API, forbids apps from capturing other apps' audio, and locks down DRM/FairPlay content. A tvOS app could only fan out audio it plays <em>itself</em> — never the streaming services people actually watch. (For all-AirPlay-2 homes, the Apple TV already fans its own audio to every AP2 speaker natively, so a third-party app adds nothing.)</li>
       <li><strong>Roku</strong> — BrightScript channels are restricted to content streaming; no system-level audio routing APIs, no persistent background services, no sideloading. <em>Closed</em>.</li>
       <li><strong>Fire TV Stick</strong> — Fire OS allows sideloading but Amazon Appstore is hostile to non-Amazon multi-room solutions; Fire TV Multi-Room is their walled-garden play. <em>Closed in practice.</em></li>
       <li><strong>Chromecast with Google TV</strong> — Android TV is more open but Google's Cast ecosystem is the intended path; not a host for cross-vendor orchestration. <em>Tied to Cast.</em></li>
-      <li><strong>Nvidia Shield</strong> — Android TV, most open of the bunch. Possible eventual target post-M14, but small audience.</li>
       <li><strong>Smart TVs with Tizen / WebOS / Roku OS</strong> — closed platforms generally.</li>
     </ul>
     <p style="color: var(--text-muted);">
-      <strong>The fact that no streaming stick is open enough to host our orchestrator is exactly why Hub Stick / Hub Pro exist as a category.</strong> If Roku or Fire TV were open, we'd ship there and skip hardware entirely. They're not, so we ship our own boxes. <em>Apple TV is the exception</em> — M9 turns it into Hub Pro for households that already own one.
+      <strong>That's exactly why Hub Stick / Hub Pro exist as a category.</strong> A hub on the TV's audio output (HDMI ARC / optical) captures the actual audio signal <em>downstream of the sandbox and the DRM</em> — the one place the content is finally just audio — then fans it out and syncs it across protocols. No TV-app sandbox can reach that signal; only hardware on the output can. See <a href="../docs/DECISIONS.md">DECISIONS.md 2026-06-04</a> for the full reasoning behind dropping the tvOS-companion idea.
     </p>
   </div>
 </section>
@@ -254,7 +254,7 @@
           <td>Router-plug box, own USB-C wall wart</td>
           <td>None (LAN-only via Wi-Fi or Ethernet)</td>
           <td>Phone app</td>
-          <td><strong>Households with no Mac and no Apple TV.</strong> All connectivity by the router — Ethernet option, analog out.</td>
+          <td><strong>Households with no Mac.</strong> All connectivity by the router — Ethernet option, analog out.</td>
         </tr>
         <tr>
           <td>Optical Hub</td>
@@ -698,8 +698,8 @@
       </div>
       <div class="tstep">
         <div class="when">~3–6 mo</div>
-        <div class="what">M9 + M10 + M11</div>
-        <div class="desc">Apple TV companion · iOS companion · iPhone-mic Room Tuning addon (frequency correction across multiple positions; per-speaker delay calibration via the Mac's mic already shipped in the base app 2026-05-18 as the M11 Path A precursor). Still software-only. Hardware planning starts in parallel toward end.</div>
+        <div class="what">M10 + M11</div>
+        <div class="desc">iOS companion · iPhone-mic Room Tuning addon (frequency correction across multiple positions; per-speaker delay calibration via the Mac's mic already shipped in the base app 2026-05-18 as the M11 Path A precursor). Still software-only. Hardware planning starts in parallel toward end. <em>(The once-planned M9 tvOS companion is cancelled — tvOS can't capture system/DRM audio; the TV use case is served by the Hub Pro instead. See <a href="../docs/DECISIONS.md">DECISIONS.md 2026-06-04</a>.)</em></div>
       </div>
       <div class="tstep">
         <div class="when">~9–12 mo</div>
@@ -723,7 +723,7 @@
     <div class="wedge">
       <div class="label">The strategic point</div>
       <div class="title">The Mac app is the wedge. <em>The hub products are the platform.</em></div>
-      <p>By the time Hub Pro ships, a household can have: Mac app on their MacBook (for direct-from-app audio), tvOS companion on their Apple TV (for direct-from-streaming audio), Hub Stick by the router (for headless audio orchestration), Hub Pro behind the TV (for the magic-moment "press TV power, audio everywhere" experience). Every speaker the household owns — B&amp;W from 2013, Sonos from 2018, HomePod from 2022, Chromecast from anytime — plays the same audio at the same time, tuned to each room, controlled by whatever interface is most convenient.</p>
+      <p>By the time Hub Pro ships, a household can have: Mac app on their MacBook (for direct-from-app audio), Hub Stick by the router (for headless audio orchestration), Hub Pro behind the TV (for the magic-moment "press TV power, audio everywhere" experience — the hub captures TV audio downstream of the sandbox + DRM, which no Apple TV / tvOS app can do). Every speaker the household owns — B&amp;W from 2013, Sonos from 2018, HomePod from 2022, Chromecast from anytime — plays the same audio at the same time, tuned to each room, controlled by whatever interface is most convenient.</p>
       <p>That's not "another multi-room product." That's <strong>universal audio orchestration for existing hardware</strong> — the layer above the fragmented current state, the thing that doesn't exist as a unified product anywhere on the market or on GitHub. The Mac app proves the hypothesis. The hub products turn it into a platform that scales beyond one household's geek.</p>
       <p><strong>Press TV power. Audio everywhere.</strong> That's the demo. Everything in this document exists to make that demo real and reliable.</p>
     </div>

@@ -1691,6 +1691,31 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-04 — tvOS companion blocked by platform; hardware hub is the TV path
+
+**Decision:** Kill the **"Apple TV companion ($5, tvOS)"** SKU (ROADMAP M9). It was built on a false premise. The "TV → all speakers in sync" use case is delivered by a **hardware hub on the TV's audio output (HDMI ARC / optical)** — the existing Hub Stick / Optical Hub / Hub Pro concept — not by a tvOS app.
+
+**Why the tvOS premise is invalid:**
+
+- **tvOS cannot capture the audio you'd want to fan out.** There is no tvOS system-audio / process-tap API (the macOS `CATapDescription` path has no tvOS equivalent), and the platform forbids an app from capturing other apps' audio. **DRM/FairPlay content — Netflix, Apple TV+, Disney+, etc. — is untouchable.** A tvOS app could only fan out audio it plays *itself* (its own in-app media player), which is a non-starter for the streaming services people actually watch. The roadmap's "Apple TV companion — same fan-out from an Apple TV instead of a Mac" is therefore essentially not buildable for real-world TV content.
+- The fallback "Mac sends to Apple TV over AP2, Apple TV re-fans-out" plan doesn't rescue it either — that only relays the Mac's audio; it does nothing for content the Apple TV itself is playing, which is the entire point of a TV-anchored household.
+
+**Why hardware is the right path:**
+
+- A hub sitting on the TV's HDMI ARC / optical output captures the **actual audio signal downstream of the sandbox + DRM**, then fans out + syncs across protocols. That's the technically-sound living-room/TV path. (ROADMAP M14 Hub Pro = HDMI ARC; M15 Optical Hub = TOSLINK.)
+- **For all-AirPlay-2 setups, the Apple TV already fans its own audio to every AP2 speaker natively** — no third party needed. So even where a tvOS app *could* technically relay AP2, it adds nothing.
+- **SuperAudio's value is the heterogeneous / legacy case** — old AirPlay 1 (e.g., a B&W A5) and legacy Sonos mixed with everything else. A tvOS app can't serve this anyway: it can't capture, and it can't drive AP1 / legacy receivers into AP2 groups. The hub can.
+
+**The sync engine is not wasted.** The cross-protocol acoustic sync engine (the novel IP — see 2026-06-03 entries) is the **shared brain reused by both the Mac app and the hub.** The Mac app is its proving ground / dev kit; the hub is the consumer form factor for the TV use case. Cancelling the tvOS SKU removes a dead-end form factor, not the technology.
+
+**Supersedes** the "Apple TV companion ($5, tvOS)" SKU framing from the 2026-05-13 "Product scope expanded to multi-SKU product line" entry. The "Mac must stay on" concern that motivated that SKU is answered instead by the Hub Stick (non-Mac sourcing) and the hubs (living-room TV). ROADMAP M9 is marked CANCELLED; the SKU table strikes the Apple TV companion row and points the TV use case at the hubs.
+
+**Alternatives considered:**
+- *Ship a tvOS app that fans out only its own in-app player audio.* Rejected — nobody wants a SuperAudio-branded media player; the value was supposed to be fanning out whatever's on the TV, which tvOS structurally prevents.
+- *Wait for Apple to add a tvOS system-capture API.* Rejected as planning on a non-existent, unlikely API (system audio capture on tvOS would undermine FairPlay; Apple has no incentive to ship it).
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

@@ -158,11 +158,11 @@
             <td class="trigger">Any legal letter from Sonos, or pattern of Sonos suing competitors who do less than us.</td>
           </tr>
           <tr>
-            <td><strong>L2 · App Store reverses on tvOS</strong>, requires MFi for AirPlay sending from tvOS apps.</td>
-            <td><span class="sev low">Low</span></td>
-            <td><span class="sev high">High</span></td>
-            <td class="mit">M9 (Apple TV companion) becomes unshippable via App Store. Fallback: companion only on Macs and Hubs; Apple TV is a receiver only.</td>
-            <td class="trigger">Apple developer-policy update touching tvOS audio APIs, or rejection of M9 build.</td>
+            <td><strong>L2 · <s>App Store reverses on tvOS</s> — RETIRED (2026-06-04)</strong>. Moot: the Apple TV companion (M9) is cancelled outright because tvOS cannot capture system / other-app / DRM audio at all — there's no tvOS app to ship, App Store policy or not.</td>
+            <td><span class="sev low">N/A</span></td>
+            <td><span class="sev low">N/A</span></td>
+            <td class="mit">No mitigation needed — the TV use case is served by the Hub Pro (hardware on the TV's HDMI ARC output, downstream of the sandbox + DRM), not a tvOS app. See DECISIONS.md 2026-06-04.</td>
+            <td class="trigger">Retired. (Apple TV remains usable as an AP1/AP2 speaker endpoint we fan out to.)</td>
           </tr>
           <tr>
             <td><strong>L3 · FCC / CE / IC certification delays</strong> for Hub Stick or Hub Pro.</td>
@@ -362,7 +362,7 @@
             <td><strong>O4 · Apple Developer cert revocation</strong>.</td>
             <td><span class="sev low">Low</span></td>
             <td><span class="sev high">High</span></td>
-            <td class="mit">Maintain clean App Store relationship (tvOS + iOS companions). Avoid private APIs (already a discipline per CLAUDE.md). If revoked: app distribution via DMG with notarization only stays viable, no App Store companions until reinstated.</td>
+            <td class="mit">Maintain clean App Store relationship (the free iOS companion). Avoid private APIs (already a discipline per CLAUDE.md). If revoked: app distribution via DMG with notarization only stays viable, no App Store companion until reinstated.</td>
             <td class="trigger">Any Apple developer-program email about review/violation.</td>
           </tr>
           <tr>

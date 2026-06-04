@@ -62,9 +62,10 @@ public enum AudioCorrelation {
     public static func correlatedLag(
         reference: [Float],
         observed: [Float],
-        maxLagSamples: Int? = nil
+        maxLagSamples: Int? = nil,
+        phat: Bool = false
     ) -> CorrelationResult? {
-        guard let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed) else {
+        guard let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed, phat: phat) else {
             return nil
         }
 
@@ -110,10 +111,11 @@ public enum AudioCorrelation {
         sampleRate: Double,
         maxLagSeconds: Double? = nil,
         peakCount: Int = 2,
-        minSeparationSeconds: Double = 0.3
+        minSeparationSeconds: Double = 0.3,
+        phat: Bool = false
     ) -> [(lagSeconds: Double, snr: Float)] {
         guard peakCount > 0,
-              let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed)
+              let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed, phat: phat)
         else { return [] }
 
         let searchLength = min(maxLagSeconds.map { Int($0 * sampleRate) } ?? refCount, corr.count)
@@ -164,9 +166,10 @@ public enum AudioCorrelation {
         observed: [Float],
         sampleRate: Double,
         loSeconds: Double,
-        hiSeconds: Double
+        hiSeconds: Double,
+        phat: Bool = false
     ) -> (lagSeconds: Double, snr: Float)? {
-        guard let (corr, _) = crossCorrelationArray(reference: reference, observed: observed) else {
+        guard let (corr, _) = crossCorrelationArray(reference: reference, observed: observed, phat: phat) else {
             return nil
         }
         let lo = max(0, Int(loSeconds * sampleRate))
@@ -203,7 +206,8 @@ public enum AudioCorrelation {
     /// O(N log N) computation. Returns `nil` if either input is empty.
     private static func crossCorrelationArray(
         reference: [Float],
-        observed: [Float]
+        observed: [Float],
+        phat: Bool
     ) -> (corr: [Float], referenceCount: Int)? {
         guard !reference.isEmpty, !observed.isEmpty else { return nil }
 
@@ -239,6 +243,8 @@ public enum AudioCorrelation {
         var obsImag = [Float](repeating: 0, count: fftSize / 2)
         var prodReal = [Float](repeating: 0, count: fftSize / 2)
         var prodImag = [Float](repeating: 0, count: fftSize / 2)
+        var mag = [Float](repeating: 0, count: fftSize / 2)     // scratch for PHAT magnitude
+        var magEps = [Float](repeating: 0, count: fftSize / 2)  // magnitude + epsilon (divisor)
 
         refReal.withUnsafeMutableBufferPointer { rrBuf in
         refImag.withUnsafeMutableBufferPointer { riBuf in
@@ -271,6 +277,21 @@ public enum AudioCorrelation {
             var negOne: Float = -1
             vDSP_vsmul(refSplit.imagp, 1, &negOne, refSplit.imagp, 1, vDSP_Length(fftSize / 2))
             vDSP_zvmul(&refSplit, 1, &obsSplit, 1, &prodSplit, 1, vDSP_Length(fftSize / 2), 1)
+
+            // GCC-PHAT: whiten the cross-spectrum to phase-only by dividing
+            // each bin by its magnitude. The plain cross-correlation peak is
+            // smeared by the signal's colored spectrum and room reverb; PHAT
+            // flattens magnitude so only phase alignment survives, producing a
+            // far sharper, more reliable peak on real music. `phat == false`
+            // leaves classic cross-correlation (used by the chirp path).
+            if phat {
+                let half = vDSP_Length(fftSize / 2)
+                vDSP_zvabs(&prodSplit, 1, &mag, 1, half)              // mag = |prod|
+                var eps: Float = 1e-6
+                vDSP_vsadd(mag, 1, &eps, &magEps, 1, half)            // magEps = mag + eps
+                vDSP_vdiv(magEps, 1, prodSplit.realp, 1, prodSplit.realp, 1, half)  // re /= magEps
+                vDSP_vdiv(magEps, 1, prodSplit.imagp, 1, prodSplit.imagp, 1, half)  // im /= magEps
+            }
 
             // Inverse FFT → cross-correlation in time domain.
             vDSP_fft_zrip(fftSetup, &prodSplit, 1, vDSP_Length(log2N), FFTDirection(FFT_INVERSE))

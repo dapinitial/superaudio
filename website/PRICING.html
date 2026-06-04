@@ -113,7 +113,7 @@
     <p>No subscriptions, not for the app, not for the addons, not for hardware. The audience we're targeting (working households with $50–150K income, a mix of legacy speakers, mild tech-savvy) is sick of <code>$X/month</code> for software that used to be a one-time purchase. Subscription is fashionable; we differentiate by not doing it. <strong>Roon charges $150/yr or $700 lifetime; Sonos's official multi-room is bundled into hardware you already overpaid for.</strong> We position against both by being the thing you buy once.</p>
 
     <h3>Rule 2 — Impulse-purchase floor for everything user-facing</h3>
-    <p>The Mac app at $19 and every addon at $5 sit below the "have to think about it" threshold for the target audience. Research on app pricing consistently shows a sharp drop at $10 and another at $25–30. We straddle the $20 line for the base, and put addons firmly in the impulse-buy band. <strong>Total spend for a fully-loaded software setup (base + 3 addons + Apple TV companion) = $39.</strong> That's less than dinner for two.</p>
+    <p>The Mac app at $19 and every addon at $5 sit below the "have to think about it" threshold for the target audience. Research on app pricing consistently shows a sharp drop at $10 and another at $25–30. We straddle the $20 line for the base, and put addons firmly in the impulse-buy band. <strong>Total spend for a fully-loaded software setup (base + 3 addons) = $34.</strong> That's less than dinner for two.</p>
 
     <h3>Rule 3 — Anchor below the obvious comparison, beat the less-obvious one on capability</h3>
     <p>For each SKU, there's a "what would I buy instead" anchor. Mac app vs Airfoil ($35) — we're at $19, half the price. Hub Stick vs WiiM Pro Plus ($149) — we're at $59, 40%. Hub Pro vs Bluesound Node ($599) — we're at $249, 42%. The deliberate gap signals "the affordable choice" without signaling "the cheap choice." Quality positioning, not budget positioning.</p>
@@ -167,7 +167,6 @@
       <li><strong>Cross-protocol Mac-mic auto-calibration</strong> (shipped 2026-05-18) — built-in mic measures each speaker's arrival lag at your listening spot, aligns AirPlay to match Sonos automatically. Click Play All, hear sync — no manual tuning, no calibration mic, no UI</li>
       <li>iOS companion app (free, App Store)</li>
       <li>All future updates to the base app, perpetual</li>
-      <li>Free Apple TV companion install (no separate cost — see "addons" below)</li>
     </ul>
 
     <p>What's <em>not</em> included: AirPlay 2, Chromecast, Bluetooth fan-out, iPhone-mic Room Tuning (whole-room frequency correction), multi-zone groups. Each is a $5 a-la-carte addon. Most buyers will pick 0–2. <strong>Per-speaker delay calibration is in the base $19</strong> — the addon is the iPhone-mic walk-around for frequency correction across multiple listening positions.</p>
@@ -219,8 +218,8 @@
     </div>
     <p>Average buyer take rate weighted: ~$5.75 in addon revenue per base purchase. At $19 base + $5.75 average addon, blended revenue per user ≈ $24.75. We use this for the unit-economics model.</p>
 
-    <h3>The Apple TV companion is also $5</h3>
-    <p>The tvOS companion is technically an addon — same pricing band, same friction philosophy. Buyer scenario: "I have an Apple TV connected to my TV and don't want to keep my Mac on for music in the kitchen." Worth $5; buyer activates it once and forgets it. Apple TV App Store handles distribution; we collect after Apple's 15% (Small Business Program) or 30% cut.</p>
+    <h3>Why there's no "Apple TV companion" SKU</h3>
+    <p>An earlier plan listed a $5 tvOS companion that would "fan out from your Apple TV instead of your Mac." We dropped it: <strong>it isn't buildable.</strong> tvOS has no system-audio capture API, forbids apps from capturing other apps' audio, and locks down DRM/FairPlay streams (Netflix, Apple TV+, Disney+). A tvOS app could only re-broadcast audio it plays itself — useless for the streaming people actually watch. The "TV → every speaker" job is done by <strong>hardware on the TV's audio output</strong> instead — the Hub Pro (HDMI ARC) and Optical Hub, below — which capture the real audio signal after the sandbox and DRM. (For all-AirPlay-2 homes, an Apple TV already fans its own audio to every AP2 speaker natively, so a third-party app would add nothing anyway.)</p>
 
     <h3>The iOS companion is free</h3>
     <p>Remote control and Room Tuning input. Charging for it would be hostile — the customer already paid for the base app. The Room Tuning <em>addon</em> is what we charge for; the iOS app that <em>uses</em> the addon is free. <strong>Per-speaker delay calibration is already in the base $19</strong> via the Mac's built-in mic (shipped 2026-05-18); the addon adds the iPhone-mic walk-around for whole-room frequency correction.</p>
@@ -237,7 +236,7 @@
       <div class="sku">
         <div class="sku-name">Hub Stick</div>
         <div class="price">$59</div>
-        <div class="role">Pi Zero 2 W in a preconfigured case. For households with no Mac and no Apple TV. Receives audio over LAN; fans out to AP1 + Sonos + (addon) AP2 + Cast.</div>
+        <div class="role">Pi Zero 2 W in a preconfigured case. For households with no Mac. Receives audio over LAN; fans out to AP1 + Sonos + (addon) AP2 + Cast.</div>
         <div class="derive">
           <strong>BOM:</strong> Pi Zero 2 W $15 · case+PCB $4 · USB-C PSU $3 · packaging $2 · cert amortization $4 = $28<br>
           <strong>Channel:</strong> direct sale, 15% Paddle fee = $8.85<br>
@@ -311,7 +310,7 @@
           </tr>
           <tr class="us-row">
             <td><strong>Whole House</strong></td>
-            <td>Mac app + Room Tuning + AP2 + Multi-zone + Apple TV companion</td>
+            <td>Mac app + Room Tuning + AP2 + Multi-zone + Bluetooth</td>
             <td>$39</td>
             <td>$35</td>
             <td>$4 (~10%)</td>
@@ -395,7 +394,7 @@
       <div class="label">Pricing as positioning</div>
       <div class="title">$19 says <em>"real but accessible."</em> $5 says <em>"why not."</em> $249 says <em>"premium without paying tax."</em></div>
       <p>Every number above is defensible against a specific competitor anchor. We're not the cheapest, and we shouldn't be. We're not the premium choice, and we shouldn't be. We sit in the gap between "free OSS that needs CLI" and "subscription audiophile lock-in," and we charge prices that say "this is for people who want it to just work, in their actual house, without becoming an expert."</p>
-      <p>The total spend for a fully-equipped household (Mac app + 3 addons + iOS companion + Apple TV companion + Hub Pro + Hub Stick + Room Tuning) is <strong>~$355</strong>. The Sonos-or-Bluesound equivalent is $1,200–2,500. <strong>That ratio is the moat.</strong></p>
+      <p>The total spend for a fully-equipped household (Mac app + 3 addons + iOS companion + Hub Pro + Hub Stick + Room Tuning) is <strong>~$350</strong>. The Sonos-or-Bluesound equivalent is $1,200–2,500. <strong>That ratio is the moat.</strong></p>
     </div>
   </div>
 </section>
