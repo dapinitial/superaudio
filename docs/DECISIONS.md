@@ -1668,6 +1668,21 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-03 (evening) — Cross-protocol sync confirmed on real hardware; GCC-PHAT is the next lever
+
+**Result:** Mic Calibrate (auto) brought a B&W A5 (AirPlay 1) into sync with a Sonos Playbar **and** a newly-added Sonos One SL (two Sonos zones, "Den" + "Den 2") — from ~1.3 s out to a barely-perceptible residual ("a hair ahead"). First confirmed cross-ecosystem harmonization on real hardware. The two Sonos stay perfectly in sync with each other (Sonos's own SonosNet); the A5 is the controllable sink we slide onto them.
+
+**Confirmed conclusions:**
+- **Mic-based measurement >> Sonos UPnP self-report** for accuracy. The chirp anchor is reliable (SNR 10–15); passive measurement from music is accurate on good signal but marginal on quiet/periodic content.
+- **Direction is AirPlay → Sonos.** You can only ever *add* delay; Sonos can't be sped up or precisely shifted, so it's the fixed reference and the AirPlay sink slides onto it. (A5 intrinsic buffer ≈ 0.31 s — it's the fast sink; the earlier "3.4 s / behind" readings were a stale 3359 ms offset + ambiguous-music noise, not the device.)
+- **The residual is Sonos drift.** A one-shot calibration goes slightly stale within minutes as Sonos's hidden buffer drifts — which is the whole argument for *continuous* correction.
+
+**Bug fixed:** the corrector treated an over-delayed (stale-offset) AirPlay sink as the immovable "floor" and refused to correct it. Now it judges the AirPlay sink by its *intrinsic buffer* (not its currently-offset position) and **reduces** the offset when overshot — reference is the slowest *other* sink.
+
+**Next lever (decided):** **GCC-PHAT** (phase-transform cross-correlation) is the #1 next build — whitens the signal so peaks stay sharp on music/reverb, which is what's needed to make the continuous passive loop (`PassiveSyncMonitor`) hold reliably. Interim fallback: periodic chirp re-anchor (~60–90 s). Silent endgame: per-speaker inaudible ~18–19 kHz pilot (M6.7). AP2 (M12) makes all of this easier — AP2 sinks are low-latency and fully delay-controllable.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

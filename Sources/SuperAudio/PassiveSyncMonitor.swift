@@ -263,19 +263,27 @@ final class PassiveSyncMonitor {
             return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "only AirPlay peak confident — coast")
         }
 
-        // 4. Reference = slowest sink.
-        let referenceLag = peakLags.max() ?? airplayLag
-
-        // 5. AirPlay is the slowest → it's the floor; faster sinks (Sonos) would
-        //    need delaying, which we can't do continuously yet.
-        if airplayLag >= referenceLag - (minPeakSeparationSec / 2) {
-            errorWindowMs.removeAll()
-            let fastest = peakLags.filter { $0 < airplayLag - 0.05 }.min().map { String(format: "%.3f", $0) } ?? "?"
-            return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: airplayLag,
-                          status: "AirPlay is the SLOWEST sink (\(String(format: "%.3f", airplayLag))s) — it's the reference. Faster sink at \(fastest)s would need delaying; no continuous Sonos delay yet, holding.")
+        // 4. Reference = slowest OTHER sink (exclude the AirPlay peak itself).
+        //    The AirPlay sink is controllable, so a stale offset pushing it
+        //    "late" must NOT make it the reference — we judge it by its
+        //    intrinsic buffer, not its currently-offset position.
+        let otherLags = peakLags.filter { abs($0 - airplayLag) > minPeakSeparationSec / 2 }
+        guard let referenceLag = otherLags.max() else {
+            return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "only AirPlay peak resolvable — coast")
         }
 
-        // 6. Delay AirPlay up toward the reference.
+        // 5. True floor only if AirPlay is slower than the reference even at
+        //    offset 0 (its intrinsic buffer exceeds the reference) — then it
+        //    can't be sped up and others would need delaying.
+        let buffer = airplayBufferSec ?? max(0, airplayLag - currentOffsetSec)
+        if buffer >= referenceLag - (minPeakSeparationSec / 2) {
+            errorWindowMs.removeAll()
+            return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: referenceLag,
+                          status: "AirPlay's intrinsic buffer (\(String(format: "%.3f", buffer))s) ≥ reference (\(String(format: "%.3f", referenceLag))s) — true floor; would need to delay the others (no Sonos delay yet), holding.")
+        }
+
+        // 6. Move AirPlay toward the reference. error is SIGNED: negative ⇒
+        //    AirPlay overshot (reduce offset); positive ⇒ behind (add delay).
         let errorMs = (referenceLag - airplayLag) * 1000
         errorWindowMs.append(errorMs)
         if errorWindowMs.count > windowCap { errorWindowMs.removeFirst() }
