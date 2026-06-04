@@ -64,6 +64,147 @@ public enum AudioCorrelation {
         observed: [Float],
         maxLagSamples: Int? = nil
     ) -> CorrelationResult? {
+        guard let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed) else {
+            return nil
+        }
+
+        // The full circular correlation. Positive lags 0..<N are in the
+        // first half; negative lags are wrapped to the back. For our
+        // use case (mic lags reference, so lag >= 0), search the
+        // positive-lag range. Default to the full reference length so
+        // callers with `reference` >> `observed` (mic vs longer ref tap)
+        // can find lags beyond `observed.count`.
+        let searchLength = min(maxLagSamples ?? refCount, corr.count)
+        var peakIdx: vDSP_Length = 0
+        var peakVal: Float = 0
+        corr.withUnsafeBufferPointer { ptr in
+            vDSP_maxvi(ptr.baseAddress!, 1, &peakVal, &peakIdx, vDSP_Length(searchLength))
+        }
+
+        return CorrelationResult(
+            lagSamples: Int(peakIdx),
+            peakValue: peakVal,
+            meanAbsValue: meanAbsValue(corr, searchLength: searchLength)
+        )
+    }
+
+    /// Find the **top `peakCount` correlation peaks**, each separated from
+    /// the others by at least `minSeparationSeconds`. Returns them sorted
+    /// by lag ascending (so for a two-speaker room, `[0]` is the nearest/
+    /// fastest sink and `.last` is the slowest — e.g. AirPlay vs Sonos).
+    ///
+    /// This is the passive multi-speaker primitive: when several speakers
+    /// play the SAME reference content, the mic recording correlated
+    /// against that reference shows one peak per speaker, each at that
+    /// speaker's total playback lag. The *difference* between two peaks is
+    /// the inter-speaker offset — what we drive to zero to keep them in
+    /// sync, without ever injecting a chirp.
+    ///
+    /// Greedy non-maximum suppression: take the global max, blank a
+    /// ±`minSeparationSeconds` window around it, repeat. `minSeparation`
+    /// guards against reporting two samples of the same physical peak (or
+    /// an early room reflection of it) as two speakers.
+    public static func topCorrelatedLags(
+        reference: [Float],
+        observed: [Float],
+        sampleRate: Double,
+        maxLagSeconds: Double? = nil,
+        peakCount: Int = 2,
+        minSeparationSeconds: Double = 0.3
+    ) -> [(lagSeconds: Double, snr: Float)] {
+        guard peakCount > 0,
+              let (corr, refCount) = crossCorrelationArray(reference: reference, observed: observed)
+        else { return [] }
+
+        let searchLength = min(maxLagSeconds.map { Int($0 * sampleRate) } ?? refCount, corr.count)
+        guard searchLength > 0 else { return [] }
+
+        // SNR denominator is computed once over the untouched window — each
+        // peak's confidence is its height relative to the overall noise floor.
+        let meanAbs = meanAbsValue(corr, searchLength: searchLength)
+        let sepSamples = max(1, Int(minSeparationSeconds * sampleRate))
+
+        // Mutable working copy of the search window; suppressed regions are
+        // driven to -inf so they can't win a later round.
+        var work = Array(corr[0..<searchLength])
+        var peaks: [(lagSeconds: Double, snr: Float)] = []
+        for _ in 0..<peakCount {
+            var peakIdx: vDSP_Length = 0
+            var peakVal: Float = 0
+            work.withUnsafeBufferPointer { ptr in
+                vDSP_maxvi(ptr.baseAddress!, 1, &peakVal, &peakIdx, vDSP_Length(work.count))
+            }
+            // Stop if nothing real is left (all suppressed, or non-positive).
+            guard peakVal > 0, peakVal.isFinite else { break }
+            let idx = Int(peakIdx)
+            let snr = meanAbs > 0 ? abs(peakVal) / meanAbs : 0
+            peaks.append((lagSeconds: Double(idx) / sampleRate, snr: snr))
+            let lo = max(0, idx - sepSamples)
+            let hi = min(work.count - 1, idx + sepSamples)
+            for i in lo...hi { work[i] = -.greatestFiniteMagnitude }
+        }
+        return peaks.sorted { $0.lagSeconds < $1.lagSeconds }
+    }
+
+    /// Strongest correlation peak **within a specific lag window**
+    /// `[loSeconds, hiSeconds]`. Returns its lag (seconds) and SNR, or `nil`
+    /// if the window is empty / no positive peak.
+    ///
+    /// This is the domain-constrained primitive for the auto-corrector: when
+    /// we already know roughly where a speaker's peak should be (an AirPlay
+    /// sink near its commanded delay; a Sonos sink in a band beyond it), we
+    /// search only that window. That sidesteps the blind top-N's failure
+    /// modes — grabbing a beat-spaced false peak, or a room reflection — that
+    /// showed up as jumpy readings in the read-only monitor.
+    ///
+    /// The SNR denominator is the noise floor over `[0, hiSeconds]`, so peak
+    /// confidence is comparable across calls regardless of window width.
+    public static func strongestPeak(
+        reference: [Float],
+        observed: [Float],
+        sampleRate: Double,
+        loSeconds: Double,
+        hiSeconds: Double
+    ) -> (lagSeconds: Double, snr: Float)? {
+        guard let (corr, _) = crossCorrelationArray(reference: reference, observed: observed) else {
+            return nil
+        }
+        let lo = max(0, Int(loSeconds * sampleRate))
+        let hi = min(corr.count - 1, Int(hiSeconds * sampleRate))
+        guard hi > lo else { return nil }
+
+        let meanAbs = meanAbsValue(corr, searchLength: hi + 1)
+        var rel: vDSP_Length = 0
+        var peakVal: Float = 0
+        corr.withUnsafeBufferPointer { ptr in
+            vDSP_maxvi(ptr.baseAddress!.advanced(by: lo), 1, &peakVal, &rel, vDSP_Length(hi - lo + 1))
+        }
+        guard peakVal > 0 else { return nil }
+        let idx = lo + Int(rel)
+        let snr = meanAbs > 0 ? abs(peakVal) / meanAbs : 0
+        return (lagSeconds: Double(idx) / sampleRate, snr: snr)
+    }
+
+    // MARK: - Shared FFT cross-correlation
+
+    /// Mean absolute value of the first `searchLength` correlation samples
+    /// — the noise floor used for the SNR (peak / mean) confidence metric.
+    private static func meanAbsValue(_ corr: [Float], searchLength: Int) -> Float {
+        var meanAbs: Float = 0
+        let absSlice = (0..<searchLength).map { abs(corr[$0]) }
+        vDSP_meanv(absSlice, 1, &meanAbs, vDSP_Length(searchLength))
+        return meanAbs
+    }
+
+    /// FFT-based cross-correlation of two real mono signals. Returns the
+    /// full (power-of-two length) correlation array plus the reference
+    /// length, so callers can do their own peak search. Factored out of
+    /// `correlatedLag` so single-peak and multi-peak searches share one
+    /// O(N log N) computation. Returns `nil` if either input is empty.
+    private static func crossCorrelationArray(
+        reference: [Float],
+        observed: [Float]
+    ) -> (corr: [Float], referenceCount: Int)? {
         guard !reference.isEmpty, !observed.isEmpty else { return nil }
 
         // For full cross-correlation length, we want N + M - 1 output
@@ -156,29 +297,7 @@ public enum AudioCorrelation {
         var scale = 1.0 / Float(fftSize)
         vDSP_vsmul(corr, 1, &scale, &corr, 1, vDSP_Length(fftSize))
 
-        // The full circular correlation. Positive lags 0..<N are in the
-        // first half; negative lags are wrapped to the back. For our
-        // use case (mic lags reference, so lag >= 0), search the
-        // positive-lag range. Default to the full reference length so
-        // callers with `reference` >> `observed` (mic vs longer ref tap)
-        // can find lags beyond `observed.count`.
-        let searchLength = min(maxLagSamples ?? n, fftSize)
-        var peakIdx: vDSP_Length = 0
-        var peakVal: Float = 0
-        corr.withUnsafeBufferPointer { ptr in
-            vDSP_maxvi(ptr.baseAddress!, 1, &peakVal, &peakIdx, vDSP_Length(searchLength))
-        }
-
-        // Mean absolute value of the correlation (for SNR metric).
-        var meanAbs: Float = 0
-        let absSlice = (0..<searchLength).map { abs(corr[$0]) }
-        vDSP_meanv(absSlice, 1, &meanAbs, vDSP_Length(searchLength))
-
-        return CorrelationResult(
-            lagSamples: Int(peakIdx),
-            peakValue: peakVal,
-            meanAbsValue: meanAbs
-        )
+        return (corr, n)
     }
 
     /// Convenience wrapper that returns the lag in seconds. Both signals

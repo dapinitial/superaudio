@@ -29,11 +29,12 @@ struct MenuBarView: View {
     @AppStorage("losslessMode") private var losslessMode: Bool = false
     // #110 M6.4 — auto-trigger Mic Calibrate on Play All when Sonos active.
     @AppStorage("autoCalibrateOnPlayAll") private var autoCalibrateOnPlayAll: Bool = true
+    // Milestone 2 — when armed, the Passive Sync Monitor actually moves the
+    // AirPlay offset to track Sonos (otherwise it only logs "would apply").
+    @AppStorage("passiveSyncArmed") private var passiveSyncArmed: Bool = false
     // M3 hardening 2/2 — toggle ANNOUNCE et=1 (encrypted ALAC) for receiver
     // compat verification. Default off (et=0 confirmed working on B&W A5/A7).
     @AppStorage("useEncryptedAirPlay") private var useEncryptedAirPlay: Bool = false
-    // #100 M6.3 — preview the rotary knob as offset control instead of slider.
-    @AppStorage("useRotaryKnobForOffset") private var useRotaryKnobForOffset: Bool = false
     // #118 M6.4 — sine-sweep chirp vs MLS noise as calibration reference signal.
     // Default OFF = MLS (friendlier sound). ON = chirp (the alarm-tone sweep).
     @AppStorage("useChirpForCalibration") private var useChirpForCalibration: Bool = false
@@ -234,40 +235,26 @@ struct MenuBarView: View {
                         .frame(width: 162, alignment: .trailing)
                         .help("Delay this speaker by N ms to match Sonos's natural lag. Applies on next Play.")
 
-                    if useRotaryKnobForOffset {
-                        // #100 rotary knob alternative — preview opt-in.
-                        // Auto-calibration handles the bulk; the knob is for
-                        // fine residual nudges by ear.
-                        RotaryKnob(
-                            value: Binding(
-                                get: { session.offset(for: descriptor.id) },
-                                set: { session.setOffset($0, for: descriptor.id) }
-                            ),
-                            range: SessionState.offsetRangeMs,
-                            revolutionMs: 500,
-                            defaultValue: 0,
-                            diameter: 30
-                        )
-                        Spacer()
-                    } else {
-                        Slider(
-                            value: Binding(
-                                get: { Double(session.offset(for: descriptor.id)) },
-                                set: { session.setOffset(Int($0.rounded()), for: descriptor.id) }
-                            ),
-                            in: Double(SessionState.offsetRangeMs.lowerBound)...Double(SessionState.offsetRangeMs.upperBound),
-                            step: 5
-                        )
-                        .controlSize(.mini)
-                        .tint(.accentColor.opacity(0.6))
-                        .help("Drag right to delay this speaker. Applies on next Play.")
+                    // Auto-calibration handles fine alignment; this slider is
+                    // for coarse residual nudges by ear, so it steps in 25 ms
+                    // increments rather than single milliseconds.
+                    Slider(
+                        value: Binding(
+                            get: { Double(session.offset(for: descriptor.id)) },
+                            set: { session.setOffset(Int($0.rounded()), for: descriptor.id) }
+                        ),
+                        in: Double(SessionState.offsetRangeMs.lowerBound)...Double(SessionState.offsetRangeMs.upperBound),
+                        step: 25
+                    )
+                    .controlSize(.mini)
+                    .tint(.accentColor.opacity(0.6))
+                    .help("Drag right to delay this speaker. Applies on next Play.")
 
-                        Text("+\(session.offset(for: descriptor.id)) ms")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                            .frame(width: 56, alignment: .trailing)
-                    }
+                    Text("+\(session.offset(for: descriptor.id)) ms")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(width: 56, alignment: .trailing)
                 }
             } else {
                 Text("~200 ms–2 s intrinsic delay · drag AP1 sliders ↑ to match")
@@ -332,6 +319,25 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Plays a 1-sec sine sweep through all speakers, records mic, measures arrival lag at this location. Briefly interrupts music.")
+
+                // Passive Sync Monitor (beta) — Milestone 1, read-only. Loops
+                // on the music already playing (no chirp), correlates the mic
+                // against the known reference, and logs the per-speaker lags +
+                // inter-speaker drift each round. Proof of the content-based
+                // tracking thesis before we close the loop into setDelay.
+                Button {
+                    PassiveSyncMonitor.shared.toggle()
+                } label: {
+                    Label(
+                        PassiveSyncMonitor.shared.isRunning
+                            ? String(localized: "Stop Passive Sync Monitor")
+                            : String(localized: "Passive Sync Monitor (beta)"),
+                        systemImage: PassiveSyncMonitor.shared.isRunning ? "stop.circle" : "waveform.badge.magnifyingglass"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .help("Listens to the music already playing and continuously logs how far apart your speakers are — no calibration tone. Read-only beta; watch Console for per-round readings.")
 
                 // #109 Mic Calibrate (auto) — full sequential per-speaker
                 // calibration. Mutes all but one speaker at a time, runs
@@ -564,6 +570,15 @@ struct MenuBarView: View {
                 Text(String(localized: "Auto-calibrate sync on Play All"))
             }
 
+            // Milestone 2 — arm the Passive Sync Monitor to actually apply
+            // corrections. Off = observe only (logs "would apply"). On = it
+            // continuously nudges the AirPlay offset to track Sonos, with no
+            // calibration tone, from the live music.
+            Toggle(isOn: $passiveSyncArmed) {
+                Text(String(localized: "Arm passive auto-correct (moves AirPlay offset)"))
+            }
+            .help("When on, the Passive Sync Monitor moves the AirPlay delay to keep it locked to Sonos — continuously, from the music already playing, no chirp. When off, it only measures and logs what it would do.")
+
             // M3 hardening 2/2 — toggle for verifying et=1 encrypted ALAC
             // on receivers that require it. Restart sessions after flipping
             // (the toggle is read when each AirPlay 1 session starts).
@@ -571,14 +586,6 @@ struct MenuBarView: View {
                 Text(String(localized: "AirPlay encrypted mode (et=1) — restart sessions to apply"))
             }
             .help("Sends ANNOUNCE with et=1 + RSA-OAEP encrypted session key + AES-128-CBC audio payload. Off = et=0 cleartext (default, works on B&W A5/A7). Turn on to test receivers that require encryption.")
-
-            // #100 — switch the AP1 Δ slider for a rotary knob. Knob offers
-            // finer angular control + ⌥-drag fine mode + double-click reset.
-            // Slider stays default until the knob feel is validated.
-            Toggle(isOn: $useRotaryKnobForOffset) {
-                Text(String(localized: "Rotary knob for delay offset (preview)"))
-            }
-            .help("Replace the linear AirPlay delay slider with a rotary knob. Drag in circles, ⌥-drag for fine mode (10× slower), double-click to reset.")
 
             // #118 — switch calibration reference signal. Default off = MLS
             // (friendly brief static); on = the sine-sweep chirp ("wooop").

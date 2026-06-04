@@ -1648,6 +1648,26 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-03 — Passive content-based sync + the "slowest sink is the reference" model
+
+**Decision:** Add a passive, continuous auto-corrector (`PassiveSyncMonitor`) that keeps speakers in sync **from the live music, with no calibration chirp**, and restructure correction around one rule: **the slowest sink is the reference, and every faster *controllable* sink is delayed up to match it.** Supersedes the implicit "always delay AirPlay to match a slower Sonos" assumption baked into the chirp calibration and Auto-Align paths.
+
+**How it works:** SuperAudio already knows the exact waveform sent to each speaker (the broadcaster reference tap). Cross-correlating the Mac mic against that reference yields one peak per speaker, each at that speaker's true playback lag — recovered from ordinary content, no test tone. New primitives in `AudioCorrelation`: `topCorrelatedLags` (top-N peaks with non-max suppression) and `strongestPeak(in window)`. The controller medians the per-round error, gates on SNR, clamps the step, deadbands, and settles past the receiver's silent catch-up gap after a shift. Two modes via `passiveSyncArmed`: observe (logs geometry + "would apply") and armed (applies via `SessionState.setOffset`, which persists, retimes live, and snoozes the health monitor).
+
+**Rationale — two empirical findings on 2026-06-03 (real-hardware test, AirPlay "Spacelab Audio" + Sonos Playbar):**
+1. **Passive measurement works.** With domain-constrained search + median smoothing, the mic-vs-reference correlation tracks each speaker's lag from live YouTube audio (clean 10-round stretches; Sonos peak stable to ±10 ms). The chirp's only remaining justified role is a one-time coarse anchor on ambiguous/quiet content — not a repeated ritual.
+2. **The control assumption was inverted for this hardware.** "Spacelab Audio" buffers ~3.4 s — it is *slower* than the Sonos (~2.4 s). Since every lever only **adds** delay (you cannot un-buffer a receiver; Sonos timing can't be pulled forward — see gotcha #17), a slow AirPlay sink can't be sped up to meet a faster Sonos. Hence the general rule: align everyone **up** to the slowest sink. Legacy Sonos's natural role is the immovable reference; it can only be made a *follower* once a continuous Sonos feed-delay exists (not yet built — when the slowest sink is AirPlay and Sonos is faster, the corrector now reports the limitation instead of mis-correcting).
+
+**Identification by motion:** a heavy-buffering receiver's peak sits far from its commanded offset, so we don't assume where it is — we nudge the controllable sink's delay by a known amount and detect which peak moved by that amount. The mover is that sink; stationary peaks are reference-class. Makes the corrector hardware-agnostic to hidden receiver buffers.
+
+**Why this is strategically significant:** passive, continuous, cross-protocol harmonization of consumer speakers across ecosystems doesn't exist as a product (see COMPETITIVE_LANDSCAPE). It's the consumer application of what Smaart/REW/ARTA do in pro audio. The AP2 path (M12) makes it shine — AP2 sinks (HomePod, Apple TV, modern Sonos) are low-latency *and* fully delay-controllable, so they slot into the "delay-to-slowest" model cleanly, with legacy Sonos as the anchor.
+
+**Alternatives considered:** keep chirp-only calibration (rejected — single-shot goes stale as Sonos drifts 2.7–3.1 s within a session; audible; can't track continuously). Blind top-N peak picking without motion identification (rejected — mis-locks on beat-spaced false peaks; can't attribute peaks to sinks when a receiver's buffer is large). Reverse-engineer Sonos timing shift (rejected — gotcha #17, encrypted).
+
+**Follow-ups:** (a) continuous Sonos feed-delay (prepend silence / hold HTTP writes) so legacy Sonos can be a follower, not only the reference; (b) generalize identification to multiple simultaneous controllable sinks once AP2 lands; (c) one-time coarse chirp anchor for ambiguous content; (d) once verified, prune the redundant repeated-calibration UI (keep chirp as the anchor). Status 2026-06-03: corrector rewritten + building; verified passively measuring; armed end-to-end correction not yet confirmed on hardware.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.
