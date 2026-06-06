@@ -56,10 +56,10 @@ struct MenuBarView: View {
     @State private var showingDiagnostics: Bool = false
 
     private var visibleSinks: [SinkDescriptor] {
-        if showAllDevices {
-            return store.sinks
-        }
-        return store.sinks.filter(\.isLikelySpeaker)
+        // Cross-protocol dedup first (hide a Sonos's redundant AirPlay face),
+        // then the speaker/diagnostic filter.
+        let base = store.deduplicated
+        return showAllDevices ? base : base.filter(\.isLikelySpeaker)
     }
 
     private var airplay1Sinks: [SinkDescriptor] {

@@ -1716,6 +1716,29 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-05 — Auto-correctors destabilize AirPlay 1; static by-ear offset is the stable path
+
+**Decision:** For AirPlay 1 sinks, the **stable, shippable sync recipe is a static manual offset set by ear, with all automatic correctors off** (Passive Sync in observe-only mode, Mic Calibrate (auto) never run). Continuous hands-free correction of an AP1 sink is **not viable on this hardware** and is deferred to the AP2 path (M12). This refines — does not reverse — the 2026-06-03 "continuous passive correction is the moat" entries: the *measurement* is real, but *applying* corrections to a live AP1 receiver is the part that breaks.
+
+**Root-cause finding (real-hardware test, B&W A5 "Spacelab Audio" + Sonos Playbar + Sonos One SL):** the "A5 keeps failing and reconnecting" symptom — a reconnect loop firing roughly every 13 s — is **not the speaker**. The A5 pings fine, advertises `_raop._tcp`, and answers RECORD with `200 OK` throughout. The loop is caused by the **automatic offset correctors** — `MicCalibrator` ("Mic Calibrate (auto)") and the **armed** `PassiveSyncMonitor` — each of which **restarts the AP1 receiver (TEARDOWN + re-RECORD) on every offset change.** Proven from live OSLog: every corrector apply lines up with a session restart.
+
+**Mechanism (ties to gotcha #16):** the A5 clamps far-future NTP scheduling to its ~93 ms buffer, so an offset can't be honored receiver-side — it's applied **sender-side** as an `AudioBroadcaster` delay. A large retime momentarily starves/silences the receiver; the health monitor reads the dead-air as a dropped receiver and restarts the session. `MicCalibrator` compounds this by *explicitly* restarting the AP1 sink after it applies its delta. So any corrector that touches a live AP1 offset — even a "correct" one — pays a restart, and a continuous corrector pays one every cycle.
+
+**Trust the ear, not the mic.** Mic-based auto-calibration disagreed with the by-ear-correct value by **~1.2 seconds** (the mic wanted ~4200 ms; the ear settled at ~3050 ms). The mic was right about *where the mic is* and wrong about *where the listener is* — mic position ≠ listening position, and the geometry difference is well over a second of acoustic travel + room effect. For a consumer sync product the listening position is the only one that matters, so the **ear is ground truth** and the mic is at best a coarse starting anchor.
+
+**The stable recipe (what actually works today):** static manual AP1 offset by ear (~3050 ms for the A5 against these Sonos) + Passive Sync **OFF / observe-only** + **never** run Mic Calibrate (auto). With no corrector touching the offset, the A5 never restarts — it stays connected and in sync indefinitely. The cost is that **Sonos's hidden buffer drifts session-to-session**, so the static offset needs occasional manual re-tuning by ear. That re-tuning is cheap and infrequent; the reconnect loop was not.
+
+**Reinforced conclusion — hands-free sync needs AP2 (M12).** The whole reason AP1 can't be continuously corrected is that it isn't smoothly retimable: every nudge is a restart. **AP2 is low-latency *and* fully delay-controllable**, so a continuous corrector can retime an AP2 sink in place without tearing the session down. The "delay-to-slowest-sink" model from 2026-06-03 only becomes hands-free once the controllable sinks are AP2. Until M12 lands, continuous auto-correction stays an observe-only research mode, and the product story for AP1 is "set it once by ear."
+
+**Supporting code shipped this session (reduces churn but does NOT make armed AP1 correction safe):**
+- **`PassiveSyncMonitor` runaway fix.** The passive corrector was over-correcting itself into oscillation. Fixed by (a) **trust-geometry** for locating the AP1 sink's position (judge by intrinsic buffer + observed motion, not the currently-commanded offset — same spirit as the 2026-06-03-evening bug fix), (b) a **hysteresis "converged" lock** so once the geometry settles the monitor stops nudging, and (c) widening the **deadband 40 ms → 120 ms**. Together these stop the self-induced churn — but an armed apply still restarts the A5, so the monitor stays observe-only for AP1.
+- **Sonos auto-align default bumped 2000 ms → ~3025 ms** to match where the by-ear AP1 offset actually lands against these Sonos zones, so the starting point is close instead of a second-plus off.
+- **Cross-protocol sink dedup.** A modern Sonos advertises both a Sonos face and a redundant AirPlay face; we now dedup so the same physical speaker doesn't appear twice and get driven over two protocols at once. (Hygiene cleanup surfaced while chasing the reconnect loop.)
+
+**Alternatives considered:** keep armed continuous correction on AP1 and suppress the restart (rejected — the restart is the health monitor doing its job; defeating it to paper over corrector-induced silence risks masking real network drops, gotcha #15); trust the mic value and live with it (rejected — ~1.2 s wrong at the listening position is audibly bad); reverse-engineer Sonos timing to make Sonos the follower instead (rejected — gotcha #17, encrypted). The honest answer is: static-by-ear now, AP2-driven continuous later.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

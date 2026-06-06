@@ -1019,10 +1019,14 @@ final class SessionState {
     /// Auto-align default applied to AirPlay 1 sinks at session start when
     /// Sonos is in the active set AND the user hasn't touched this sink's
     /// offset slider yet. Matches the typical Sonos intrinsic buffer floor
-    /// observed in our soak tests (200 ms–2 s, with 2 s being the common
-    /// case under loaded Wi-Fi). M11 Room Tuning will eventually replace
-    /// this fixed guess with a measured value via iPhone mic.
-    static let sonosAutoAlignOffsetMs: Int = 2000
+    /// observed in our soak tests. **Bumped 2000 → 3025 ms (2026-06-04)**:
+    /// across repeated real-hardware sessions (B&W A5 "Spacelab" + Sonos),
+    /// the A5 offset that actually lands in sync settles in the ~3025–3100 ms
+    /// band — the Sonos's real buffer floor on this LAN is ~3 s, not the 2 s
+    /// earlier guess. 3025 is the best-sounding value dialed in by ear.
+    /// M11 Room Tuning will eventually replace this fixed guess with a
+    /// measured value via iPhone mic.
+    static let sonosAutoAlignOffsetMs: Int = 3025
 
     /// True iff at least one Sonos sink is currently in the active set.
     var isAnySonosActive: Bool {

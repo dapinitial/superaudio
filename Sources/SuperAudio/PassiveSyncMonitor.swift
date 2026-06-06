@@ -58,10 +58,19 @@ final class PassiveSyncMonitor {
     /// + acoustic travel), i.e. its measured lag minus its commanded offset.
     /// `nil` ⇒ needs (re-)acquisition via chirp.
     private var airplayBufferSec: Double?
+    /// Anchored lag of the reference (slowest, uncontrollable) sink — the
+    /// Sonos. Like the AirPlay buffer, it's learned by chirp and then tracked
+    /// in a focused window, so PHAT's sharpened reflection peaks can't
+    /// masquerade as the reference. `nil` ⇒ needs (re-)acquisition.
+    private var referenceAnchorLag: Double?
     /// Consecutive passive rounds where we couldn't re-find the AirPlay peak.
     /// Brief losses coast; a sustained loss forces a fresh chirp anchor.
     private var lostCount = 0
     private var errorWindowMs: [Double] = []
+    /// Hysteresis latch: true once locked. Holds (no offset changes) until
+    /// Sonos drifts past `reengageThresholdMs`, so noise can't cause endless
+    /// re-timing. Reset on start and whenever we re-anchor.
+    private var converged = false
 
     // MARK: - Tuning
 
@@ -75,6 +84,9 @@ final class PassiveSyncMonitor {
     private let minPeakSeparationSec = 0.3
     /// Window (± this) around `offset + buffer` to re-find the AirPlay peak.
     private let trackTolSec = 0.30
+    /// Wider focused-search window for the reference — Sonos drifts more than
+    /// the deterministic AirPlay delay, so give it room to follow.
+    private let referenceTolSec = 0.5
     /// SNR floor for the *focused* AirPlay re-find. Lower than the broad gate:
     /// we already know where the peak is (from the chirp anchor), so a quiet
     /// peak in the right place is still trustworthy — this stops the softer
@@ -84,7 +96,11 @@ final class PassiveSyncMonitor {
     private let lostThreshold = 5
     /// Floor volume for the isolated AirPlay sink during chirp acquisition.
     private let acquireVolumeFloor = 50
-    private let deadbandMs = 40.0
+    // Coarsened from 40 ms: sub-~120 ms is imperceptible, and a tight deadband
+    // made the loop chase per-round measurement noise. `reengage` adds
+    // hysteresis so a locked sync only re-corrects on genuine Sonos drift.
+    private let deadbandMs = 120.0
+    private let reengageThresholdMs = 250.0
     private let maxStepMs = 2000.0
     private let minSamplesToApply = 3
     private let windowCap = 7
@@ -104,6 +120,8 @@ final class PassiveSyncMonitor {
         errorWindowMs.removeAll()
         lostCount = 0
         airplayBufferSec = nil   // always re-anchor with a chirp on a fresh start
+        referenceAnchorLag = nil
+        converged = false
         Log.app.notice("PassiveSyncMonitor ▶ started (\(self.armed ? "ARMED — will move offsets" : "observe only", privacy: .public)) — will chirp-anchor once, then track silently")
         loopTask = Task { @MainActor [weak self] in await self?.runLoop() }
     }
@@ -145,7 +163,7 @@ final class PassiveSyncMonitor {
     /// One round: acquire (chirp) if we have no anchor, otherwise passively
     /// measure and correct. Returns extra settle seconds.
     private func tick(iteration: Int) async throws -> Double {
-        let active = DiscoveredSinks.shared.sinks.filter { SessionState.shared.activeSinks.contains($0.id) }
+        let active = DiscoveredSinks.deduplicate(DiscoveredSinks.shared.sinks).filter { SessionState.shared.activeSinks.contains($0.id) }
         guard let airplay = active.first(where: { $0.protocolKind == .airplay1 }) else {
             Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): no controllable AirPlay sink active")
             return 0
@@ -155,8 +173,8 @@ final class PassiveSyncMonitor {
             return 0
         }
 
-        // Acquire an anchor with one chirp if we don't have one.
-        if airplayBufferSec == nil {
+        // Acquire anchors with chirps if we don't have both (AirPlay + reference).
+        if airplayBufferSec == nil || referenceAnchorLag == nil {
             let ok = await acquireWithChirp(airplay: airplay, others: active.filter { $0.id != airplay.id }, iteration: iteration)
             lostCount = 0
             return ok ? 1.0 : 1.5   // settle, then track (or retry the chirp)
@@ -190,26 +208,48 @@ final class PassiveSyncMonitor {
         // capture avoids the chirp landing before the mic is live).
         _ = try? await MicCapture().capture(duration: 0.5)
 
-        Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ◆ chirp-anchoring — one sweep through \(airplay.displayName, privacy: .public) (others muted)…")
         let offsetSec = Double(SessionState.shared.offset(for: airplay.id)) / 1000.0
-        var ok = false
+
+        // --- Chirp 1: AirPlay in isolation (others already muted) → its buffer.
+        Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ◆ chirp-anchoring \(airplay.displayName, privacy: .public) (others muted)…")
+        var airOK = false
         do {
             let m = try await MicCalibrator.measureWithChirp(chirpDurationSec: 1.0, maxLagSec: maxLagSec)
             if m.snr >= snrGate {
                 let buffer = max(0, m.lagSeconds - offsetSec)
                 airplayBufferSec = buffer
-                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ✓ anchored — \(airplay.displayName, privacy: .public) lag=\(String(format: "%.3f", m.lagSeconds), privacy: .public)s (SNR \(String(format: "%.1f", m.snr), privacy: .public)) → buffer \(String(format: "%.3f", buffer), privacy: .public)s at offset \(Int(offsetSec * 1000))ms")
-                ok = true
+                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ✓ anchored \(airplay.displayName, privacy: .public) lag=\(String(format: "%.3f", m.lagSeconds), privacy: .public)s (SNR \(String(format: "%.1f", m.snr), privacy: .public)) → buffer \(String(format: "%.3f", buffer), privacy: .public)s")
+                airOK = true
             } else {
-                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): chirp anchor weak (SNR \(String(format: "%.1f", m.snr), privacy: .public)) — will retry")
+                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): AirPlay chirp weak (SNR \(String(format: "%.1f", m.snr), privacy: .public)) — will retry")
             }
         } catch {
-            Log.app.error("PassiveSyncMonitor #\(iteration, privacy: .public): chirp anchor failed: \(String(describing: error), privacy: .public)")
+            Log.app.error("PassiveSyncMonitor #\(iteration, privacy: .public): AirPlay chirp failed: \(String(describing: error), privacy: .public)")
+        }
+
+        // --- Chirp 2: reference (Sonos) in isolation → its lag. Mute AirPlay,
+        //     un-mute the others (the Sonos zones).
+        await SessionState.shared.setVolumeImmediate(0, for: airplay.id)
+        for d in others { await SessionState.shared.setVolumeImmediate(max(saved[d.id] ?? acquireVolumeFloor, acquireVolumeFloor), for: d.id) }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ◆ chirp-anchoring reference (Sonos; AirPlay muted)…")
+        var refOK = false
+        do {
+            let m = try await MicCalibrator.measureWithChirp(chirpDurationSec: 1.0, maxLagSec: maxLagSec)
+            if m.snr >= snrGate {
+                referenceAnchorLag = m.lagSeconds
+                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): ✓ anchored reference (Sonos) lag=\(String(format: "%.3f", m.lagSeconds), privacy: .public)s (SNR \(String(format: "%.1f", m.snr), privacy: .public))")
+                refOK = true
+            } else {
+                Log.app.notice("PassiveSyncMonitor #\(iteration, privacy: .public): reference chirp weak (SNR \(String(format: "%.1f", m.snr), privacy: .public)) — will retry")
+            }
+        } catch {
+            Log.app.error("PassiveSyncMonitor #\(iteration, privacy: .public): reference chirp failed: \(String(describing: error), privacy: .public)")
         }
 
         // Restore all volumes.
         for (id, v) in saved { await SessionState.shared.setVolumeImmediate(v, for: id) }
-        return ok
+        return airOK && refOK
     }
 
     // MARK: - Passive tracking + correction
@@ -239,44 +279,38 @@ final class PassiveSyncMonitor {
 
         let currentOffsetMs = SessionState.shared.offset(for: airplay.id)
         let currentOffsetSec = Double(currentOffsetMs) / 1000.0
-        let peakLags = peaks.map(\.lagSeconds).sorted()
 
-        // 3. Re-find the anchored AirPlay peak with a FOCUSED window search
-        //    near offset + buffer, at the lower `trackGate` (we know where it
-        //    is, so we don't need it to win the broad gated top-N).
-        let expected = currentOffsetSec + (airplayBufferSec ?? 0)
-        let airHit = AudioCorrelation.strongestPeak(
+        // 3. AirPlay position is KNOWN by construction: its lag = commanded
+        //    offset + the buffer measured at the chirp anchor. We deliberately
+        //    do NOT re-measure it acoustically — near alignment its peak merges
+        //    with the Sonos's, and resolving the two against each other was the
+        //    source of the runaway (phantom errors → endless re-timing → the
+        //    receiver never actually plays). Trust the geometry.
+        let buffer = airplayBufferSec ?? 0
+        let airplayLag = currentOffsetSec + buffer
+
+        // 4. Reference (Sonos) — FOCUSED window search near its anchored lag,
+        //    exactly like AirPlay. PHAT sharpens room reflections into strong
+        //    spurious peaks, so "slowest peak wins" grabs junk; a focused
+        //    window around the anchor ignores them. Update the anchor each
+        //    round so it follows Sonos's drift.
+        let refExpected = referenceAnchorLag ?? 0
+        let refHit = AudioCorrelation.strongestPeak(
             reference: ref.samples, observed: micSamples, sampleRate: ref.sampleRate,
-            loSeconds: max(0, expected - trackTolSec), hiSeconds: expected + trackTolSec, phat: true)
-        guard let airHit, airHit.snr >= trackGate else {
+            loSeconds: max(0, refExpected - referenceTolSec), hiSeconds: refExpected + referenceTolSec, phat: true)
+        guard let refHit, refHit.snr >= trackGate else {
             lostCount += 1
             if lostCount >= lostThreshold {
-                airplayBufferSec = nil   // re-anchor with a chirp next round
-                return record(iteration, peaks: peaks, status: "lost AirPlay peak \(lostCount)× — re-anchoring with chirp next round")
+                referenceAnchorLag = nil; airplayBufferSec = nil   // re-anchor both next round
+                return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "lost Sonos reference \(lostCount)× — re-anchoring next round")
             }
-            return record(iteration, peaks: peaks, status: "AirPlay peak not found near \(String(format: "%.3f", expected))s (\(lostCount)/\(lostThreshold)) — coast")
+            return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "Sonos peak not found near \(String(format: "%.3f", refExpected))s (\(lostCount)/\(lostThreshold)) — coast")
         }
-        let airplayLag = airHit.lagSeconds
-        lostCount = 0
-        airplayBufferSec = airplayLag - currentOffsetSec   // keep the estimate fresh
+        let referenceLag = refHit.lagSeconds
+        referenceAnchorLag = referenceLag   // track drift
 
-        guard peakLags.count >= 2 else {
-            return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "only AirPlay peak confident — coast")
-        }
-
-        // 4. Reference = slowest OTHER sink (exclude the AirPlay peak itself).
-        //    The AirPlay sink is controllable, so a stale offset pushing it
-        //    "late" must NOT make it the reference — we judge it by its
-        //    intrinsic buffer, not its currently-offset position.
-        let otherLags = peakLags.filter { abs($0 - airplayLag) > minPeakSeparationSec / 2 }
-        guard let referenceLag = otherLags.max() else {
-            return record(iteration, peaks: peaks, airplayLag: airplayLag, status: "only AirPlay peak resolvable — coast")
-        }
-
-        // 5. True floor only if AirPlay is slower than the reference even at
-        //    offset 0 (its intrinsic buffer exceeds the reference) — then it
-        //    can't be sped up and others would need delaying.
-        let buffer = airplayBufferSec ?? max(0, airplayLag - currentOffsetSec)
+        // 5. True floor only if AirPlay's intrinsic buffer exceeds the
+        //    reference even at offset 0 — then it can't be sped up.
         if buffer >= referenceLag - (minPeakSeparationSec / 2) {
             errorWindowMs.removeAll()
             return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: referenceLag,
@@ -294,9 +328,23 @@ final class PassiveSyncMonitor {
             return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: referenceLag,
                           status: "correcting toward \(String(format: "%.3f", referenceLag))s · err=\(Int(errorMs))ms median=\(Int(median))ms · accumulating (\(errorWindowMs.count)/\(minSamplesToApply))")
         }
+        // Hysteresis latch — THE runaway fix. Once locked, HOLD and stop
+        // touching the offset; only re-engage when Sonos has genuinely drifted
+        // past `reengageThresholdMs`. Without this, measurement noise larger
+        // than the tiny deadband triggered a correction every round, and each
+        // correction re-timed (and silenced) the AirPlay receiver — forever.
+        if converged {
+            if abs(median) < reengageThresholdMs {
+                return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: referenceLag,
+                              status: "✓ locked — holding (median \(Int(median))ms, within ±\(Int(reengageThresholdMs))ms)")
+            }
+            converged = false   // real drift — act again
+        }
         if abs(median) < deadbandMs {
+            converged = true
+            errorWindowMs.removeAll()
             return record(iteration, peaks: peaks, airplayLag: airplayLag, referenceLag: referenceLag,
-                          status: "aligned within deadband (median \(Int(median))ms) — holding")
+                          status: "✓ converged — locked (median \(Int(median))ms)")
         }
 
         let stepMs = max(-maxStepMs, min(maxStepMs, median))

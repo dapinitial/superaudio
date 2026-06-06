@@ -17,6 +17,22 @@ final class DiscoveredSinks {
 
     private(set) var sinks: [SinkDescriptor] = []
 
+    /// Sinks with cross-protocol duplicates removed. A Sonos speaker with
+    /// AirPlay enabled (e.g. a Sonos One SL) advertises BOTH `_sonos` and
+    /// `_raop`, so it shows up twice — once as Sonos, once as AirPlay. The
+    /// AirPlay face is an AirPlay-2-only receiver our AirPlay-1 client can't
+    /// drive (it times out), and we'd rather drive it via the Sonos path
+    /// anyway. So drop any AirPlay sink whose name matches a Sonos sink.
+    var deduplicated: [SinkDescriptor] { Self.deduplicate(sinks) }
+
+    static func deduplicate(_ all: [SinkDescriptor]) -> [SinkDescriptor] {
+        let sonosNames = Set(all.filter { $0.protocolKind == .sonos }
+                                .map { $0.displayName.lowercased() })
+        return all.filter { sink in
+            !(sink.protocolKind == .airplay1 && sonosNames.contains(sink.displayName.lowercased()))
+        }
+    }
+
     private var observerTasks: [Task<Void, Never>] = []
 
     private init() {}
