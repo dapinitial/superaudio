@@ -15,6 +15,12 @@ let package = Package(
         .library(name: "SuperAudioAirPlay2", targets: ["SuperAudioAirPlay2"]),
         .library(name: "SuperAudioSonos", targets: ["SuperAudioSonos"]),
     ],
+    dependencies: [
+        // M12 AirPlay 2 pairing — SRP-6a needs 3072-bit modular arithmetic,
+        // which Swift/CryptoKit don't provide. attaswift/BigInt is pure-Swift
+        // and MIT (no C toolchain tax — see DECISIONS.md 2026-06-25 M12 sprint).
+        .package(url: "https://github.com/attaswift/BigInt.git", from: "5.3.0"),
+    ],
     targets: [
         // Core contracts — depends on nothing project-internal. Pure Swift + Apple frameworks.
         // Bundles the device profile JSON resources for the M5.5 substrate.
@@ -47,7 +53,11 @@ let package = Package(
         // `swift-opus`) land with the handshake/audio sub-tasks.
         .target(
             name: "SuperAudioAirPlay2",
-            dependencies: ["SuperAudioCore", "SuperAudioDiscovery"]
+            dependencies: [
+                "SuperAudioCore",
+                "SuperAudioDiscovery",
+                .product(name: "BigInt", package: "BigInt"),
+            ]
         ),
 
         // Sonos protocol module. Depends on Core + Discovery only.

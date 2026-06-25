@@ -1775,6 +1775,24 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-25 (M12 sprint) — AP2 pairing: CryptoKit-native fresh Swift, NOT vendored pair_ap; revises the 2026-05-29 plan
+
+**Decision:** Implement AirPlay 2 pairing (pair-setup + pair-verify) in **fresh Swift on Apple CryptoKit**, NOT by vendoring the `pair_ap` C library. The one primitive CryptoKit lacks — big-integer modular arithmetic for SRP-6a — is supplied by a **pure-Swift MIT BigInt package** (attaswift/BigInt), which reintroduces none of the C-build cost that motivated the original vendoring decision. **This revises the 2026-05-29 (evening) decision** to "vendor pair_ap (MIT)"; that part of the plan is superseded. The rest of the 2026-05-29 stack stands (swift-opus for the codec is still on the table; fresh Swift for PTP/RTSP/RTP; shairport-sync/nqptp/pair_ap read-only as protocol references).
+
+**Why revise:** the 2026-05-29 estimate picked `pair_ap` for *speed* (SRP-6a + the HomeKit message grammar was projected at ~2 weeks of fresh Swift; vendoring dropped it to ~3 days). Two facts seen at implementation time invert that math:
+1. **CryptoKit already covers ~80% of the crypto natively** — Curve25519 (X25519 ECDH), ChaCha20-Poly1305, Ed25519 sign/verify, HKDF, SHA-512. None of these need to be written or vendored. What's actually left to write fresh is small: TLV8 encode/decode, SRP-6a (on top of a bignum), and the pairing state machine.
+2. **Vendoring `pair_ap` drags in a C toolchain tax** — libsodium + libplist + libgcrypt, a mixed C/Swift SPM target, and ad-hoc-signing a mixed bundle that is currently pure-Swift. That plumbing is itself multi-day and is the most likely "M12 not done by day 14" failure mode. The path chosen for speed had become the slower, riskier one.
+
+**Why this fits the codebase philosophy better than the original plan:** the project's stated norms are "fresh Swift implementations only" for protocol/wire code (same rule applied to RAOP), "no CocoaPods, keep SPM clean," ad-hoc local signing, and strict license hygiene. CryptoKit-native + one pure-Swift MIT dep honors all of these; the C-vendoring path strains the signing/build simplicity. License hygiene is *stronger* this way: pair_ap/shairport-sync are read **as protocol reference only** (the wire format is a fact, not copyrightable — identical stance to RAOP), so no third-party pairing code enters the binary at all. attaswift/BigInt (MIT) is the only added dependency; it gets a THIRD_PARTY_NOTICES entry.
+
+**What gets built (fresh Swift, CryptoKit + BigInt):** TLV8 codec → SRP-6a (SHA-512, RFC 5054 3072-bit group), verified against RFC test vectors offline → pair-setup transient flow over RTSP POST → pair-verify (X25519 ECDH + Ed25519 + ChaCha20-Poly1305 + HKDF, all CryptoKit) → derived session keys. Receiver references read (not copied): shairport-sync `pair_ap/`, `lmcgartland/airplay2-rs` (sender-side).
+
+**Risk acknowledged:** SRP-6a correctness and matching the exact HomeKit/AirPlay message grammar are fiddly and only fully verifiable against a real receiver (the One SL, `needsPairing=yes`, is the test bed; a woken Apple TV 4K is the second). Offline RFC-5054 test vectors de-risk the SRP math before we ever hit the device. If a receiver turns out to need a pairing variant that's materially harder than transient SRP, revisit vendoring for that piece only — but the primitives stay CryptoKit.
+
+**Alternatives considered:** vendor pair_ap as committed (rejected — see "why revise"); write our own bignum/modexp instead of a dep (rejected — error-prone and slow; a vetted MIT pure-Swift BigInt is the right call and stays C-free); use Apple's `Security`/`Accelerate` for modexp (rejected — no public arbitrary-precision modexp API). See ROADMAP M12 + gotcha #25.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

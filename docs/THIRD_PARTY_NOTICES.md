@@ -6,7 +6,12 @@ SuperAudio uses, will use, or has read the following third-party software. This 
 
 ## In-binary dependencies
 
-(None yet. Each entry below is provisional — confirmed when the dependency actually lands in `Package.swift` or vendored sources.)
+### attaswift/BigInt *(landed 2026-06-25 — M12 AirPlay 2 pairing)*
+
+- **Source:** https://github.com/attaswift/BigInt
+- **License:** MIT
+- **Use:** Arbitrary-precision integer arithmetic for SRP-6a (3072-bit modular exponentiation) in `SuperAudioAirPlay2` pair-setup. Swift and CryptoKit provide no bignum; this is the pure-Swift, C-free way to get it (see DECISIONS.md 2026-06-25 M12 sprint — chosen over vendoring `pair_ap`). First real SPM dependency.
+- **Attribution:** Copyright © Károly Lőrentey. Licensed under MIT.
 
 ### Apple ALAC Encoder *(provisional, Phase 1)*
 
@@ -71,6 +76,24 @@ These projects were read to understand wire formats and protocol behavior. **No 
 - **Source:** https://github.com/openairplay/node_airtunes
 - **License:** BSD-2-Clause
 - **Use:** Reference for AirPlay 1 sender behavior in a high-level (JS) implementation. Cleaner protocol description than shairport-sync in some respects.
+
+### pair_ap (ejurgensen) *(M12 AirPlay 2 — reference only; NOT vendored)*
+
+- **Source:** https://github.com/ejurgensen/pair_ap
+- **License:** MIT
+- **Use:** Reference for the AirPlay 2 HomeKit pairing message grammar (TLV8 layout, pair-setup/pair-verify state machine, SRP-6a parameter choices). The 2026-05-29 plan was to vendor this; the 2026-06-25 decision instead implements pairing fresh in Swift on CryptoKit + BigInt, reading pair_ap for the wire grammar only. **No code copied** — despite its permissive MIT license, we keep the fresh-Swift discipline for protocol code. If it is ever vendored later, it moves to the in-binary list (MIT-compatible).
+
+### airplay2-rs (lmcgartland) *(M12 — reference only)*
+
+- **Source:** https://github.com/lmcgartland/airplay2-rs
+- **License:** GPL-2.0
+- **Use:** Reference for AirPlay 2 **sender-side** architecture (PTP, RTSP SETUP, RTP/Opus) where shairport-sync's receiver perspective doesn't map. Read only; GPL — no code copied.
+
+### nqptp (mikebrady) *(M12 — reference only)*
+
+- **Source:** https://github.com/mikebrady/nqptp
+- **License:** GPL-2.0
+- **Use:** Reference for the PTP (IEEE 1588) timing subset AirPlay 2 needs. Read only; GPL — our PTP monitor is fresh Swift.
 
 ---
 
