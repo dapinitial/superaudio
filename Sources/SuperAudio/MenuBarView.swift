@@ -23,6 +23,7 @@ struct MenuBarView: View {
     private let store = DiscoveredSinks.shared
     private let session = SessionState.shared
     private let groups = SpeakerGroups.shared
+    private let topology = SonosTopology.shared
 
     @AppStorage("showAllDevices") private var showAllDevices: Bool = false
     @AppStorage("muteMacWhilePlaying") private var muteMacWhilePlaying: Bool = true
@@ -59,7 +60,17 @@ struct MenuBarView: View {
         // Cross-protocol dedup first (hide a Sonos's redundant AirPlay face),
         // then the speaker/diagnostic filter.
         let base = store.deduplicated
-        return showAllDevices ? base : base.filter(\.isLikelySpeaker)
+        let speakerFiltered = showAllDevices ? base : base.filter(\.isLikelySpeaker)
+        // "Show all devices" is the diagnostic escape hatch — reveal grouped
+        // members too, so the user can see/inspect the full topology.
+        guard !showAllDevices else { return speakerFiltered }
+        // M6.6a — hide non-coordinator members of a Sonos group. We feed only
+        // the coordinator; SonosNet relays to the rest (gotcha #24). Fail-open:
+        // unknown topology hides nothing.
+        let sonosHere = speakerFiltered.filter { $0.protocolKind == .sonos }
+        let hidden = topology.hiddenMemberIDs(among: sonosHere)
+        guard !hidden.isEmpty else { return speakerFiltered }
+        return speakerFiltered.filter { !hidden.contains($0.id) }
     }
 
     private var airplay1Sinks: [SinkDescriptor] {
@@ -184,7 +195,7 @@ struct MenuBarView: View {
                                     .font(.caption2)
                                     .foregroundStyle(.orange)
                             } else {
-                                Text(descriptor.protocolKind.displayName)
+                                Text(subtitle(for: descriptor))
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -621,6 +632,18 @@ struct MenuBarView: View {
             .keyboardShortcut("q")
             .controlSize(.small)
         }
+    }
+
+    /// Row subtitle: protocol name, plus — for a Sonos that coordinates a
+    /// multi-speaker group (M6.6a) — the grouped members it relays to. The
+    /// hidden members don't get their own rows, so this is where the user
+    /// learns "playing this one also fills Den 2."
+    private func subtitle(for descriptor: SinkDescriptor) -> String {
+        let base = descriptor.protocolKind.displayName
+        guard descriptor.protocolKind == .sonos else { return base }
+        let grouped = topology.groupedMemberNames(forCoordinator: descriptor)
+        guard !grouped.isEmpty else { return base }
+        return "\(base) · group → +\(grouped.joined(separator: ", "))"
     }
 
     /// Click on a sink row → toggle the session. The slider next to it has

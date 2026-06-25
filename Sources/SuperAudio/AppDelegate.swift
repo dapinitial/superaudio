@@ -21,6 +21,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         registerSinkDiscoverers()
         DiscoveredSinks.shared.startObserving()
         Task { @MainActor in AirPlay1Keepalive.shared.start() }
+        // M6.6a — poll Sonos zone-group topology so the menu can hide
+        // non-coordinator grouped members and feed only the coordinator.
+        Task { @MainActor in SonosTopology.shared.start() }
         Log.app.info("SuperAudio ready")
 
         // `--auto-click=<displayName>` — launched with this arg, the app
@@ -92,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         _ = group.wait(timeout: .now() + 2.5)
 
+        SonosTopology.shared.stop()
         DiscoveredSinks.shared.stopObserving()
         for discoverer in SinkRegistry.shared.allDiscoverers() {
             discoverer.stop()

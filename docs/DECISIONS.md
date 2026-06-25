@@ -1739,6 +1739,42 @@ Total: **~1.5 weeks of work + ~$250-499 in test hardware.** Adds to the v1 timel
 
 ---
 
+## 2026-06-09 — Soak test: corrector-off holds, but an AP1 reconnect breaks cross-sink sync; WiFi fragility is the remaining enemy
+
+**Finding:** A ~3-hour real-hardware soak (B&W A5 + grouped Sonos, static offset ~3050 ms, all correctors off) **validated the corrector-off recipe — zero corrector events the entire run.** The 2026-06-05 fix holds: nothing self-inflicted a restart. But the soak exposed the *next* failure mode: **a single AP1 reconnect permanently breaks cross-sink sync, and nothing re-aligns it.**
+
+**What happened:** the A5 suffered **real WiFi network drops** — genuine socket deaths (`Socket is not connected` → timing packets stale → health monitor "Network loss detected" → supervisor auto-reconnect). They clustered in the first ~35 min (reconnects at 16:43, 16:43, 17:02, 17:13), then the A5 stayed rock-solid for the final ~2.5 hours. These are honest AirPlay-1-over-WiFi drops, **not** corrector-induced (correctors were off).
+
+**Why a reconnect desyncs:** on auto-reconnect the A5 re-subscribes at its **static offset** (`subscribe delay=3.000s`) — a stale point-in-time value. But the Sonos kept playing and **drifted through the gap**, so the A5 comes back aligned to where the Sonos *was*, not where it *is*. There is no re-alignment step after a reconnect, so once a drop happens the two stay out of sync for the rest of the session. The static-offset model survives a *quiet* session indefinitely but **cannot survive one WiFi blip.**
+
+**Conclusion / next levers:**
+1. **Ethernet the A5** is the highest-leverage reliability fix — it attacks the *trigger*. The drops were all real WiFi losses; the A5 has an RJ45 jack. No drops → no reconnects → the static offset holds. This is now the recommended deployment for the AP1 sink.
+2. **Re-sync after reconnect** is the missing software feature, but on AP1 it's circular: re-aligning means another offset change, which means another restart. So robust mid-session re-sync really wants **AP2 (M12)** — smoothly retimable, reconnect-tolerant. Reinforces the 2026-06-05 conclusion from a new angle: AP1 is fragile both to *correction* and to *reconnection*; AP2 fixes both.
+
+**Also confirmed this session (logged in ROADMAP M6.6a):** grouping the Sonos in the Sonos app and feeding **only the group coordinator** through SuperAudio gives sample-locked Sonos-to-Sonos sync (SonosNet) — the M6.6a premise, validated by hand. The gap: SuperAudio has no group-topology awareness, so activating *both* grouped members double-streams and fights the group.
+
+---
+
+## 2026-06-25 — Sonos group awareness shipped: feed the coordinator only (M6.6a precursor)
+
+**Decision:** SuperAudio now reads Sonos zone-group topology and **feeds only the group coordinator**, hiding non-coordinator members from the menu and from Play All. This is the precursor half of M6.6a — read-only awareness of *existing* groups — and it closes the double-stream gap that bit twice (observed 2026-06-09, recurred under the 2026-06-16 soak as "even the grouped Sonos went out of sync"). The full M6.6a (programmatic auto-grouping via Sonos Cloud Control for users who haven't grouped in the Sonos app) remains ahead; coordinator-only feeding is its foundation.
+
+**Why it was breaking (gotcha #24):** a Sonos group is sample-locked over SonosNet by one coordinator; the other members render the coordinator's relay, not an external stream. SuperAudio discovered each grouped speaker as a separate `_sonos._tcp` renderer and — via "Play All" — streamed an independent HTTP/AAC stream to *both*. Two competing streams into an already-synced group → the members fight → drift that no AP1 offset can fix (the two Sonos aren't even aligned with each other). The user's instinct was right: "set a GROUP device and omit the other cleanly" — that's exactly coordinator-only feeding, and it should be automatic, not a manual per-session deselect.
+
+**Implementation:**
+- **`SonosClient.getZoneGroupState()`** — one new SOAP call to `ZoneGroupTopology:1` (`GetZoneGroupState`). The `<ZoneGroupState>` field carries the group XML as an escaped string; we extract, unescape, and regex-parse `ZoneGroup`/`ZoneGroupMember` (Coordinator UUID, member UUID, member ZoneName). Satellite sub-elements of a stereo/surround member are ignored — they're sub-units of one logical member, not separate sinks. The service is **household-global**, so one online Sonos maps the whole house.
+- **`SonosTopology`** (app module, `@Observable`) — polls every 10 s (group membership changes rarely) from the first reachable Sonos, plus exposes `hiddenMemberIDs(among:)` and `groupedMemberNames(forCoordinator:)`.
+- **`MenuBarView`** — `visibleSinks` filters out hidden members (so rows, Play All, and saved-group capture all inherit it); the coordinator row gets a "group → +<members>" subtitle. "Show all devices" reveals members again for diagnostics.
+- **Identity maps cleanly** because the Sonos discoverer already uses `RINCON_<UDN>` as the `SinkID`, which equals the topology member `UUID`; a room-name fallback covers any Bonjour-vs-topology format drift (room names are unique per household).
+
+**Fail-open contract:** if topology is unknown — no Sonos discovered yet, or every poll failed — `groups` is empty and the helpers hide *nothing*. A transient SOAP timeout keeps the prior snapshot rather than flickering a member back into the menu. The app never hides a speaker the user wants because a poll failed.
+
+**Verified on real hardware (2026-06-25):** the poller detected the live group `2×[Spacelab Den + Den]` and polls cleanly every 10 s; the A5 ("Spacelab Audio", a distinct name) is unaffected and still listed. Parser also unit-checked offline against a representative escaped `ZoneGroupState` payload incl. a stereo pair with satellites. **Note a naming subtlety this surfaced:** the A5's AirPlay name is "Spacelab **Audio**", while the two Sonos zones are "Spacelab **Den**" and "Den" — no collision with the A5, and the Sonos's own redundant AirPlay face ("Spacelab Den", `_raop`) was already cross-protocol-deduped (gotcha-adjacent existing behaviour). This is *Sonos network grouping*, distinct from SuperAudio's own saved Speaker Groups (`SpeakerGroups.swift`), which are unaffected.
+
+**Alternatives considered:** keep the manual "activate only one Sonos of a group" workaround (rejected — the user explicitly wanted it automatic, and a per-session manual step is exactly the friction that produced the bug); hardcode coordinator detection by name (rejected — brittle; topology is the source of truth and handles regrouping live); block/disable non-coordinator rows instead of hiding (rejected — hiding is cleaner and matches "show the group as one device," with "Show all devices" as the escape hatch). See gotcha #24 + ROADMAP M6.6a.
+
+---
+
 ## Open questions (resolve before the affected sub-task)
 
 - **Hub Stick OS image: Buildroot vs Raspberry Pi OS Lite (M13).** Buildroot is smaller and more reproducible; Raspberry Pi OS Lite is easier to maintain and gets security updates for free. Decide closer to M13.

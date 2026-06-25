@@ -34,6 +34,27 @@ public final class SonosClient: @unchecked Sendable {
         public let raw: String                 // full XML body, for debugging
     }
 
+    /// One Sonos zone group as reported by `ZoneGroupTopology`. A group is
+    /// the unit SonosNet sample-locks together: the **coordinator** is the
+    /// only member that renders an external stream, and it relays audio to
+    /// the other members over SonosNet. SuperAudio must stream to ONLY the
+    /// coordinator — feeding a non-coordinator member pushes a second,
+    /// competing stream into a group that's already internally synced, and
+    /// the two fight → audible drift (gotcha #24, root-caused 2026-06-16).
+    public struct ZoneGroup: Sendable, Hashable {
+        public let coordinatorUUID: String          // RINCON_… of the coordinator
+        public let members: [Member]                // every speaker in the group, incl. the coordinator
+
+        public struct Member: Sendable, Hashable {
+            public let uuid: String                 // RINCON_… — compared against our Sonos SinkID
+            public let zoneName: String             // room name, e.g. "Den" — compared against displayName
+        }
+
+        /// True when the group spans more than one speaker — the only case
+        /// where coordinator-only feeding matters.
+        public var isMultiMember: Bool { members.count > 1 }
+    }
+
     public enum SonosClientError: Error, CustomStringConvertible {
         case missingHost
         case httpError(Int, String)
@@ -186,6 +207,115 @@ public final class SonosClient: @unchecked Sendable {
         let relSec = Self.parseHHMMSS(relTimeStr) ?? 0
         Log.sonos.info("SOAP[\(label, privacy: .public)] ← GetPositionInfo 200 OK relTime=\(relTimeStr, privacy: .public) (\(String(format: "%.3f", relSec), privacy: .public)s)")
         return PositionInfo(relTimeSeconds: relSec, trackURI: trackURI, raw: respBody)
+    }
+
+    /// Query the household's zone-group topology via `ZoneGroupTopology`.
+    ///
+    /// This service is **household-global** — any reachable Sonos returns the
+    /// full group layout for every speaker, so the topology poller only needs
+    /// one online Sonos to map the whole house. The result drives M6.6a:
+    /// hide non-coordinator grouped members from the menu and feed only the
+    /// coordinator (SonosNet relays to the rest).
+    ///
+    /// The `<ZoneGroupState>` field carries the group XML as an *escaped*
+    /// string (`&lt;ZoneGroup …&gt;`), so we extract the field, unescape it,
+    /// then parse the `ZoneGroup` / `ZoneGroupMember` structure. Some firmware
+    /// returns it already-unescaped; the unescape step is a no-op there.
+    public func getZoneGroupState(timeout: TimeInterval = 5) async throws -> [ZoneGroup] {
+        let body = """
+        <?xml version="1.0"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+          <s:Body>
+            <u:GetZoneGroupState xmlns:u="urn:schemas-upnp-org:service:ZoneGroupTopology:1">
+            </u:GetZoneGroupState>
+          </s:Body>
+        </s:Envelope>
+        """
+        guard !descriptor.endpoint.host.isEmpty else {
+            throw SonosClientError.missingHost
+        }
+        let urlString = "http://\(descriptor.endpoint.host):\(descriptor.endpoint.port)/ZoneGroupTopology/Control"
+        guard let url = URL(string: urlString) else {
+            throw SonosClientError.missingHost
+        }
+        var request = URLRequest(url: url, timeoutInterval: timeout)
+        request.httpMethod = "POST"
+        request.setValue("text/xml; charset=\"utf-8\"", forHTTPHeaderField: "Content-Type")
+        request.setValue("\"urn:schemas-upnp-org:service:ZoneGroupTopology:1#GetZoneGroupState\"", forHTTPHeaderField: "SOAPAction")
+        request.httpBody = body.data(using: .utf8)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw SonosClientError.parseFailed("non-HTTP response")
+        }
+        let respBody = String(data: data, encoding: .utf8) ?? ""
+        guard http.statusCode == 200 else {
+            throw SonosClientError.httpError(http.statusCode, respBody)
+        }
+
+        guard let stateField = extractField("ZoneGroupState", from: respBody) else {
+            throw SonosClientError.parseFailed("no <ZoneGroupState> in response")
+        }
+        let groups = Self.parseZoneGroups(Self.xmlUnescape(stateField))
+        Log.sonos.info("ZoneGroupTopology: \(groups.count) group(s), \(groups.reduce(0) { $0 + $1.members.count }) member(s)")
+        return groups
+    }
+
+    /// Parse the (unescaped) `<ZoneGroupState>` XML into `[ZoneGroup]`.
+    /// Regex-based rather than full XML parsing — the structure is shallow
+    /// and stable, and we only need three attributes (group `Coordinator`,
+    /// member `UUID`, member `ZoneName`). Satellite sub-elements of a
+    /// stereo/surround member are ignored: they're physical sub-units of one
+    /// logical member, not independently addressable sinks.
+    static func parseZoneGroups(_ xml: String) -> [ZoneGroup] {
+        var result: [ZoneGroup] = []
+        let groupPattern = "<ZoneGroup\\b([^>]*)>(.*?)</ZoneGroup>"
+        guard let groupRegex = try? NSRegularExpression(pattern: groupPattern, options: [.dotMatchesLineSeparators]) else {
+            return []
+        }
+        let full = NSRange(xml.startIndex..., in: xml)
+        for gm in groupRegex.matches(in: xml, range: full) {
+            guard let attrR = Range(gm.range(at: 1), in: xml),
+                  let innerR = Range(gm.range(at: 2), in: xml) else { continue }
+            let groupAttrs = String(xml[attrR])
+            let inner = String(xml[innerR])
+            guard let coordinator = attribute("Coordinator", in: groupAttrs) else { continue }
+
+            var members: [ZoneGroup.Member] = []
+            let memberPattern = "<ZoneGroupMember\\b([^>]*?)/?>"
+            if let memberRegex = try? NSRegularExpression(pattern: memberPattern, options: [.dotMatchesLineSeparators]) {
+                let innerRange = NSRange(inner.startIndex..., in: inner)
+                for mm in memberRegex.matches(in: inner, range: innerRange) {
+                    guard let mAttrR = Range(mm.range(at: 1), in: inner) else { continue }
+                    let mAttrs = String(inner[mAttrR])
+                    guard let uuid = attribute("UUID", in: mAttrs) else { continue }
+                    let zoneName = attribute("ZoneName", in: mAttrs) ?? uuid
+                    members.append(.init(uuid: uuid, zoneName: zoneName))
+                }
+            }
+            guard !members.isEmpty else { continue }
+            result.append(ZoneGroup(coordinatorUUID: coordinator, members: members))
+        }
+        return result
+    }
+
+    /// Pull a single `Name="value"` attribute out of a tag's attribute string.
+    static func attribute(_ name: String, in attrs: String) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: "\\b\(name)=\"(.*?)\"", options: []) else { return nil }
+        let range = NSRange(attrs.startIndex..., in: attrs)
+        guard let match = regex.firstMatch(in: attrs, range: range),
+              let r = Range(match.range(at: 1), in: attrs) else { return nil }
+        return String(attrs[r])
+    }
+
+    /// Reverse the standard XML entity escaping. `&amp;` is undone last so a
+    /// literal `&lt;` in the source survives a leading-ampersand collision.
+    static func xmlUnescape(_ s: String) -> String {
+        s.replacingOccurrences(of: "&lt;", with: "<")
+         .replacingOccurrences(of: "&gt;", with: ">")
+         .replacingOccurrences(of: "&quot;", with: "\"")
+         .replacingOccurrences(of: "&apos;", with: "'")
+         .replacingOccurrences(of: "&amp;", with: "&")
     }
 
     /// Parse `HH:MM:SS` (or `H:MM:SS`, occasionally fractional) into seconds.
