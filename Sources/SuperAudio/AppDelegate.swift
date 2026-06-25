@@ -3,6 +3,7 @@
 import AppKit
 import SuperAudioCore
 import SuperAudioAirPlay1
+import SuperAudioAirPlay2
 import SuperAudioSonos
 
 /// SwiftUI's `@main App` handles UI lifecycle, but we still need an
@@ -146,10 +147,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SinkRegistry.shared.register(AirPlay1Discoverer())
         SinkRegistry.shared.register(SonosDiscoverer())
 
+        // M12 — AirPlay 2. Discovery scaffold is live; the sink (pairing +
+        // PTP/RTSP/RTP/Opus) is still landing, so createSink throws for now.
+        // Gated by LicenseManager exactly as the $5-addon model intends.
+        if LicenseManager.isEnabled(.airplay2) {
+            SinkRegistry.shared.register(AirPlay2Discoverer())
+        }
+
         // Future addons — drop the modules in, uncomment, ship.
-        // if LicenseManager.isEnabled(.airplay2) {
-        //     SinkRegistry.shared.register(AirPlay2Discoverer())
-        // }
         // if LicenseManager.isEnabled(.chromecast) {
         //     SinkRegistry.shared.register(ChromecastDiscoverer())
         // }

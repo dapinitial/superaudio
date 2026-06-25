@@ -13,6 +13,7 @@ public enum Log {
     public static let capture   = Logger(subsystem: subsystem, category: "capture")
     public static let discovery = Logger(subsystem: subsystem, category: "discovery")
     public static let airplay1  = Logger(subsystem: subsystem, category: "airplay1")
+    public static let airplay2  = Logger(subsystem: subsystem, category: "airplay2")
     public static let sonos     = Logger(subsystem: subsystem, category: "sonos")
     public static let license   = Logger(subsystem: subsystem, category: "license")
 }

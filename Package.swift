@@ -1,5 +1,5 @@
 // swift-tools-version: 5.10
-// SuperAudio © 2026 David Puerto. MIT licensed — see LICENSE.md.
+// SuperAudio © 2026 David Puerto. Proprietary — see LICENSE.md.
 
 import PackageDescription
 
@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "SuperAudioCore", targets: ["SuperAudioCore"]),
         .library(name: "SuperAudioDiscovery", targets: ["SuperAudioDiscovery"]),
         .library(name: "SuperAudioAirPlay1", targets: ["SuperAudioAirPlay1"]),
+        .library(name: "SuperAudioAirPlay2", targets: ["SuperAudioAirPlay2"]),
         .library(name: "SuperAudioSonos", targets: ["SuperAudioSonos"]),
     ],
     targets: [
@@ -40,6 +41,15 @@ let package = Package(
             dependencies: ["SuperAudioCore", "SuperAudioDiscovery"]
         ),
 
+        // AirPlay 2 protocol module (M12). Depends on Core + Discovery only,
+        // same shape as AirPlay 1. Day-1 scope is `_airplay._tcp` discovery
+        // (pure Swift / NWBrowser). The pairing + codec deps (`pair_ap` MIT,
+        // `swift-opus`) land with the handshake/audio sub-tasks.
+        .target(
+            name: "SuperAudioAirPlay2",
+            dependencies: ["SuperAudioCore", "SuperAudioDiscovery"]
+        ),
+
         // Sonos protocol module. Depends on Core + Discovery only.
         .target(
             name: "SuperAudioSonos",
@@ -54,6 +64,7 @@ let package = Package(
                 "SuperAudioCore",
                 "SuperAudioDiscovery",
                 "SuperAudioAirPlay1",
+                "SuperAudioAirPlay2",
                 "SuperAudioSonos",
             ]
         ),
