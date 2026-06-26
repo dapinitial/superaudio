@@ -2,6 +2,7 @@
 
 import Foundation
 import AVFoundation
+import Accelerate
 import Darwin
 
 /// One shared `SystemAudioCapture`, fanned out to N subscribers via
@@ -136,6 +137,39 @@ public final class AudioBroadcaster: @unchecked Sendable {
     public private(set) var captureGapCount: Int = 0
     public private(set) var largestCaptureGapMs: Int = 0
     private static let captureGapThresholdMs: Double = 100
+
+    // MARK: - Zombie-silence auto-recovery
+
+    /// The process tap can silently *detach* from the source: chunks keep
+    /// arriving on schedule (so gap-detection above sees nothing wrong) but
+    /// carry digital silence — every speaker goes quiet while the pipeline
+    /// looks healthy, and only a manual Stop+Play fixes it (the "zombie
+    /// silence" failure, observed 2026-06-25). We detect prolonged silence in
+    /// the captured *content* and re-attach the tap with a **capture-only
+    /// restart**: subscribers, the playback anchor, and mach-time continuity
+    /// are all preserved, so active AP1 sessions (which snapshot the anchor at
+    /// start and never re-read it) keep their timing. The restart fires only
+    /// during silence, so it's inaudible even on a false positive.
+    public private(set) var silenceRecoveryCount: Int = 0
+    /// mach time of the last chunk whose peak exceeded the silence floor.
+    /// 0 until the first chunk of a capture; (re)initialized in `startCaptureLocked`.
+    private var lastNonSilentHost: UInt64 = 0
+    /// mach time of the last recovery restart (cooldown anchor). 0 = none yet.
+    private var lastRecoveryHost: UInt64 = 0
+    private var silenceRecoveryInProgress = false
+    /// Recoveries fired back-to-back without audio ever returning. Bounded so a
+    /// genuinely long pause can't thrash the tap; reset the moment audio resumes.
+    private var consecutiveSilentRecoveries = 0
+    /// Peak |sample| at or below this (≈ −72 dBFS) counts as a silent chunk.
+    private static let silencePeakThreshold: Float = 0.00025
+    /// Continuous silence longer than this — with active subscribers, after real
+    /// audio has been seen — triggers a recovery restart.
+    private static let silenceRecoverySeconds: Double = 12.0
+    /// Minimum spacing between recovery restarts.
+    private static let silenceRecoveryCooldownSeconds: Double = 30.0
+    /// Stop retrying after this many consecutive restarts that don't restore
+    /// audio (a real long pause, not a stall). Resets when audio returns.
+    private static let maxConsecutiveSilentRecoveries = 2
 
     // MARK: - Reference signal tap (#105 mic calibration)
 
@@ -493,6 +527,9 @@ public final class AudioBroadcaster: @unchecked Sendable {
         let cap = SystemAudioCapture()
         try cap.start()
         capture = cap
+        // Reset the silence-stall timer so a fresh (or just-recovered) capture
+        // doesn't immediately re-trigger before any audio has flowed.
+        lastNonSilentHost = mach_absolute_time()
 
         captureTask = Task { [weak self] in
             var lastChunkArrivalHost: UInt64 = 0
@@ -525,6 +562,33 @@ public final class AudioBroadcaster: @unchecked Sendable {
                     }
                 }
                 lastChunkArrivalHost = now
+
+                // Zombie-silence detection (capture CONTENT, not arrival
+                // timing). The gap-detection above catches chunks that STOP
+                // arriving; this catches chunks that keep arriving but are
+                // silent — the tap detached from the source. Recover by
+                // re-attaching the tap, during the silence (inaudible).
+                let peak = Self.peakMagnitude(chunk)
+                if peak > Self.silencePeakThreshold {
+                    self.lastNonSilentHost = now
+                    self.consecutiveSilentRecoveries = 0
+                } else if self.lastNonSilentHost != 0,
+                          !self.silenceRecoveryInProgress,
+                          self.consecutiveSilentRecoveries < Self.maxConsecutiveSilentRecoveries {
+                    self.lock.lock(); let subs = self.subscribers.count; self.lock.unlock()
+                    let silentMs = Self.millis(from: self.lastNonSilentHost, to: now)
+                    let sinceRecoveryMs = self.lastRecoveryHost == 0
+                        ? Double.infinity
+                        : Self.millis(from: self.lastRecoveryHost, to: now)
+                    if subs > 0,
+                       silentMs > Self.silenceRecoverySeconds * 1000,
+                       sinceRecoveryMs > Self.silenceRecoveryCooldownSeconds * 1000 {
+                        self.silenceRecoveryInProgress = true
+                        self.lastRecoveryHost = now
+                        Log.core.error("⚠ Zombie-silence: \(Int(silentMs / 1000))s of silent capture with \(subs) active sink(s) — re-attaching process tap")
+                        Task { [weak self] in self?.performSilenceRecovery() }
+                    }
+                }
 
                 // #105 mic calibration — append mono mixdown to the
                 // reference tap ring buffer BEFORE locking the main mutex
@@ -628,6 +692,54 @@ public final class AudioBroadcaster: @unchecked Sendable {
             let cont = sub2.continuation
             lock.unlock()
             cont.yield(popped.chunk)
+        }
+    }
+
+    /// Peak |sample| of a chunk (channel 0). Cheap silence probe via vDSP.
+    private static func peakMagnitude(_ chunk: AudioChunk) -> Float {
+        guard let ch = chunk.pcm.floatChannelData else { return 0 }
+        let n = vDSP_Length(chunk.pcm.frameLength)
+        if n == 0 { return 0 }
+        var peak: Float = 0
+        vDSP_maxmgv(ch[0], 1, &peak, n)
+        return peak
+    }
+
+    /// Milliseconds between two mach_absolute_time samples.
+    private static func millis(from start: UInt64, to end: UInt64) -> Double {
+        Double(end &- start) * Double(timebase.numer) / Double(timebase.denom) / 1_000_000.0
+    }
+
+    /// Recover from a zombie-silence stall by re-attaching the process tap
+    /// WITHOUT disturbing subscribers or the playback anchor. Active AP1
+    /// sessions snapshot the anchor at start and never re-read it, and
+    /// mach-time is continuous across the swap, so their RTP timing is
+    /// unaffected. Runs on a detached task (it cancels the capture task that
+    /// detected the stall).
+    private func performSilenceRecovery() {
+        let old = capture
+        captureTask?.cancel()
+        old?.stop()
+
+        lock.lock()
+        capture = nil
+        captureTask = nil
+        // Note: `_anchor` is deliberately PRESERVED (not nil'd) — see method doc.
+        var startError: Error?
+        do {
+            try startCaptureLocked()   // sees _anchor != nil → won't re-anchor
+        } catch {
+            startError = error
+        }
+        lock.unlock()
+
+        consecutiveSilentRecoveries += 1
+        silenceRecoveryInProgress = false
+        if let startError {
+            Log.core.error("Zombie-silence recovery: capture restart failed — \(String(describing: startError), privacy: .public)")
+        } else {
+            silenceRecoveryCount += 1
+            Log.core.notice("✓ Zombie-silence recovery #\(self.silenceRecoveryCount) — process tap re-attached (anchor + subscribers preserved)")
         }
     }
 
