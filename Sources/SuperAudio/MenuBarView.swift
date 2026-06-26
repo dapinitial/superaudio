@@ -4,6 +4,7 @@ import SwiftUI
 import AVFoundation
 import SuperAudioCore
 import SuperAudioAirPlay1
+import SuperAudioAirPlay2
 import SuperAudioSonos
 
 /// Contents of the menu bar popover. Live-bound to `DiscoveredSinks.shared`
@@ -657,6 +658,19 @@ struct MenuBarView: View {
             // Unified toggle model — SessionState.toggle dispatches by
             // protocolKind into AirPlay1Session.run or SonosSession.run.
             SessionState.shared.toggle(descriptor)
+        case .airplay2:
+            // M12 WIP — clicking an AP2 device runs the pair-setup handshake
+            // and logs the result. No streaming sink yet; this is the dev
+            // test loop for the pairing sub-task. Watch the airplay2 log.
+            Log.app.notice("AP2 pair-setup test → \(descriptor.displayName, privacy: .public)")
+            Task { @MainActor in
+                do {
+                    let result = try await AP2PairSetup.run(descriptor: descriptor)
+                    Log.app.notice("AP2 pair-setup ✓ \(descriptor.displayName, privacy: .public) — session key \(result.sessionKey.count)B established")
+                } catch {
+                    Log.app.error("AP2 pair-setup ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                }
+            }
         default:
             Log.app.info("No-op selection — \(descriptor.protocolKind.rawValue, privacy: .public) connection lands in a later phase")
         }

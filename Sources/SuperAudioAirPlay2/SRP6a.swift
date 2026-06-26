@@ -109,6 +109,10 @@ public struct SRP6aClient {
         group.g.power(a, modulus: group.N)
     }
 
+    /// Big-endian, PAD-to-width byte form of a public value (A, B, S) for the
+    /// wire (TLV8 publicKey field is fixed at `width` bytes).
+    public func padPublic(_ x: BigUInt) -> Data { pad(x) }
+
     /// Client premaster secret S = (B - k·g^x)^(a + u·x) mod N.
     /// Throws on the SRP safety check B mod N == 0 (a hostile/garbled server).
     public func premaster(identity: String,
@@ -134,6 +138,24 @@ public struct SRP6aClient {
     /// the shared secret in pair-verify; pair-setup proofs use K directly.)
     public func sessionKey(premaster S: BigUInt) -> Data {
         alg.hash(pad(S))
+    }
+
+    /// Client proof M1 = H( (H(N) XOR H(g)) | H(I) | s | PAD(A) | PAD(B) | K )
+    /// — RFC 5054 §2.6 / RFC 2945. Sent in pair-setup M3 to prove the client
+    /// knows the password without revealing it.
+    public func clientProof(identity: String, salt: Data, A: BigUInt, B: BigUInt, sessionKey K: Data) -> Data {
+        let hN = alg.hash(pad(group.N))
+        let hg = alg.hash(pad(group.g))
+        let hNxorG = Data(zip(hN, hg).map { $0 ^ $1 })
+        let hI = alg.hash(Data(identity.utf8))
+        return alg.hash(hNxorG + hI + salt + pad(A) + pad(B) + K)
+    }
+
+    /// Expected server proof M2 = H( PAD(A) | M1 | K ). The receiver returns
+    /// this in pair-setup M4; we recompute and compare to confirm the receiver
+    /// also derived the same key (mutual authentication).
+    public func expectedServerProof(A: BigUInt, clientProof M1: Data, sessionKey K: Data) -> Data {
+        alg.hash(pad(A) + M1 + K)
     }
 
     public enum SRPError: Error { case badServerPublicKey }

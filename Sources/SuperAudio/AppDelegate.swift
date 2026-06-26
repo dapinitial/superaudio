@@ -32,6 +32,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // appear via discovery, then triggers `AirPlay1Session.run`
         // automatically. Lets external tooling (test scripts, CI, the
         // M3 debug loop) drive a full session without GUI interaction.
+        // M12 dev loop — headless AP2 pair-setup trigger.
+        if let ap2Target = Self.ap2PairTarget() {
+            Log.app.notice("AP2 pair target: '\(ap2Target, privacy: .public)' — waiting for discovery…")
+            Task { @MainActor in
+                guard let descriptor = await Self.awaitAP2Sink(named: ap2Target, timeout: 15) else {
+                    Log.app.error("AP2 pair target '\(ap2Target, privacy: .public)' never appeared")
+                    return
+                }
+                do {
+                    let result = try await AP2PairSetup.run(descriptor: descriptor)
+                    Log.app.notice("AP2 pair-setup ✓ \(descriptor.displayName, privacy: .public) — session key \(result.sessionKey.count)B")
+                } catch {
+                    Log.app.error("AP2 pair-setup ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+
         if let target = Self.autoClickTarget() {
             Log.app.info("Auto-click target: '\(target, privacy: .public)' — waiting for discovery…")
             Task { @MainActor in
@@ -56,6 +73,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if arg.hasPrefix("--auto-click=") {
                 return String(arg.dropFirst("--auto-click=".count))
             }
+        }
+        return nil
+    }
+
+    /// `--ap2-pair=<displayName>` — M12 dev loop. Waits for an AirPlay 2 sink
+    /// with that name, runs pair-setup, logs the result, and stays running.
+    /// Lets the pairing handshake be driven headlessly (no menu click).
+    private static func ap2PairTarget() -> String? {
+        for arg in CommandLine.arguments {
+            if arg.hasPrefix("--ap2-pair=") {
+                return String(arg.dropFirst("--ap2-pair=".count))
+            }
+        }
+        return nil
+    }
+
+    @MainActor
+    private static func awaitAP2Sink(named name: String, timeout: TimeInterval) async -> SinkDescriptor? {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let match = DiscoveredSinks.shared.sinks.first(where: {
+                $0.displayName == name && $0.protocolKind == .airplay2
+            }) {
+                return match
+            }
+            try? await Task.sleep(nanoseconds: 250_000_000)
         }
         return nil
     }
