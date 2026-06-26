@@ -32,6 +32,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // appear via discovery, then triggers `AirPlay1Session.run`
         // automatically. Lets external tooling (test scripts, CI, the
         // M3 debug loop) drive a full session without GUI interaction.
+        // M6.6 dev loop — headless Sonos group/ungroup triggers. Wait for
+        // discovery + first topology poll, then act and log.
+        if CommandLine.arguments.contains("--sonos-ungroup") || CommandLine.arguments.contains("--sonos-group") {
+            let doGroup = CommandLine.arguments.contains("--sonos-group")
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 9_000_000_000)
+                await SonosTopology.shared.refreshNow()
+                if doGroup { await SonosGrouping.groupAll() } else { await SonosGrouping.ungroupAll() }
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await SonosTopology.shared.refreshNow()
+            }
+        }
+
         // M12 dev loop — headless AP2 pair-setup trigger.
         if let ap2Target = Self.ap2PairTarget() {
             Log.app.notice("AP2 pair target: '\(ap2Target, privacy: .public)' — waiting for discovery…")

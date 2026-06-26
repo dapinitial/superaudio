@@ -116,6 +116,21 @@ final class SonosTopology {
             .map(\.zoneName)
     }
 
+    /// True when every one of the given discovered Sonos is already a member
+    /// of a single shared group — i.e. "Group" would be a no-op and the menu
+    /// should offer "Ungroup" instead. Fail-closed: unknown topology → false
+    /// (offer "Group").
+    func allInOneGroup(_ sonos: [SinkDescriptor]) -> Bool {
+        guard sonos.count >= 2, !groups.isEmpty else { return false }
+        for group in groups where group.members.count >= sonos.count {
+            let ids = Set(group.members.map(\.uuid))
+            let names = Set(group.members.map { $0.zoneName.lowercased() })
+            let covered = sonos.allSatisfy { ids.contains($0.id) || names.contains($0.displayName.lowercased()) }
+            if covered { return true }
+        }
+        return false
+    }
+
     // MARK: - Matching
 
     /// Match a topology member to a discovered sink. Primary key is the

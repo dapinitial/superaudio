@@ -102,6 +102,36 @@ public final class SonosClient: @unchecked Sendable {
         return try await sendSOAP(action: "SetAVTransportURI", body: body, timeout: timeout)
     }
 
+    /// Join this player into another player's group as a follower (M6.6 full).
+    /// Local Sonos grouping: point the follower's AVTransport at the special
+    /// `x-rincon:<coordinator-UUID>` URI; SonosNet then sample-locks it to the
+    /// coordinator. The coordinator UUID is the RINCON id (== our Sonos SinkID).
+    /// Mirrors SoCo's `join()` (MIT — see THIRD_PARTY_NOTICES). After this, the
+    /// follower stops being independently streamable; `SonosTopology` will
+    /// detect the group on its next poll and the menu hides the follower.
+    @discardableResult
+    public func joinGroup(coordinatorUUID: String, timeout: TimeInterval = 5) async throws -> TransportInfo {
+        try await setAVTransportURI("x-rincon:\(coordinatorUUID)", metadata: "", timeout: timeout)
+    }
+
+    /// Remove this player from its group, making it a standalone coordinator
+    /// again (the inverse of `joinGroup`). Uses AVTransport's
+    /// `BecomeCoordinatorOfStandaloneGroup`.
+    @discardableResult
+    public func becomeStandalone(timeout: TimeInterval = 5) async throws -> TransportInfo {
+        let body = """
+        <?xml version="1.0"?>
+        <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+          <s:Body>
+            <u:BecomeCoordinatorOfStandaloneGroup xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+              <InstanceID>0</InstanceID>
+            </u:BecomeCoordinatorOfStandaloneGroup>
+          </s:Body>
+        </s:Envelope>
+        """
+        return try await sendSOAP(action: "BecomeCoordinatorOfStandaloneGroup", body: body, timeout: timeout)
+    }
+
     /// Start playback of whatever URI was last `SetAVTransportURI`'d.
     @discardableResult
     public func play(speed: String = "1", timeout: TimeInterval = 5) async throws -> TransportInfo {

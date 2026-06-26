@@ -305,6 +305,30 @@ struct MenuBarView: View {
                 .buttonStyle(.plain)
             }
 
+            // M6.6 full — one-tap Sonos grouping. Group every Sonos under one
+            // coordinator (SonosNet keeps them sample-locked) or dissolve it.
+            // SonosTopology auto-detects the result and the menu collapses to
+            // the coordinator (M6.6a). Uses the RAW discovered Sonos count, not
+            // the group-filtered list, so the button persists after grouping.
+            let rawSonos = SonosGrouping.discoveredSonos()
+            if rawSonos.count >= 2 {
+                let grouped = topology.allInOneGroup(rawSonos)
+                Button {
+                    Log.app.notice("Group: \(grouped ? "Ungroup" : "Group") Sonos (\(rawSonos.count))")
+                    Task { grouped ? await SonosGrouping.ungroupAll() : await SonosGrouping.groupAll() }
+                } label: {
+                    Label(
+                        grouped ? String(localized: "Ungroup Sonos") : String(localized: "Group Sonos (sync them)"),
+                        systemImage: grouped ? "rectangle.split.3x1" : "rectangle.3.group"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .help(grouped
+                    ? "Split the Sonos back into independent speakers."
+                    : "Group all Sonos under one coordinator so SonosNet keeps them sample-locked. SuperAudio then feeds only the coordinator.")
+            }
+
             if session.isAnyActive {
                 // Auto-Align — one-click sync using Sonos UPnP telemetry.
                 // Reads Sonos's current playback position, computes its
