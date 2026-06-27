@@ -3,6 +3,7 @@
 import SwiftUI
 import AppKit
 import SuperAudioCore
+import SuperAudioSonos
 
 /// #102 / M6.3 — In-app diagnostics panel.
 ///
@@ -27,6 +28,7 @@ struct DiagnosticsView: View {
     private let session = SessionState.shared
     private let broadcaster = AudioBroadcaster.shared
     private let discovered = DiscoveredSinks.shared
+    private let topology = SonosTopology.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -66,6 +68,8 @@ struct DiagnosticsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 pipelineSection
+                Divider()
+                sonosGroupsSection
                 Divider()
                 calibrationSection
                 Divider()
@@ -132,8 +136,35 @@ struct DiagnosticsView: View {
             row("Capture", broadcaster.streamFormat != nil ? "running @ \(Int(broadcaster.streamFormat?.sampleRate ?? 0)) Hz" : "stopped")
             row("Subscribers", "\(broadcaster.subscriberCount)")
             row("Capture gaps", "\(broadcaster.captureGapCount) (worst \(broadcaster.largestCaptureGapMs) ms)")
+            row("Silence recoveries", "\(broadcaster.silenceRecoveryCount)")
+            row("AirPlay encryption", UserDefaults.standard.bool(forKey: "useEncryptedAirPlay") ? "et=1 ⚠ known-silent" : "et=0 cleartext")
             row("Chirp inject active", broadcaster.isChirpInjecting ? "yes" : "no")
             row("Anchor set", broadcaster.anchor != nil ? "yes" : "no")
+        }
+    }
+
+    // MARK: - Sonos groups section
+
+    /// Surfaces the live zone-group topology — the thing behind the 2026-06-26
+    /// double-feed drop (ungrouped Sonos → both fed → listener flapping).
+    /// "0 multi-speaker" at a glance = the double-feed-prone state.
+    private var sonosGroupsSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Sonos groups")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
+            let groups = topology.groups
+            if groups.isEmpty {
+                row("Topology", "unknown (no Sonos / not polled yet)")
+            } else {
+                let multi = groups.filter { $0.members.count > 1 }.count
+                row("Groups", "\(groups.count) total, \(multi) multi-speaker")
+                ForEach(Array(groups.enumerated()), id: \.offset) { _, g in
+                    let coord = g.members.first(where: { $0.uuid == g.coordinatorUUID })?.zoneName ?? g.coordinatorUUID
+                    let others = g.members.filter { $0.uuid != g.coordinatorUUID }.map(\.zoneName)
+                    row(others.isEmpty ? coord : "\(coord) ▸", others.isEmpty ? "standalone" : "+ \(others.joined(separator: ", "))")
+                }
+            }
         }
     }
 
@@ -178,8 +209,8 @@ struct DiagnosticsView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if session.reconnecting[desc.id] != nil {
-                    Text("RECONNECT")
+                if let r = session.reconnecting[desc.id] {
+                    Text("RECONNECT #\(r.attempt)")
                         .font(.caption2.bold())
                         .foregroundStyle(.orange)
                 }
@@ -274,8 +305,25 @@ struct DiagnosticsView: View {
         }
         s += "- Subscribers: \(broadcaster.subscriberCount)\n"
         s += "- Capture gaps: \(broadcaster.captureGapCount) (worst \(broadcaster.largestCaptureGapMs) ms)\n"
+        s += "- Silence recoveries: \(broadcaster.silenceRecoveryCount)\n"
+        s += "- AirPlay encryption: \(UserDefaults.standard.bool(forKey: "useEncryptedAirPlay") ? "et=1 (known-silent on B&W A5/A7 — see gotcha #27)" : "et=0 cleartext")\n"
         s += "- Chirp inject active: \(broadcaster.isChirpInjecting ? "yes" : "no")\n"
         s += "- Anchor set: \(broadcaster.anchor != nil ? "yes" : "no")\n\n"
+
+        s += "## Sonos groups\n"
+        let groups = topology.groups
+        if groups.isEmpty {
+            s += "_Topology unknown (no Sonos discovered / not yet polled)._\n\n"
+        } else {
+            let multi = groups.filter { $0.members.count > 1 }.count
+            s += "- \(groups.count) group(s), \(multi) multi-speaker\n"
+            for g in groups {
+                let coord = g.members.first(where: { $0.uuid == g.coordinatorUUID })?.zoneName ?? g.coordinatorUUID
+                let others = g.members.filter { $0.uuid != g.coordinatorUUID }.map(\.zoneName)
+                s += others.isEmpty ? "  - \(coord) (standalone)\n" : "  - \(coord) ▸ + \(others.joined(separator: ", "))\n"
+            }
+            s += "\n"
+        }
 
         s += "## Calibration\n"
         s += "- Auto-calibrate on Play All: \(session.autoCalibrateOnPlayAll ? "on" : "off")\n"
