@@ -541,7 +541,7 @@
 <section id="moat">
   <div class="wrap">
     <h2>The thing nobody else does at <em>this price.</em></h2>
-    <p class="subhead">Multi-protocol streaming is table stakes. Room tuning across mixed protocols isn't done anywhere — except SuperAudio.</p>
+    <p class="subhead">Multi-protocol streaming is table stakes. Cross-protocol room tuning, Sonos-native grouping, and device support that lives in the open? Not done anywhere at this price — except SuperAudio.</p>
 
     <div class="moat-callout">
       <div class="badge">SuperAudio Measurement-Assisted Sync · base app · on Mac</div>
@@ -550,6 +550,20 @@
       <p><strong>SuperAudio's cross-protocol sync is real and audible across every speaker we support, on Mac today.</strong> Your Mac's built-in microphone hears a 1-second chirp from each speaker and measures the actual arrival lag, getting AirPlay 1 close to Sonos automatically. From there you set a static offset and nudge it by ear — usually a one-time per-session tweak — because your ears at the couch are the final judge, not the mic's position. Verified against B&amp;W A5 + B&amp;W A7 (side room) + Sonos Playbar gen 1. Works with the AirPlay 1 speakers you've owned since 2014.</p>
       <p>The $5 <strong>Room Tuning addon</strong> (M11) extends this to an iPhone-mic walk-around — measure multiple listening positions, generate per-zone EQ correction. Same algorithm, more positions, frequency-domain correction on top.</p>
       <p>This is the moat. Everyone else's room tuning is locked to their ecosystem. Ours is locked to your living room. Fully hands-free continuous sync is in development — it arrives with our AirPlay 2 path (M12).</p>
+    </div>
+
+    <div class="moat-callout">
+      <div class="badge">Sonos-native grouping · base app · on Mac</div>
+      <div class="title">We don't blast a stream at your Sonos and pray. <em>We speak SonosNet.</em></div>
+      <p>Most apps fire an identical stream at every Sonos in the house — and the speakers drift, because nothing's holding them in lockstep. SuperAudio reads your Sonos zone topology and streams to the group <strong>coordinator only</strong>, letting Sonos's own SonosNet keep the rest sample-locked — exactly the way Sonos does it internally. No fighting, no flapping, no drift.</p>
+      <p>Not grouped yet? <strong>One tap.</strong> Group or ungroup every Sonos straight from the menu bar — entirely on your LAN, no Sonos account, no cloud round-trip. Your 2014 Playbar and your newest One SL, finally moving as one. Verified on real hardware.</p>
+    </div>
+
+    <div class="moat-callout">
+      <div class="badge">Open device profiles · the substrate</div>
+      <div class="title">Your speaker's quirks belong in the open. <em>Not buried in our binary.</em></div>
+      <p>Every speaker has a fingerprint — latency, codec, volume curve, firmware gotchas. SuperAudio keeps them in plain-JSON device profiles the app reads at runtime, instead of constants only we can change. It's live today: the volume curve for your B&amp;W speakers already comes from its profile, and more of each device's fingerprint moves into the open with every release.</p>
+      <p>The endgame: supporting a new speaker becomes <strong>data, not a software update</strong> — a profile anyone can read, audit, and contribute. Open substrate, paid app, no lock-in. The whole catalog of forgotten speakers, brought back one profile at a time.</p>
     </div>
   </div>
 </section>
