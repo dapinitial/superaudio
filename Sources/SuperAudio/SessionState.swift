@@ -1120,10 +1120,23 @@ final class SessionState {
     /// `nonisolated` because `SessionState` is `@MainActor`, but this is a
     /// pure function with no shared state — the volume-setter closures
     /// registered by live sessions need to call this off the main actor.
-    nonisolated static func airplay1Volume(fromPercent percent: Int) -> Float {
+    /// Map the 0–100 % user slider to the receiver's dB volume. The dB range
+    /// and "muted" sentinel come from the device profile's `volumeScale` when a
+    /// dB-type scale is available (M5.5); otherwise fall back to the AirTunes
+    /// defaults (−30…0 dB, −144 = muted) — identical to the pre-M5.5 behavior,
+    /// and identical to what the B&W A5/A7 profiles declare.
+    nonisolated static func airplay1Volume(
+        fromPercent percent: Int,
+        scale: DeviceProfile.SinkRole.VolumeScale? = nil
+    ) -> Float {
         let clamped = max(0, min(100, percent))
-        if clamped == 0 { return -144 }
-        return -30.0 + (Float(clamped) / 100.0) * 30.0
+        // Only dB-type scales are usable here (sendSetVolume speaks dB).
+        let dbScale = (scale?.type == .dB) ? scale : nil
+        let minDB = Float(dbScale?.min ?? -30.0)
+        let maxDB = Float(dbScale?.max ?? 0.0)
+        let mutedDB = Float(dbScale?.muted ?? -144.0)
+        if clamped == 0 { return mutedDB }
+        return minDB + (Float(clamped) / 100.0) * (maxDB - minDB)
     }
 
     private func applyMuteIfNeeded() {

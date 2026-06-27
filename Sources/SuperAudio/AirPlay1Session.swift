@@ -147,8 +147,19 @@ enum AirPlay1Session {
             // delay its subscribe by 2.2 s after barrier release,
             // re-introducing exactly the skew the barrier exists to
             // prevent.
+            // M5.5 — resolve this sink's device profile. Its volumeScale
+            // drives the %→dB mapping below (falls back to AirTunes defaults
+            // when no profile matches — identical to pre-M5.5 behavior).
+            let deviceProfile = ProfileStore.shared.profile(for: descriptor)
+            let volScale = deviceProfile?.roles.sink?.volumeScale
+            if let deviceProfile {
+                Log.airplay1.notice("Device profile '\(deviceProfile.id, privacy: .public)' for \(label, privacy: .public) — volumeScale \(volScale != nil ? "from profile" : "default", privacy: .public)")
+            } else {
+                Log.airplay1.info("Device profile: none matched for \(label, privacy: .public) — built-in defaults")
+            }
+
             let initialPct = await MainActor.run { SessionState.shared.volume(for: sinkID) }
-            let initialDB = SessionState.airplay1Volume(fromPercent: initialPct)
+            let initialDB = SessionState.airplay1Volume(fromPercent: initialPct, scale: volScale)
             let volume = try await client.sendSetVolume(level: initialDB)
             if volume.isOK {
                 Log.app.notice("✓ VOLUME   \(label, privacy: .public) → \(volume.statusLine, privacy: .public)  (\(initialPct)%, \(String(format: "%.1f", initialDB)) dB)")
@@ -163,7 +174,7 @@ enum AirPlay1Session {
             // no-op rather than racing the TEARDOWN.
             let volumeSetter: @Sendable (Int) async -> Void = { [weak client] pct in
                 guard let client else { return }
-                let dB = SessionState.airplay1Volume(fromPercent: pct)
+                let dB = SessionState.airplay1Volume(fromPercent: pct, scale: volScale)
                 _ = try? await client.sendSetVolume(level: dB)
                 Log.airplay1.info("Volume → \(pct)% (\(String(format: "%.1f", dB)) dB) on \(label, privacy: .public)")
             }
