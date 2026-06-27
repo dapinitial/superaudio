@@ -10,7 +10,7 @@
 
 This snapshot used to live here and rotted. **The single source of truth for "where are we, what's next" is [docs/ROADMAP.md](docs/ROADMAP.md)** — read its "Progress snapshot" + "Currently working on" sections, not a copy here.
 
-Frontier as of 2026-06-03 (sync caveat updated 2026-06-05): M1–M6 done (foundation → RAOP → Sonos → multi-sink fan-out + reliability arc); Mac-mic auto-calibration shipped; **cross-protocol sync (B&W A5 + Sonos Playbar + Sonos One SL) is real and audibly achievable** — first reached via Mic Calibrate (auto). **But the auto-correction path proved unstable (2026-06-05):** every offset adjustment restarts the AP1 receiver (TEARDOWN + re-RECORD) → ~13s reconnect loop, and the mic disagreed with the ear by ~1.2s (mic position ≠ listening position). The stable config today is a **static by-ear manual offset (~3050ms) with auto-correctors OFF** (`PassiveSyncMonitor` observe-only, no Mic Calibrate auto); hands-free continuous retiming awaits AP2 (M12). Current build targets: **M12 AirPlay 2 sender** (committed V1 hero, hardware on the LAN, not built yet) and the **passive-sync / GCC-PHAT** thread. See ROADMAP.md for the full milestone map and DECISIONS.md 2026-06-03 for the sync work.
+Frontier as of 2026-06-27: M1–M6 done (foundation → RAOP → Sonos → multi-sink fan-out + reliability arc); Mac-mic auto-calibration shipped. **Cross-protocol sync (B&W A5 + Sonos) is real and audible via a static by-ear manual offset (~3050ms) with auto-correctors OFF** — the *automatic* correction path restarts the AP1 receiver on every adjustment (~13s reconnect loop) and the mic disagrees with the ear by ~1.2s, so hands-free retiming awaits AP2 (M12). Recent work (2026-06-25→27): **M6.6 Sonos group awareness read+write** (feed the coordinator only; one-tap group/ungroup — gotcha #24); **zombie-silence auto-recovery** (re-attach a detached process tap — gotcha #26); **diagnostics panel upgraded**; **M5.5 device profiles now consumed** (ProfileStore + AP1 volume scale from JSON); **et=1 verified BROKEN** (silent on A5/A7, et=0 is the path — gotcha #27). **M12 AirPlay 2:** foundation built + offline-verified (module, `_airplay._tcp` discovery, TLV8, SRP-6a/CryptoKit; `/info` reaches a real device) but **blocked on a HomeKit AP2 device** — there is NO Apple TV/HomePod on the LAN; the only AP2 device (Sonos One SL) needs the MFi path, not the HomeKit pairing we built. Other open threads: passive-sync / GCC-PHAT; remaining M5.5 slices. See ROADMAP.md for the milestone map and DECISIONS.md for the sync + AP2 decisions.
 
 ---
 
@@ -377,7 +377,7 @@ If POC succeeds and the commercial track is greenlit, a new "commercialization p
 
 ## Known gotchas
 
-The numbered list of hard-won lessons lives in **[docs/GOTCHAS.md](docs/GOTCHAS.md)** (22 entries as of 2026-05-21). Referenced as **gotcha #N** throughout the codebase, in `docs/DECISIONS.md`, and in PR descriptions. Add new entries there — do not retire numbers; they are stable references.
+The numbered list of hard-won lessons lives in **[docs/GOTCHAS.md](docs/GOTCHAS.md)** (27 entries as of 2026-06-27). Referenced as **gotcha #N** throughout the codebase, in `docs/DECISIONS.md`, and in PR descriptions. Add new entries there — do not retire numbers; they are stable references.
 
 Skim it before doing protocol-level work, debugging silent failures, or making changes to session lifecycle / supervisor / calibration code.
 
