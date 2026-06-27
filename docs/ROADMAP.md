@@ -127,7 +127,7 @@ Done:
 Still open for M3 to be called "done":
 
 - [ ] 30-minute soak test — uninterrupted music with no drops, no glitches. Now trivially testable thanks to M6 reliability work: leave Play All running while doing dishes, check `Capture gap detected` log count at the end.
-- [ ] Verify et=1 (AES) works with compressed ALAC. Today's working build is et=0; flip the flag and confirm both modes audible.
+- [x] Verify et=1 (AES) works with compressed ALAC. **VERIFIED 2026-06-26 — result: et=1 audio does NOT work (et=0 is the shipping/working path).** With `useEncryptedAirPlay=true` the full handshake succeeds on the B&W A5 (ANNOUNCE et=1 with RSA-OAEP-wrapped key → SETUP → RECORD → RTP streaming real *varying-size* compressed ALAC, `encryption=et=1 AES`, no rejection, no reconnect) — but playback is **silent**. Classic "byte-correct on the wire but silent" failure (cf. gotcha #10). The code is correct by inspection (RSA-OAEP-SHA1 wrap; AES-128-CBC no-padding over whole 16-byte blocks, per-packet IV reset, cleartext tail) so the bug is subtle and needs a pcap diff vs a real et=1 sender to crack. **Not pursued now: et=1 is unnecessary for B&W A5/A7 (they accept et=0), so this is low-priority receiver-compat work, not a release gate.** See gotcha #27.
 - [x] Volume: per-sink slider live since M5d (range 0–100%, default 15%, 250 ms debounce since M6 reliability).
 - [x] Stale-session recovery: SIGTERM/SIGINT handlers send TEARDOWN + Sonos `Stop` before exit, plus 1.5 s TEARDOWN timeout so cleanup never stalls. See M5 reliability block and M6 sync arc.
 

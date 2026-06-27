@@ -621,7 +621,7 @@ struct MenuBarView: View {
             Toggle(isOn: $useEncryptedAirPlay) {
                 Text(String(localized: "AirPlay encrypted mode (et=1) — restart sessions to apply"))
             }
-            .help("Sends ANNOUNCE with et=1 + RSA-OAEP encrypted session key + AES-128-CBC audio payload. Off = et=0 cleartext (default, works on B&W A5/A7). Turn on to test receivers that require encryption.")
+            .help("Sends ANNOUNCE with et=1 + RSA-OAEP encrypted session key + AES-128-CBC audio payload. Off = et=0 cleartext (default, works on B&W A5/A7). ⚠️ KNOWN ISSUE (verified 2026-06-26): et=1 handshakes fine but plays SILENT on B&W A5/A7 — leave OFF unless debugging a receiver that requires encryption. See gotcha #27.")
 
             // #118 — switch calibration reference signal. Default off = MLS
             // (friendly brief static); on = the sine-sweep chirp ("wooop").
