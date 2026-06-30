@@ -7,30 +7,27 @@
 # pull request via the `gh` CLI. The profile content becomes public. Run only
 # after the user has reviewed the drafted JSON and explicitly confirmed.
 #
-# ALPHA STATUS: the public repo is not split out of the monorepo yet (M5.5
-# "public repo go-live" is unchecked). This script refuses to run unless
-#   SUPERAUDIO_PROFILES_REPO  is set to the public repo (owner/name), and
-#   SUPERAUDIO_ENABLE_PR=1     is set as an explicit opt-in.
-# Until then, the onboarding flow stops after install-profile.sh — the profile
-# works locally; sharing waits for go-live.
+# The public repo is LIVE (dapinitial/superaudio-device-profiles). PR submission
+# is a deliberate opt-in so the Skill never surprise-pushes: it refuses unless
+#   SUPERAUDIO_ENABLE_PR=1
+# is set after the user reviews the drafted JSON and confirms. The target repo
+# defaults to the live repo; override with SUPERAUDIO_PROFILES_REPO if needed.
 #
 # Usage: open-pr.sh <profile.json>
 
 set -euo pipefail
 
-REPO="${SUPERAUDIO_PROFILES_REPO:-}"
+REPO="${SUPERAUDIO_PROFILES_REPO:-dapinitial/superaudio-device-profiles}"
 ENABLED="${SUPERAUDIO_ENABLE_PR:-0}"
 
-if [[ "$ENABLED" != "1" || -z "$REPO" ]]; then
-  cat >&2 <<'EOF'
-PR submission is disabled in the alpha.
+if [[ "$ENABLED" != "1" ]]; then
+  cat >&2 <<EOF
+PR submission is a deliberate opt-in.
 
-The public superaudio-device-profiles repo has not gone live yet, so there is
-nowhere to send the PR. Your profile is already installed locally and working.
-
-When the repo is public, enable this step with:
-  export SUPERAUDIO_PROFILES_REPO="dapinitial/superaudio-device-profiles"
+Your profile is installed locally and working. To open a PUBLIC pull request
+against $REPO — the profile content becomes public — confirm with the user, then:
   export SUPERAUDIO_ENABLE_PR=1
+and re-run. (Override the target with SUPERAUDIO_PROFILES_REPO if needed.)
 EOF
   exit 3
 fi

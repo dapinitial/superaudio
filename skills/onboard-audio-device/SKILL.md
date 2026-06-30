@@ -138,11 +138,12 @@ what actually worked.
 bash scripts/open-pr.sh /tmp/<id>.json
 ```
 
-This is **disabled until the public repo goes live** (it refuses to run without
-`SUPERAUDIO_PROFILES_REPO` + `SUPERAUDIO_ENABLE_PR=1`). In the alpha, stop after
-phase 6 and tell the user: the profile works locally now; community sharing
-opens when `superaudio-device-profiles` is public. Never push without explicit
-confirmation, and only after the profile content has been anonymized.
+The public repo is **live** (`dapinitial/superaudio-device-profiles`). This step
+is a deliberate opt-in so the Skill never surprise-pushes: it refuses unless the
+user has reviewed the drafted JSON and set `SUPERAUDIO_ENABLE_PR=1`. Always
+confirm explicitly before pushing, and only after the profile content has been
+anonymized. The PR is validated by the repo's CI (`scripts/validate.py` against
+`schema.json`) before a maintainer reviews it.
 
 ## Done
 
