@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "REPLACE-manufacturer-model",
+  "displayName": "REPLACE Human Readable Name",
+  "manufacturer": "REPLACE",
+  "model": "REPLACE",
+  "firstRelease": null,
+  "lastFirmware": null,
+  "match": {
+    "bonjourServiceType": "_raop._tcp",
+    "modelHints": ["REPLACE-with-am-TXT-value-or-stable-model-substring"],
+    "macOUI": []
+  },
+  "roles": {
+    "sink": {
+      "protocol": "airplay1",
+      "codec": {
+        "format": "alac",
+        "sampleRate": 44100,
+        "bitDepth": 16,
+        "channels": 2,
+        "compressed": true
+      },
+      "encryption": {
+        "et": 0,
+        "fallback": "et=1"
+      },
+      "audioLatencyMs": 88,
+      "buffer": "RTP timestamp-based. AirPort-Express-derived receiver.",
+      "quirks": [
+        "REPLACE with anything observed during onboarding (e.g. rejects verbatim ALAC, requires et=1, source-port-matching for sync packets)."
+      ],
+      "volumeScale": {
+        "type": "dB",
+        "min": -30.0,
+        "max": 0.0,
+        "muted": -144.0
+      },
+      "knownFirmware": []
+    },
+    "control": null
+  },
+  "verifiedBy": [],
+  "verifiedDate": null,
+  "contributedDate": "REPLACE-YYYY-MM-DD",
+  "notes": "REPLACE. State whether tested on hardware or seeded from references."
+}

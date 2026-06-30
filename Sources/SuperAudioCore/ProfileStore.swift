@@ -37,7 +37,7 @@ public final class ProfileStore: @unchecked Sendable {
         if let cached = cache[descriptor.id] { return cached }
         let match = DeviceProfileLoader.matchProfile(
             bonjourServiceType: Self.bonjourServiceType(for: descriptor.protocolKind),
-            modelHintText: descriptor.displayName,
+            modelHintText: Self.modelHintText(for: descriptor),
             macOUI: nil,                       // RAOP names carry a MAC but not as a clean OUI; our profiles don't gate on it
             among: profiles
         )
@@ -53,6 +53,32 @@ public final class ProfileStore: @unchecked Sendable {
     /// The sink-role of the matched profile (nil if no match or no sink role).
     public func sinkRole(for descriptor: SinkDescriptor) -> DeviceProfile.SinkRole? {
         profile(for: descriptor)?.roles.sink
+    }
+
+    /// The text `match.modelHints` substring-matches against. The schema
+    /// documents hints as matching "the device's mDNS TXT record or HTTP
+    /// description" — but the user-visible `displayName` (for RAOP, the part
+    /// after the `@` in `{MAC}@{Name}`) is whatever the *owner* named the
+    /// speaker, not the model. Matching on that alone makes community profiles
+    /// non-portable: a "B&W A5" profile would only resolve on a downstream user
+    /// who happened to name their speaker "B&W…". So we also fold in the
+    /// model-bearing TXT keys — chiefly `am` (the AirPlay model identifier),
+    /// which is stable across owners — letting profiles key on the model.
+    ///
+    /// Only an allowlist of model-bearing keys is included; dumping the whole
+    /// TXT record would invite spurious substring hits on flag fields
+    /// (`et`, `cn`, `sf`, …). Cross-protocol bleed is already prevented upstream
+    /// by the `bonjourServiceType` filter in `matchProfile`.
+    private static let modelHintTXTKeys = ["am", "model"]
+
+    static func modelHintText(for descriptor: SinkDescriptor) -> String {
+        var parts = [descriptor.displayName]
+        for key in modelHintTXTKeys {
+            if let value = descriptor.endpoint.metadata[key], !value.isEmpty {
+                parts.append(value)
+            }
+        }
+        return parts.joined(separator: " ")
     }
 
     /// Bonjour service type for a protocol kind — the `match.bonjourServiceType`
