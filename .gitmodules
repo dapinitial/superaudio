@@ -1,0 +1,3 @@
+[submodule "superaudio-device-profiles"]
+	path = superaudio-device-profiles
+	url = git@github.com:dapinitial/superaudio-device-profiles.git
