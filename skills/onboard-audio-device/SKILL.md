@@ -85,6 +85,11 @@ Copy `templates/airplay1-receiver.json` and fill it in:
 - `match.modelHints`: **the `txt.am` value** and/or a stable model substring.
   Verify your chosen hint is a substring of `displayName + " " + txt.am` (that
   is exactly what the app matches against — see the contract above).
+  **Never use a hint derived from the speaker's user-given name.** The Bonjour
+  name is 100% owner-chosen and brand-agnostic, so a name-hint is worse than
+  useless — it can *false-match* a different device the owner named similarly
+  (a non-B&W speaker named "…A5…" would wrongly inherit the A5 profile). Hints
+  must be **manufacturer-set model identifiers** (the `am` value), never names.
 - `match.macOUI`: only if you can confirm the MAC's OUI belongs to this
   manufacturer (tiebreaker, optional); otherwise leave `[]`.
 - `roles.sink.encryption.et`: `0` unless identification shows the device needs

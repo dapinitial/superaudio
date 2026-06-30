@@ -8,7 +8,7 @@
   "lastFirmware": null,
   "match": {
     "bonjourServiceType": "_raop._tcp",
-    "modelHints": ["B&W", "BW-A7", "Spacelab Forever"],
+    "modelHints": ["B&W", "BW-A7", "A7"],
     "macOUI": []
   },
   "roles": {
