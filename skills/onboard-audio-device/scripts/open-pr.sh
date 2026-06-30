@@ -29,7 +29,7 @@ The public superaudio-device-profiles repo has not gone live yet, so there is
 nowhere to send the PR. Your profile is already installed locally and working.
 
 When the repo is public, enable this step with:
-  export SUPERAUDIO_PROFILES_REPO="davidpuerto/superaudio-device-profiles"
+  export SUPERAUDIO_PROFILES_REPO="dapinitial/superaudio-device-profiles"
   export SUPERAUDIO_ENABLE_PR=1
 EOF
   exit 3

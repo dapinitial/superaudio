@@ -21,6 +21,9 @@ APP="SuperAudio.app"
 BIN_NAME="SuperAudio"
 BUNDLE_ID="com.davidpuerto.SuperAudio"
 
+echo "==> Checking device-profile sync (gotcha #28)"
+"$ROOT/Scripts/check_profile_drift.sh"
+
 echo "==> Building $BIN_NAME ($CONFIG)"
 swift build -c "$CONFIG"
 

@@ -1,6 +1,6 @@
 # superaudio-device-profiles
 
-Community-contributed JSON profiles describing how to talk to audio devices — speakers, soundbars, AVRs, smart-TV-as-source — across protocols. Consumed by [SuperAudio](https://github.com/davidpuerto/superaudio) and openly licensed so anyone (commercial or open-source) can use them.
+Community-contributed JSON profiles describing how to talk to audio devices — speakers, soundbars, AVRs, smart-TV-as-source — across protocols. Consumed by [SuperAudio](https://github.com/dapinitial/superaudio) and openly licensed so anyone (commercial or open-source) can use them.
 
 **MIT licensed. Pure data. No executable code.** Profiles describe protocol parameters, codec quirks, timing tolerances, volume scales, and known-firmware-gotchas. They don't run code. A hostile profile cannot pwn your user.
 
@@ -10,7 +10,7 @@ This is the substrate for SuperAudio's M6.5 Claude Skill — an AI-assisted onbo
 
 ## Status — 2026-05-18
 
-**v1 schema · 4 seed profiles · pre-launch.** This repo lives inside the SuperAudio monorepo for now; it'll split out as a standalone public repo (`github.com/davidpuerto/superaudio-device-profiles`) when SuperAudio M5.5 ships.
+**v1 schema · 4 seed profiles · pre-launch.** This repo lives inside the SuperAudio monorepo for now; it'll split out as a standalone public repo (`github.com/dapinitial/superaudio-device-profiles`) when SuperAudio M5.5 ships.
 
 | Profile | Status | Source |
 |---|---|---|
@@ -42,7 +42,7 @@ See [`schema.json`](./schema.json) for the full field definition.
 4. **Mark `verifiedBy` honestly.** If you measured the behavior on your own hardware, list yourself. If you derived from public references (shairport-sync, libraop, node-sonos-ts), list those instead and set `verifiedDate: null`.
 5. **Open a PR.** A GitHub Action validates JSON against [`schema.json`](./schema.json) and CODEOWNERS routes by protocol family for review.
 
-If you don't want to hand-author, the [SuperAudio app](https://github.com/davidpuerto/superaudio) will eventually include a Claude Skill that probes your device interactively and drafts the profile for you. See M6.5 in the [SuperAudio roadmap](https://github.com/davidpuerto/superaudio/blob/main/docs/ROADMAP.md).
+If you don't want to hand-author, the [SuperAudio app](https://github.com/dapinitial/superaudio) will eventually include a Claude Skill that probes your device interactively and drafts the profile for you. See M6.5 in the [SuperAudio roadmap](https://github.com/dapinitial/superaudio/blob/main/docs/ROADMAP.md).
 
 ---
 

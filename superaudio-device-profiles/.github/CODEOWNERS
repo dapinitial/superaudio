@@ -1,0 +1,9 @@
+# Device-profile contributions are reviewed by the maintainer before merge.
+# As protocol-specific maintainers join, route reviews by adding per-glob lines
+# above the catch-all (e.g. group profiles by protocol, or match on id prefix).
+#
+#   /profiles/sonos-*       @some-sonos-maintainer
+#   /profiles/bowers-*      @some-airplay-maintainer
+#
+# For now, everything routes to the maintainer.
+* @dapinitial
