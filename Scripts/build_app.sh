@@ -21,6 +21,15 @@ APP="SuperAudio.app"
 BIN_NAME="SuperAudio"
 BUNDLE_ID="com.davidpuerto.SuperAudio"
 
+# Ensure the device-profiles submodule is present. A fresh clone has an empty
+# submodule dir until `git submodule update --init`; the drift check below reads
+# the submodule's canonical profiles, so init it here to keep the build
+# self-contained (idempotent — a no-op once checked out).
+if [ -f "$ROOT/.gitmodules" ] && command -v git >/dev/null 2>&1; then
+    echo "==> Ensuring git submodules are checked out"
+    git -C "$ROOT" submodule update --init --recursive
+fi
+
 echo "==> Checking device-profile sync (gotcha #28)"
 "$ROOT/Scripts/check_profile_drift.sh"
 
