@@ -53,8 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     Log.app.error("AP2 pair target '\(ap2Target, privacy: .public)' never appeared")
                     return
                 }
+                let pinProvider = Self.ap2PinProvider()
+                Log.app.notice("AP2 pairing mode: \(pinProvider == nil ? "transient" : "PIN (HomeKit)", privacy: .public)")
                 do {
-                    let result = try await AP2PairSetup.run(descriptor: descriptor)
+                    let result = try await AP2PairSetup.run(descriptor: descriptor, pinProvider: pinProvider)
                     Log.app.notice("AP2 pair-setup ✓ \(descriptor.displayName, privacy: .public) — session key \(result.sessionKey.count)B")
                 } catch {
                     Log.app.error("AP2 pair-setup ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
@@ -97,6 +99,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for arg in CommandLine.arguments {
             if arg.hasPrefix("--ap2-pair=") {
                 return String(arg.dropFirst("--ap2-pair=".count))
+            }
+        }
+        return nil
+    }
+
+    /// `--ap2-pin[=XXXX]` — companion to `--ap2-pair`. Switches pair-setup from
+    /// transient to PIN (HomeKit) mode: `/pair-pin-start` puts a PIN on the
+    /// receiver's screen. Bare `--ap2-pin` (or `=ask`) reads the PIN from the
+    /// terminal — launch the binary directly, not via `open`, so stdin is a
+    /// tty. `--ap2-pin=1234` supplies a fixed AirPlay password.
+    private static func ap2PinProvider() -> (@Sendable () async -> String?)? {
+        for arg in CommandLine.arguments {
+            if arg == "--ap2-pin" || arg == "--ap2-pin=ask" {
+                return {
+                    print("Enter the PIN shown on the receiver's screen: ", terminator: "")
+                    // readLine blocks — keep it off the main actor.
+                    return await Task.detached {
+                        readLine()?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }.value
+                }
+            }
+            if arg.hasPrefix("--ap2-pin=") {
+                let pin = String(arg.dropFirst("--ap2-pin=".count))
+                return { pin }
             }
         }
         return nil

@@ -5,20 +5,30 @@ import Security
 import BigInt
 import SuperAudioCore
 
-/// AirPlay 2 **pair-setup** (transient SRP) over the control channel.
+/// AirPlay 2 **pair-setup** (SRP) over the control channel — two modes:
 ///
-/// Transient pairing is the path AirPlay-2 audio senders use against HomePods
-/// and modern Sonos: SRP-6a (3072-bit / SHA-512) establishes a shared secret
-/// without persisting a long-term key pair, so there's no PIN to type and no
-/// stored pairing — each streaming session re-derives the channel key. Flow:
+/// **Transient** (default) is the path AirPlay-2 audio senders use against
+/// HomePods and modern Sonos: SRP-6a (3072-bit / SHA-512) establishes a shared
+/// secret without persisting a long-term key pair, so there's no PIN to type
+/// and no stored pairing — each streaming session re-derives the channel key.
+/// Apple TVs also accept it when AirPlay access is "Everyone" / "Anyone on the
+/// Same Network" with no password.
 ///
-///   M1 → POST /pair-setup  { state=1, method, flags=transient }
+/// **PIN** (pass a `pinProvider`) is the non-transient HomeKit path for
+/// receivers that require device verification: `POST /pair-pin-start` makes an
+/// Apple TV display a 4-digit PIN on screen, and that PIN becomes the SRP
+/// password. (A fixed AirPlay password set by the user works the same way,
+/// minus the on-screen display.)
+///
+///   [PIN mode] → POST /pair-pin-start                     (PIN appears on TV)
+///   M1 → POST /pair-setup  { state=1, method[, flags=transient] }
 ///   M2 ← { state=2, salt, serverPublicKey B }            (or { error })
 ///   M3 → POST /pair-setup  { state=3, clientPublicKey A, proof M1 }
 ///   M4 ← { state=4, proof M2 }                           (or { error })
 ///
-/// then both sides hold the SRP session key K. (M5/M6 — the long-term key
-/// exchange — are skipped in transient mode.)
+/// then both sides hold the SRP session key K. M5/M6 — the long-term key
+/// exchange — are skipped in transient mode and NOT YET IMPLEMENTED for PIN
+/// mode (M4 still fully verifies the SRP handshake against real hardware).
 ///
 /// **Reverse-engineered constants** (flags, the transient setup code) are
 /// marked below and logged verbatim so they can be tuned against a live
@@ -74,7 +84,11 @@ public enum AP2PairSetup {
 
     // MARK: - Run
 
-    public static func run(descriptor: SinkDescriptor) async throws -> Result {
+    /// - Parameter pinProvider: nil → transient pairing (fixed code). Non-nil →
+    ///   PIN (HomeKit) pairing: `/pair-pin-start` fires first, then the provider
+    ///   is awaited after M2 to collect the PIN the receiver is displaying.
+    public static func run(descriptor: SinkDescriptor,
+                           pinProvider: (@Sendable () async -> String?)? = nil) async throws -> Result {
         let label = descriptor.displayName
         let client = AP2RTSPClient(descriptor: descriptor)
         do {
@@ -106,13 +120,30 @@ public enum AP2PairSetup {
             Log.airplay2.error("pair-setup[\(label, privacy: .public)] GET /info failed: \(String(describing: error), privacy: .public)")
         }
 
+        // ---- /pair-pin-start (PIN mode only) ---------------------------
+        // Makes an Apple TV put the 4-digit PIN on screen. Must precede M1;
+        // the PIN itself isn't needed until the M3 proof.
+        if pinProvider != nil {
+            do {
+                let r = try await client.post(path: "/pair-pin-start", body: Data())
+                Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← POST /pair-pin-start \(r.statusLine, privacy: .public) — PIN should now be on the receiver's screen")
+            } catch {
+                throw PairSetupError.transport(error)
+            }
+        }
+
         // ---- M1 → M2 ---------------------------------------------------
-        let m1 = TLV8.encode([
+        // The transient flag is what makes it transient; PIN mode omits it.
+        var m1Items: [TLV8.Item] = [
             TLV8.Item(.state, byte: 0x01),
             TLV8.Item(.method, byte: methodPairSetup),
-            TLV8.Item(.flags, Data(transientFlag)),
-        ])
-        Log.airplay2.notice("pair-setup[\(label, privacy: .public)] → M1 (state=1 method=\(methodPairSetup) flags=\(transientFlag.map { String(format: "%02x", $0) }.joined(), privacy: .public))")
+        ]
+        if pinProvider == nil {
+            m1Items.append(TLV8.Item(.flags, Data(transientFlag)))
+        }
+        let m1 = TLV8.encode(m1Items)
+        let flagsDesc = pinProvider == nil ? "flags=" + transientFlag.map { String(format: "%02x", $0) }.joined() : "PIN mode, no flags"
+        Log.airplay2.notice("pair-setup[\(label, privacy: .public)] → M1 (state=1 method=\(methodPairSetup) \(flagsDesc, privacy: .public))")
 
         let m2resp: AP2RTSPClient.Response
         do {
@@ -132,11 +163,23 @@ public enum AP2PairSetup {
         Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← M2 ✓ salt=\(salt.count)B serverB=\(bData.count)B")
 
         // ---- compute SRP client side ----------------------------------
+        // PIN mode collects the password here — after M2, once the receiver
+        // is already displaying it.
+        let password: String
+        if let pinProvider {
+            guard let pin = await pinProvider(), !pin.isEmpty else {
+                throw PairSetupError.missingField("PIN (provider returned none)")
+            }
+            password = pin
+        } else {
+            password = transientSetupCode
+        }
+
         let a = randomScalar(byteCount: 32)
         let A = srp.publicA(privateA: a)
         let S: BigUInt
         do {
-            S = try srp.premaster(identity: identity, password: transientSetupCode, salt: salt, privateA: a, serverB: B)
+            S = try srp.premaster(identity: identity, password: password, salt: salt, privateA: a, serverB: B)
         } catch {
             throw PairSetupError.transport(error)
         }
@@ -167,6 +210,9 @@ public enum AP2PairSetup {
             throw PairSetupError.proofMismatch
         }
         Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← M4 ✓ — SRP session key established")
+        if pinProvider != nil {
+            Log.airplay2.notice("pair-setup[\(label, privacy: .public)] PIN pair-setup M1–M4 verified against hardware. M5/M6 long-term key exchange not implemented yet — next M12 step if PIN mode is the required path.")
+        }
         return Result(sessionKey: K, sharedSecret: srp.padPublic(S))
     }
 
