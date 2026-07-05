@@ -48,7 +48,7 @@ superaudio/
 - **[website/RISK_REGISTER.html](website/RISK_REGISTER.html)** — what could kill this project, with mitigations and trigger-to-act per risk.
 - **[website/REACTIVE_DISCOVERY.html](website/REACTIVE_DISCOVERY.html)** — build log artifact for the discovery milestone.
 
-## Status — 2026-06-03
+## Status — 2026-07-05
 
 - ✅ **M1 — Foundation.** Scaffolding, capture, discovery, menu bar app.
 - ✅ **M2 — RAOP control plane.** Full RTSP handshake to B&W A5 and A7 with NTP timing-channel replies.
@@ -65,7 +65,7 @@ superaudio/
 - ✅ **M6.6 — Sonos group awareness, read + write** (2026-06-25/26). Reads zone-group topology (`ZoneGroupTopology`) and feeds only the group **coordinator** — SonosNet keeps the rest sample-locked, so a grouped pair can't be double-streamed (the cause of an audible drift bug). Plus one-tap **Group / Ungroup Sonos** from the menu (local `x-rincon:` SOAP, no cloud). Verified on real hardware. See gotcha #24.
 - ✅ **Zombie-silence auto-recovery** (2026-06-26). The process tap can detach and deliver silent buffers while the pipeline looks healthy (every speaker quiet, no errors). The broadcaster now detects sustained silent capture and re-attaches the tap — preserving subscribers + sync, so AP1 sessions don't even reconnect. Verified: no false positives, recovers a silent-but-flowing source. See gotcha #26.
 - ✅ **M5.5 — device profiles consumed (slice 1)** (2026-06-26). The JSON device-profile substrate (schema + loader) is now *used*, not just present: a `ProfileStore` resolves a discovered sink → profile, and AirPlay 1 volume scale reads from the profile's `volumeScale` (verified: the A5 matches `bowers-wilkins-a5`, volume driven from JSON). The seam for community-crowdsourced device support. Remaining slices: codec params, Sonos volume.
-- 🟡 **M12 — AirPlay 2 sender (committed V1 hero).** AP2 is now in V1 scope, not a non-goal. **Foundation built + verified offline (2026-06-26):** the `SuperAudioAirPlay2` module, `_airplay._tcp` discovery, TLV8 codec, and SRP-6a pairing crypto (CryptoKit + BigInt, RFC-5054-verified); the control transport reaches a real device (`GET /info` → 200). **Blocked on a HomeKit AP2 device to finish/verify pairing** — there is **no Apple TV 4K or HomePod on the test LAN**; the only AP2 device here is a Sonos One SL, which uses the MFi/FairPlay path rather than the HomeKit `pair-setup` we built (it 403s). Decision: vendor nothing for crypto — fresh Swift on CryptoKit (see DECISIONS.md 2026-06-25). Next: verify against an Apple TV/HomePod, then PTP/RTSP/RTP/Opus.
+- 🟡 **M12 — AirPlay 2 sender (committed V1 hero).** AP2 is now in V1 scope, not a non-goal. **Foundation built + verified offline (2026-06-26):** the `SuperAudioAirPlay2` module, `_airplay._tcp` discovery, TLV8 codec, and SRP-6a pairing crypto (CryptoKit + BigInt, RFC-5054-verified); the control transport reaches a real device (`GET /info` → 200). **Blocked on a HomeKit AP2 device to finish/verify pairing** — there is **no Apple TV 4K or HomePod on the test LAN**; the only AP2 device here is a Sonos One SL, which uses the MFi/FairPlay path rather than the HomeKit `pair-setup` we built (it 403s). Decision: vendor nothing for crypto — fresh Swift on CryptoKit (see DECISIONS.md 2026-06-25). **Unblocking (2026-07-05): an Apple TV 4K is being added to the LAN; the `--ap2-pair`/`--ap2-pin` dev loop now covers both transient and PIN (HomeKit) pairing — see [docs/AP2-PAIRING-RUNBOOK.md](docs/AP2-PAIRING-RUNBOOK.md).** Next: verify pairing against the Apple TV, then PTP/RTSP/RTP/Opus.
 - 🟡 **M3 hardening (2/N).** 30-min soak still owed. **et=1 verification DONE (2026-06-26): result — encrypted AirPlay plays SILENT on B&W A5/A7** (handshake fine, audio decodes to nothing); et=0 cleartext is the working/shipping path. Not pursued further — A5/A7 don't need encryption. See gotcha #27.
 - 🟡 **M6 polish remaining.** Per-source app picker, preferences window, real menu bar icon. Independent of sync — can land any time before M8.
 - 🟡 **M6.3 / M6.4 remaining polish.** Inaudible test signals (M11 polish). In-app diagnostics panel (#102) **shipped + upgraded (2026-06-26)** — surfaces pipeline state, silence-recovery + capture-gap counts, live Sonos group topology, encryption mode, per-sink status, and a Copy-bundle button. The rotary knob UI (#100) was **removed** — the linear slider (25 ms steps) plus auto-calibration covers tuning.
@@ -106,9 +106,11 @@ Future protocol modules (`SuperAudioAirPlay2`, `SuperAudioChromecast`, `SuperAud
 | SKU | Price | Role |
 |---|---|---|
 | **SuperAudio for Mac** | $19 | The current build. Captures any Mac audio, fans out to AirPlay 1 + AirPlay 2 (V1 hero, M12) + Sonos. Addons: Cast, BT, Room Tuning, Multi-zone — $5 each. |
-| **Apple TV companion** | $5 addon | tvOS app — same fan-out from an Apple TV. Removes the "Mac must stay on" requirement. |
-| **Hub Stick** | $59 | Pi Zero 2 W in a case. For households with no Mac and no Apple TV. |
+| **Optical Hub** | $79 | TOSLINK/optical source in → every wireless speaker, IR remote learning (M15). |
+| **Hub Stick** | $59 | Pi Zero 2 W in a case. For households with no Mac. |
 | **Hub Pro (HDMI ARC)** | $249 | Sits between TV and soundbar. Every TV → every wireless speaker, regardless of source app. |
+
+*(The former "Apple TV companion" SKU was cancelled 2026-06-04 — tvOS cannot capture system/other-app/DRM audio, so a tvOS sender is structurally impossible. See ROADMAP.md M9.)*
 
 Direct sale (notarized, not App Store). Privacy: LAN-only discovery, no telemetry, no cloud anything.
 

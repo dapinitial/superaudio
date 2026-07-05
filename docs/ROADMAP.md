@@ -464,7 +464,7 @@ Convert POC to shippable product.
 **V1 scope as of 2026-05-31** (supersedes 2026-05-30 partial deferral):
 - AirPlay 1 multi-sink sync (shipped, proven)
 - AirPlay 2 sender via M12 (3-4 weeks)
-- **Legacy Sonos sync via SonosNet group-piggyback** (M6.6a, ~1.5 weeks) — covers the ~70-85% of legacy-Sonos households that own at least one AP2-capable Sonos. Auto-grouping via Sonos Cloud Control API; SonosNet's own sample-accurate sync handles the legacy speaker.
+- **Legacy Sonos sync via SonosNet group-piggyback** (M6.6a — ✅ shipped 2026-06-26) — covers the ~70-85% of legacy-Sonos households that own at least one AP2-capable Sonos. Auto-grouping via **local SOAP** (`x-rincon:` join — no Sonos cloud account needed; the original Cloud-Control-API plan was superseded, see the M6.6a entry above); SonosNet's own sample-accurate sync handles the legacy speaker.
 - Claude Skill onboarding (M6.5)
 - Device Profile substrate (M5.5)
 
@@ -472,7 +472,7 @@ Convert POC to shippable product.
 
 **The launch headline is the Claude Skill** — that's the resequence outcome from 2026-05-15. The technical story (lossless AP1 renaissance + cross-protocol AP1+AP2 fan-out) is real but emotionally subtle. The Skill story is concrete and quotable: *"Your AirPort Express still works. Your $1500 B&W from 2013 still works. Use Claude Skill to onboard any speaker you own."*
 
-**Modern Sonos works at launch via AP2** — Beam gen 1+, Arc, Era, One, Move, Roam all receive AP2 deterministically. **Legacy Sonos (Playbar gen 1, Play:1/3, Play:5 gen 1, Connect gen 1, etc.) works at launch via auto-grouping** — if the user has at least one AP2-capable Sonos on their network, SuperAudio automatically groups the legacy speaker with the modern one via Sonos Cloud Control API, and SonosNet handles the rest (sample-accurate sync, free, no calibration). **Pure-legacy-Sonos users** (zero AP2 hardware anywhere) get a clear "perfect sync coming in v1.1" message + the option to add any AP2-capable Sonos for immediate v1 support.
+**Modern Sonos works at launch via AP2** — Beam gen 1+, Arc, Era, One, Move, Roam all receive AP2 deterministically. **Legacy Sonos (Playbar gen 1, Play:1/3, Play:5 gen 1, Connect gen 1, etc.) works at launch via auto-grouping** — if the user has at least one AP2-capable Sonos on their network, SuperAudio groups the legacy speaker with the modern one via a local SOAP call (`x-rincon:` join — shipped 2026-06-26, no Sonos account needed), and SonosNet handles the rest (sample-accurate sync, free, no calibration). **Pure-legacy-Sonos users** (zero AP2 hardware anywhere) get a clear "perfect sync coming in v1.1" message + the option to add any AP2-capable Sonos for immediate v1 support.
 
 - [ ] Paddle checkout live
 - [ ] License key delivery + validation
