@@ -6,8 +6,9 @@
 # SPM doesn't natively produce .app bundles; this script is the bridge.
 #
 # Usage:
-#   ./Scripts/build_app.sh                # debug build → SuperAudio.app at repo root
-#   CONFIG=release ./Scripts/build_app.sh # release build
+#   ./Scripts/build_app.sh                   # debug build → SuperAudio.app at repo root
+#   CONFIG=release ./Scripts/build_app.sh    # release build
+#   UNIVERSAL=1 ./Scripts/build_app.sh       # arm64 + x86_64 fat binary (distribution)
 #
 # After build, launch with:  open SuperAudio.app
 
@@ -33,10 +34,19 @@ fi
 echo "==> Checking device-profile sync (gotcha #28)"
 "$ROOT/Scripts/check_profile_drift.sh"
 
-echo "==> Building $BIN_NAME ($CONFIG)"
-swift build -c "$CONFIG"
-
-BIN_DIR="$(swift build --show-bin-path -c "$CONFIG")"
+# UNIVERSAL=1 builds an arm64 + x86_64 fat binary — required for distribution
+# (a single-arch binary either excludes Apple Silicon or runs the process tap
+# under Rosetta). Default stays native-only: it's faster for the dev loop.
+UNIVERSAL="${UNIVERSAL:-0}"
+if [ "$UNIVERSAL" = "1" ]; then
+    echo "==> Building $BIN_NAME ($CONFIG, universal arm64 + x86_64)"
+    swift build -c "$CONFIG" --arch arm64 --arch x86_64
+    BIN_DIR="$(swift build --show-bin-path -c "$CONFIG" --arch arm64 --arch x86_64)"
+else
+    echo "==> Building $BIN_NAME ($CONFIG, native arch)"
+    swift build -c "$CONFIG"
+    BIN_DIR="$(swift build --show-bin-path -c "$CONFIG")"
+fi
 BIN_PATH="$BIN_DIR/$BIN_NAME"
 
 if [ ! -f "$BIN_PATH" ]; then
@@ -52,6 +62,8 @@ mkdir -p "$APP/Contents/Resources"
 cp "$BIN_PATH" "$APP/Contents/MacOS/$BIN_NAME"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
+
+echo "==> Binary architectures: $(lipo -archs "$APP/Contents/MacOS/$BIN_NAME" 2>/dev/null || echo unknown)"
 
 # Optional but good practice — touch the bundle so LaunchServices re-reads it
 touch "$APP"
