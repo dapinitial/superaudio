@@ -34,7 +34,7 @@
 
 ## Tier 3 — Legal / trust / support (easy to forget, all mandatory for direct sale)
 
-- [ ] **Product name / trademark check** — is "SuperAudio" safe + distinctive? (Watch: Sony/Philips "Super Audio CD"/SACD.) Research in progress 2026-07-09; resolve before print/marketing spend.
+- [ ] **RENAME off "SuperAudio" (flagged risky 2026-07-09).** The name is too generic to protect and already crowded: a **same-name app on the Mac App Store** (id1156321898), an audio-software studio (superaudio.studio), the "Super Audio Cart" VST, and Sony's "Super Audio CD"/SACD adjacency. Both on-brand domains are gone — **superaudio.com** (held since 1995) and **superaudio.app** (registered Jan 2026, live). Recommendation: **brand the app under the Spacelab family** — it's ownable, SEO-winnable, and finally aligns the app name with the existing marketing domain (spacelabforever.com), fixing today's name↔domain mismatch. Run a proper USPTO Class 9/42 knockout search on the chosen name and secure the exact-match .com **before** any print/marketing spend. Do NOT settle for getsuperaudio.com-style fallbacks.
 - [ ] **Privacy policy + Terms of Service** — required by Lemon Squeezy/Paddle and for trust. LAN-only/no-telemetry is a selling point; say it plainly.
 - [ ] **Refund policy** — set expectations for a v1 with fragile pillars (see monetization audit).
 - [ ] **Support channel** — a real support inbox (help@ / hello@) and/or a small Discord. Network-audio-sync tickets are the worst in software; budget for them.
