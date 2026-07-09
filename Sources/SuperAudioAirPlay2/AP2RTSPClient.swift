@@ -177,12 +177,18 @@ public final class AP2RTSPClient: @unchecked Sendable {
     /// Stable per-session client identifiers AP2 receivers expect.
     private let clientID: String
 
+    /// Resolved remote host (IP string), captured once the connection is ready.
+    public private(set) var remoteHost: String = ""
+
+    /// Our own local IP on this connection — the RTSP request-line URI is built
+    /// from OUR address (`rtsp://<localHost>/<session>`), not the receiver's.
+    public private(set) var localHost: String = ""
+
     public init(descriptor: SinkDescriptor) {
         self.descriptor = descriptor
         self.serviceName = descriptor.displayName
-        var bytes = [UInt8](repeating: 0, count: 8)
-        for i in 0..<8 { bytes[i] = UInt8.random(in: 0...255) }
-        self.clientID = bytes.map { String(format: "%02X", $0) }.joined()
+        // Client-Instance must equal the DACP-ID a real sender presents.
+        self.clientID = AP2SenderIdentity.shared.dacpID
     }
 
     deinit { connection?.cancel() }
@@ -205,6 +211,12 @@ public final class AP2RTSPClient: @unchecked Sendable {
         tcpOptions.keepaliveCount = 3
         let params = NWParameters(tls: nil, tcp: tcpOptions)
         params.allowLocalEndpointReuse = true
+        // Force IPv4: real AirPlay senders operate over the routable LAN IPv4,
+        // and the RTSP request-line URI is built from our local address — an
+        // IPv6 link-local (fe80::) host there is rejected by the receiver (400).
+        if let ip = params.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
+            ip.version = .v4
+        }
         let connection = NWConnection(to: endpoint, using: params)
 
         let label = descriptor.displayName
@@ -224,7 +236,16 @@ public final class AP2RTSPClient: @unchecked Sendable {
             connection.stateUpdateHandler = { state in
                 Log.airplay2.info("AP2 RTSP[\(label, privacy: .public)] state=\(String(describing: state), privacy: .public)")
                 switch state {
-                case .ready:         resume(.success(()))
+                case .ready:
+                    if let ep = connection.currentPath?.remoteEndpoint,
+                       case let .hostPort(host, _) = ep {
+                        self.remoteHost = Self.hostString(host)
+                    }
+                    if let lep = connection.currentPath?.localEndpoint,
+                       case let .hostPort(host, _) = lep {
+                        self.localHost = Self.hostString(host)
+                    }
+                    resume(.success(()))
                 case .failed(let e): resume(.failure(AP2RTSPError.connectFailed(String(describing: e))))
                 case .cancelled:     resume(.failure(AP2RTSPError.connectFailed("cancelled")))
                 default:             break
@@ -233,6 +254,26 @@ public final class AP2RTSPClient: @unchecked Sendable {
             connection.start(queue: queue)
         }
         self.connection = connection
+    }
+
+    private static func hostString(_ host: NWEndpoint.Host) -> String {
+        switch host {
+        case .ipv4(let a): return "\(a)".split(separator: "%").first.map(String.init) ?? "\(a)"
+        case .ipv6(let a): return "\(a)".split(separator: "%").first.map(String.init) ?? "\(a)"
+        case .name(let n, _): return n
+        @unknown default: return ""
+        }
+    }
+
+    /// Send an arbitrary RTSP method (SETUP, RECORD, SET_PARAMETER, …) with a
+    /// binary body. `path` is the request-line URI.
+    public func send(method: String,
+                     uri: String,
+                     body: Data,
+                     contentType: String = "application/octet-stream",
+                     extraHeaders: [String: String] = [:],
+                     timeout: TimeInterval = 8) async throws -> Response {
+        try await request(method: method, path: uri, body: body, contentType: contentType, extraHeaders: extraHeaders, timeout: timeout)
     }
 
     public func disconnect() {
@@ -275,8 +316,7 @@ public final class AP2RTSPClient: @unchecked Sendable {
         head += "CSeq: \(currentCseq)\r\n"
         head += "Content-Type: \(contentType)\r\n"
         head += "Content-Length: \(body.count)\r\n"
-        head += "User-Agent: AirPlay/665.13.1\r\n"
-        head += "X-Apple-Client-Name: SuperAudio\r\n"
+        head += "User-Agent: AirPlay/550.10\r\n"
         head += "Client-Instance: \(clientID)\r\n"
         for (k, v) in extraHeaders.sorted(by: { $0.key < $1.key }) {
             head += "\(k): \(v)\r\n"

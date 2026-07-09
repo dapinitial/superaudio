@@ -96,6 +96,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        // M12 dev loop — full session bring-up through RTSP SETUP.
+        if let setupTarget = Self.ap2SetupTarget() {
+            Log.app.notice("AP2 setup target: '\(setupTarget, privacy: .public)' — waiting for discovery…")
+            Task { @MainActor in
+                guard let descriptor = await Self.awaitAP2Sink(named: setupTarget, timeout: 15) else {
+                    Log.app.error("AP2 setup target '\(setupTarget, privacy: .public)' never appeared")
+                    return
+                }
+                do {
+                    let live = try await AP2PairVerify.establish(descriptor: descriptor)
+                    Log.app.notice("AP2 setup: session verified + encrypted, running SETUP…")
+                    let s = try await AP2Setup.run(client: live.client, ourTimingPort: 7010, ourControlPort: 7011)
+                    Log.app.notice("AP2 SETUP ✓ \(descriptor.displayName, privacy: .public) — dataPort=\(s.dataPort) controlPort=\(s.controlPort) eventPort=\(s.eventPort) timingPort=\(s.timingPort). Stream negotiated. Next: timing + RTP audio.")
+                    live.client.disconnect()
+                } catch {
+                    Log.app.error("AP2 SETUP ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+
         if let target = Self.autoClickTarget() {
             Log.app.info("Auto-click target: '\(target, privacy: .public)' — waiting for discovery…")
             Task { @MainActor in
@@ -142,6 +162,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for arg in CommandLine.arguments {
             if arg.hasPrefix("--ap2-verify=") {
                 return String(arg.dropFirst("--ap2-verify=".count))
+            }
+        }
+        return nil
+    }
+
+    /// `--ap2-setup=<displayName>` — verify + encrypt + RTSP SETUP (two-phase
+    /// stream negotiation). PIN-free (uses the stored pairing).
+    private static func ap2SetupTarget() -> String? {
+        for arg in CommandLine.arguments {
+            if arg.hasPrefix("--ap2-setup=") {
+                return String(arg.dropFirst("--ap2-setup=".count))
             }
         }
         return nil
