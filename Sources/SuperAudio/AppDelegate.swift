@@ -116,6 +116,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        // M12 dev loop — FULL AP2 audio path: verify → SETUP → PTP → RECORD →
+        // anchor → stream. Needs sudo (PTP binds privileged ports 319/320).
+        if let playTarget = Self.ap2PlayTarget() {
+            Log.app.notice("AP2 play target: '\(playTarget, privacy: .public)' — waiting for discovery…")
+            Task { @MainActor in
+                guard let descriptor = await Self.awaitAP2Sink(named: playTarget, timeout: 15) else {
+                    Log.app.error("AP2 play target '\(playTarget, privacy: .public)' never appeared")
+                    return
+                }
+                let session = AP2AudioSession(descriptor: descriptor)
+                Self.ap2PlaySession = session
+                do {
+                    try await session.start()
+                    Log.app.notice("AP2 audio session started for \(descriptor.displayName, privacy: .public) — play something and listen.")
+                } catch {
+                    Log.app.error("AP2 audio session ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+
         if let target = Self.autoClickTarget() {
             Log.app.info("Auto-click target: '\(target, privacy: .public)' — waiting for discovery…")
             Task { @MainActor in
@@ -173,6 +193,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for arg in CommandLine.arguments {
             if arg.hasPrefix("--ap2-setup=") {
                 return String(arg.dropFirst("--ap2-setup=".count))
+            }
+        }
+        return nil
+    }
+
+    /// `--ap2-play=<displayName>` — full AP2 audio path (PTP + RTP). Requires
+    /// sudo (PTP binds ports 319/320). Keeps a strong ref to the session.
+    private static var ap2PlaySession: AP2AudioSession?
+    private static func ap2PlayTarget() -> String? {
+        for arg in CommandLine.arguments {
+            if arg.hasPrefix("--ap2-play=") {
+                return String(arg.dropFirst("--ap2-play=".count))
             }
         }
         return nil
