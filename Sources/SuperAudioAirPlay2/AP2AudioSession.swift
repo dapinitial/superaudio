@@ -61,7 +61,10 @@ public final class AP2AudioSession: @unchecked Sendable {
 
         // 4. SETPEERS → RECORD → SETRATEANCHORTIME (all over the encrypted channel)
         try await sendPeers(client: client, addresses: [senderIP, receiverIP].filter { !$0.isEmpty })
-        try await sendRecord(client: client)
+        // RECORD can block on the receiver's PTP sync; keep it non-fatal during
+        // bring-up so we can see whether anchor + audio proceed regardless.
+        do { try await sendRecord(client: client) }
+        catch { Log.airplay2.error("AP2 RECORD failed (\(String(describing: error), privacy: .public)) — continuing to anchor") }
 
         // 5. RTP audio sender + anchor
         let startTS: UInt32 = 0
@@ -110,21 +113,32 @@ public final class AP2AudioSession: @unchecked Sendable {
             var converter: AVAudioConverter?
             var pending = Data()                 // leftover int16 bytes < one frame
             let frameBytes = Self.spf * 2 * 2    // spf samples * 2ch * 2 bytes
+            Log.airplay2.notice("AP2 pump: subscribed, waiting for chunks…")
+            var chunkCount = 0, convertFails = 0
 
             for await chunk in stream {
                 if Task.isCancelled { break }
+                chunkCount += 1
+                if chunkCount == 1 {
+                    Log.airplay2.notice("AP2 pump: first chunk — inFmt sr=\(chunk.pcm.format.sampleRate) ch=\(chunk.pcm.format.channelCount) frames=\(chunk.pcm.frameLength)")
+                }
                 if converter == nil || converter!.inputFormat != chunk.pcm.format {
                     converter = AVAudioConverter(from: chunk.pcm.format, to: outFormat)
                 }
-                guard let converter,
-                      let s16 = Self.convert(chunk.pcm, using: converter, to: outFormat) else { continue }
+                guard let converter, let s16 = Self.convert(chunk.pcm, using: converter, to: outFormat) else {
+                    convertFails += 1
+                    if convertFails == 1 { Log.airplay2.error("AP2 pump: convert returned nil (first)") }
+                    continue
+                }
                 pending.append(s16)
                 while pending.count >= frameBytes {
                     let frame = pending.prefix(frameBytes)
                     rtp.sendFrame(Data(frame))
                     pending.removeFirst(frameBytes)
                 }
+                if chunkCount % 100 == 0 { Log.airplay2.info("AP2 pump: \(chunkCount) chunks, \(convertFails) convert-fails, pending=\(pending.count)B") }
             }
+            Log.airplay2.notice("AP2 pump: stream ended after \(chunkCount) chunks")
         }
     }
 
@@ -156,10 +170,7 @@ public final class AP2AudioSession: @unchecked Sendable {
     private func sendRecord(client: AP2RTSPClient) async throws {
         let uri = "rtsp://\(bracket(client.localHost.isEmpty ? client.remoteHost : client.localHost))/\(sessionSeed())"
         let resp = try await client.send(method: "RECORD", uri: uri, body: Data(),
-                                         extraHeaders: dacpHeaders().merging([
-                                            "Range": "npt=0-",
-                                            "RTP-Info": "seq=0;rtptime=0",
-                                         ]) { a, _ in a })
+                                         extraHeaders: dacpHeaders(), timeout: 4)
         Log.airplay2.notice("AP2 RECORD ← \(resp.statusLine, privacy: .public) (Audio-Latency \(resp.headers["Audio-Latency"] ?? "?", privacy: .public))")
     }
 

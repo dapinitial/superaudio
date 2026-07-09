@@ -120,6 +120,10 @@ public final class AP2RTPSender: @unchecked Sendable {
         sequence &+= 1
         rtpTimestamp &+= UInt32(config.spf)
         packetCount &+= 1
+        if packetCount % 200 == 0 {
+            let (pc, ts, secs) = (packetCount, rtpTimestamp, packetCount * UInt64(config.spf) / 44100)
+            Log.airplay2.notice("AP2 RTP sent \(pc) packets (ts=\(ts), ~\(secs)s audio)")
+        }
     }
 
     public var currentTimestamp: UInt32 { rtpTimestamp }

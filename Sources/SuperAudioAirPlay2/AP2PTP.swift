@@ -176,6 +176,7 @@ public final class AP2PTP: @unchecked Sendable {
         }
         guard n >= 34 else { return }
         let msgType = buf[0] & 0x0F
+        Log.airplay2.info("AP2 PTP ← rx type=0x\(String(msgType, radix: 16), privacy: .public) len=\(n) on :319")
         guard msgType == 0x1 else { return }             // Delay_Req only
         let rxTime = Self.nowPTPNanos()
         let reqSeq = (UInt16(buf[30]) << 8) | UInt16(buf[31])
