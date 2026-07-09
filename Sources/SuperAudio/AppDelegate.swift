@@ -58,8 +58,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 do {
                     let result = try await AP2PairSetup.run(descriptor: descriptor, pinProvider: pinProvider)
                     Log.app.notice("AP2 pair-setup ✓ \(descriptor.displayName, privacy: .public) — session key \(result.sessionKey.count)B")
+                    if let pairing = result.pairing {
+                        AP2PairingStore.save(pairing)
+                        Log.app.notice("AP2 pairing persisted — running pair-verify to confirm PIN-free reconnect…")
+                        let session = try await AP2PairVerify.run(descriptor: descriptor)
+                        Log.app.notice("AP2 pair-verify ✓ \(descriptor.displayName, privacy: .public) — PIN-free session established (secret \(session.sharedSecret.count)B, control keys derived). Pairing layer COMPLETE.")
+                    }
                 } catch {
-                    Log.app.error("AP2 pair-setup ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                    Log.app.error("AP2 pairing ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+
+        // M12 dev loop — pair-verify alone, against a previously stored pairing.
+        if let verifyTarget = Self.ap2VerifyTarget() {
+            Log.app.notice("AP2 verify target: '\(verifyTarget, privacy: .public)' — waiting for discovery…")
+            Task { @MainActor in
+                guard let descriptor = await Self.awaitAP2Sink(named: verifyTarget, timeout: 15) else {
+                    Log.app.error("AP2 verify target '\(verifyTarget, privacy: .public)' never appeared")
+                    return
+                }
+                do {
+                    let session = try await AP2PairVerify.run(descriptor: descriptor)
+                    Log.app.notice("AP2 pair-verify ✓ \(descriptor.displayName, privacy: .public) — secret \(session.sharedSecret.count)B, control keys derived")
+                } catch {
+                    Log.app.error("AP2 pair-verify ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
                 }
             }
         }
@@ -99,6 +122,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         for arg in CommandLine.arguments {
             if arg.hasPrefix("--ap2-pair=") {
                 return String(arg.dropFirst("--ap2-pair=".count))
+            }
+        }
+        return nil
+    }
+
+    /// `--ap2-verify=<displayName>` — pair-verify only, using the pairing
+    /// stored by a previous PIN pair-setup. The PIN-free reconnect path.
+    private static func ap2VerifyTarget() -> String? {
+        for arg in CommandLine.arguments {
+            if arg.hasPrefix("--ap2-verify=") {
+                return String(arg.dropFirst("--ap2-verify=".count))
             }
         }
         return nil

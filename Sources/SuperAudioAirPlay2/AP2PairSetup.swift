@@ -2,6 +2,7 @@
 
 import Foundation
 import Security
+import CryptoKit
 import BigInt
 import SuperAudioCore
 
@@ -36,11 +37,12 @@ import SuperAudioCore
 /// constants are the iterate-against-hardware part.
 public enum AP2PairSetup {
 
-    /// What a successful transient pair-setup yields: the SRP session key the
-    /// subsequent pair-verify / channel encryption is derived from.
+    /// What a successful pair-setup yields: the SRP session key, and — when the
+    /// PIN (M5/M6) path ran — the long-term pairing to persist for pair-verify.
     public struct Result {
         public let sessionKey: Data          // K = H(S)
-        public let sharedSecret: Data        // PAD(S) — for HKDF in pair-verify
+        public let sharedSecret: Data        // PAD(S)
+        public let pairing: AP2Pairing?      // non-nil after a completed M5/M6
     }
 
     public enum PairSetupError: Error, CustomStringConvertible {
@@ -48,6 +50,8 @@ public enum AP2PairSetup {
         case unexpectedState(UInt8)
         case missingField(String)
         case proofMismatch
+        case accessorySignature
+        case cryptoFailed(String)
         case transport(Error)
 
         public var description: String {
@@ -58,6 +62,8 @@ public enum AP2PairSetup {
             case .unexpectedState(let s): return "unexpected pairing state \(s)"
             case .missingField(let f):    return "missing \(f) in response"
             case .proofMismatch:          return "server proof did not verify (wrong setup code?)"
+            case .accessorySignature:     return "accessory M6 signature did not verify"
+            case .cryptoFailed(let m):    return "crypto: \(m)"
             case .transport(let e):       return "transport: \(e)"
             }
         }
@@ -85,10 +91,14 @@ public enum AP2PairSetup {
     /// `X-Apple-HKP` — the HomeKit-pairing flavor header AP2 receivers use to
     /// route /pair-setup. tvOS returns 470 Connection Authorization Required
     /// to a pair-setup that omits it (observed live vs AppleTV11,1 on
-    /// 2026-07-08). Values per reference senders (owntone pair_ap): 3 =
-    /// transient, 4 = HomeKit with on-screen PIN. `X-Apple-PD: 1` rides along.
+    /// 2026-07-08). HKP=3 is what authorized the connection through to M2 on
+    /// real hardware — for BOTH modes. (HKP=4 authorized /pair-pin-start but
+    /// then 470'd the pair-setup M1, so the value is a per-connection auth
+    /// gate, not a mode selector; the PIN vs transient distinction is carried
+    /// by /pair-pin-start + the transient flag, not this header.) `X-Apple-PD:
+    /// 1` rides along.
     static func pairingHeaders(transient: Bool) -> [String: String] {
-        ["X-Apple-HKP": transient ? "3" : "4", "X-Apple-PD": "1"]
+        ["X-Apple-HKP": "3", "X-Apple-PD": "1"]
     }
 
     // MARK: - Run
@@ -114,6 +124,7 @@ public enum AP2PairSetup {
         // honor /pair-setup (a bare pair-setup gets 403 Forbidden). The body
         // is a binary plist; log the top-level keys so we can see the device's
         // declared features / supported pairing.
+        var deviceID: String? = nil
         do {
             let info = try await client.get(path: "/info")
             Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← GET /info \(info.statusLine, privacy: .public) (\(info.body.count)B)")
@@ -124,6 +135,7 @@ public enum AP2PairSetup {
                 for k in ["features", "statusFlags", "flags", "model", "deviceID", "pi", "protocolVersion", "sourceVersion", "keepAliveLowPower", "pw"] {
                     if let v = plist[k] { Log.airplay2.notice("pair-setup[\(label, privacy: .public)] /info \(k, privacy: .public)=\(String(describing: v), privacy: .public)") }
                 }
+                deviceID = plist["deviceID"] as? String
             }
         } catch {
             Log.airplay2.error("pair-setup[\(label, privacy: .public)] GET /info failed: \(String(describing: error), privacy: .public)")
@@ -225,10 +237,84 @@ public enum AP2PairSetup {
             throw PairSetupError.proofMismatch
         }
         Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← M4 ✓ — SRP session key established")
-        if pinProvider != nil {
-            Log.airplay2.notice("pair-setup[\(label, privacy: .public)] PIN pair-setup M1–M4 verified against hardware. M5/M6 long-term key exchange not implemented yet — next M12 step if PIN mode is the required path.")
+
+        // Transient mode: pair-setup IS the session; no long-term keys exist.
+        guard pinProvider != nil else {
+            return Result(sessionKey: K, sharedSecret: srp.padPublic(S), pairing: nil)
         }
-        return Result(sessionKey: K, sharedSecret: srp.padPublic(S))
+
+        // ---- M5 → M6: long-term key exchange (PIN mode only) ------------
+        // Both sides sign (HKDF-derived X || pairingID || LTPK) with their
+        // Ed25519 long-term key, encrypted under the SRP session key. This is
+        // the part that makes the pairing PERSISTENT: after M6 verifies, the
+        // receiver remembers our LTPK and pair-verify replaces the PIN forever.
+        let identity2 = AP2ControllerIdentity.loadOrCreate()
+        let encKey = HAPCrypto.hkdf(K, salt: "Pair-Setup-Encrypt-Salt", info: "Pair-Setup-Encrypt-Info")
+        let deviceX = HAPCrypto.hkdf(K, salt: "Pair-Setup-Controller-Sign-Salt", info: "Pair-Setup-Controller-Sign-Info")
+        let deviceInfo = deviceX + Data(identity2.pairingID.utf8) + identity2.ltpk
+        let deviceSig: Data
+        do {
+            deviceSig = try identity2.signingKey.signature(for: deviceInfo)
+        } catch {
+            throw PairSetupError.cryptoFailed("Ed25519 sign: \(error)")
+        }
+        let m5sub = TLV8.encode([
+            TLV8.Item(.identifier, Data(identity2.pairingID.utf8)),
+            TLV8.Item(.publicKey, identity2.ltpk),
+            TLV8.Item(.signature, deviceSig),
+        ])
+        let m5enc: Data
+        do {
+            m5enc = try HAPCrypto.seal(m5sub, key: encKey, nonceLabel: "PS-Msg05")
+        } catch {
+            throw PairSetupError.cryptoFailed("M5 seal: \(error)")
+        }
+        let m5 = TLV8.encode([
+            TLV8.Item(.state, byte: 0x05),
+            TLV8.Item(.encryptedData, m5enc),
+        ])
+        Log.airplay2.notice("pair-setup[\(label, privacy: .public)] → M5 (encryptedData \(m5enc.count)B)")
+
+        let m6resp: AP2RTSPClient.Response
+        do {
+            m6resp = try await client.post(path: "/pair-setup", body: m5, extraHeaders: hkpHeaders)
+        } catch {
+            throw PairSetupError.transport(error)
+        }
+        let m6 = TLV8.decode(m6resp.body)
+        try throwIfDeviceError(m6, state: "M6")
+        guard let m6enc = TLV8.value(.encryptedData, in: m6) else {
+            Log.airplay2.error("pair-setup[\(label, privacy: .public)] M6 raw: \(m6resp.statusLine, privacy: .public) body=\(m6resp.body.count)B")
+            throw PairSetupError.missingField("M6 encryptedData")
+        }
+        let m6sub: [TLV8.Item]
+        do {
+            m6sub = TLV8.decode(try HAPCrypto.open(m6enc, key: encKey, nonceLabel: "PS-Msg06"))
+        } catch {
+            throw PairSetupError.cryptoFailed("M6 open: \(error)")
+        }
+        guard let accIDData = TLV8.value(.identifier, in: m6sub),
+              let accLTPK = TLV8.value(.publicKey, in: m6sub),
+              let accSig = TLV8.value(.signature, in: m6sub),
+              let accID = String(data: accIDData, encoding: .utf8) else {
+            throw PairSetupError.missingField("M6 sub-TLV (identifier/publicKey/signature)")
+        }
+
+        // Verify AccessoryInfo signature with the accessory's own LTPK.
+        let accessoryX = HAPCrypto.hkdf(K, salt: "Pair-Setup-Accessory-Sign-Salt", info: "Pair-Setup-Accessory-Sign-Info")
+        let accessoryInfo = accessoryX + accIDData + accLTPK
+        guard let accKey = try? Curve25519.Signing.PublicKey(rawRepresentation: accLTPK),
+              accKey.isValidSignature(accSig, for: accessoryInfo) else {
+            throw PairSetupError.accessorySignature
+        }
+
+        let pairing = AP2Pairing(
+            deviceID: deviceID ?? descriptor.displayName,
+            accessoryPairingID: accID,
+            accessoryLTPK: accLTPK
+        )
+        Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← M6 ✓ — LONG-TERM PAIRING ESTABLISHED (accessory \(accID, privacy: .public), LTPK \(accLTPK.count)B)")
+        return Result(sessionKey: K, sharedSecret: srp.padPublic(S), pairing: pairing)
     }
 
     // MARK: - Helpers
