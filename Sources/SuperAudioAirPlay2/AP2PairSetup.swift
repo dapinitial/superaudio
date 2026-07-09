@@ -82,6 +82,15 @@ public enum AP2PairSetup {
     /// wants a different value.
     static let methodPairSetup: UInt8 = 0x00
 
+    /// `X-Apple-HKP` — the HomeKit-pairing flavor header AP2 receivers use to
+    /// route /pair-setup. tvOS returns 470 Connection Authorization Required
+    /// to a pair-setup that omits it (observed live vs AppleTV11,1 on
+    /// 2026-07-08). Values per reference senders (owntone pair_ap): 3 =
+    /// transient, 4 = HomeKit with on-screen PIN. `X-Apple-PD: 1` rides along.
+    static func pairingHeaders(transient: Bool) -> [String: String] {
+        ["X-Apple-HKP": transient ? "3" : "4", "X-Apple-PD": "1"]
+    }
+
     // MARK: - Run
 
     /// - Parameter pinProvider: nil → transient pairing (fixed code). Non-nil →
@@ -123,9 +132,10 @@ public enum AP2PairSetup {
         // ---- /pair-pin-start (PIN mode only) ---------------------------
         // Makes an Apple TV put the 4-digit PIN on screen. Must precede M1;
         // the PIN itself isn't needed until the M3 proof.
+        let hkpHeaders = pairingHeaders(transient: pinProvider == nil)
         if pinProvider != nil {
             do {
-                let r = try await client.post(path: "/pair-pin-start", body: Data())
+                let r = try await client.post(path: "/pair-pin-start", body: Data(), extraHeaders: hkpHeaders)
                 Log.airplay2.notice("pair-setup[\(label, privacy: .public)] ← POST /pair-pin-start \(r.statusLine, privacy: .public) — PIN should now be on the receiver's screen")
             } catch {
                 throw PairSetupError.transport(error)
@@ -147,7 +157,7 @@ public enum AP2PairSetup {
 
         let m2resp: AP2RTSPClient.Response
         do {
-            m2resp = try await client.post(path: "/pair-setup", body: m1)
+            m2resp = try await client.post(path: "/pair-setup", body: m1, extraHeaders: hkpHeaders)
         } catch {
             throw PairSetupError.transport(error)
         }
@@ -201,7 +211,7 @@ public enum AP2PairSetup {
 
         let m4resp: AP2RTSPClient.Response
         do {
-            m4resp = try await client.post(path: "/pair-setup", body: m3)
+            m4resp = try await client.post(path: "/pair-setup", body: m3, extraHeaders: hkpHeaders)
         } catch {
             throw PairSetupError.transport(error)
         }

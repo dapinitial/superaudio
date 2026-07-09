@@ -132,8 +132,9 @@ public final class AP2RTSPClient: @unchecked Sendable {
     public func post(path: String,
                      body: Data,
                      contentType: String = "application/octet-stream",
+                     extraHeaders: [String: String] = [:],
                      timeout: TimeInterval = 8) async throws -> Response {
-        try await request(method: "POST", path: path, body: body, contentType: contentType, timeout: timeout)
+        try await request(method: "POST", path: path, body: body, contentType: contentType, extraHeaders: extraHeaders, timeout: timeout)
     }
 
     /// `GET /info` — AirPlay 2 capability negotiation. Most receivers require
@@ -141,13 +142,14 @@ public final class AP2RTSPClient: @unchecked Sendable {
     /// is a binary plist describing features, flags, supported pairing, `pk`,
     /// etc. Body may be empty (some receivers want an empty-plist request body).
     public func get(path: String, timeout: TimeInterval = 8) async throws -> Response {
-        try await request(method: "GET", path: path, body: Data(), contentType: "application/octet-stream", timeout: timeout)
+        try await request(method: "GET", path: path, body: Data(), contentType: "application/octet-stream", extraHeaders: [:], timeout: timeout)
     }
 
     private func request(method: String,
                          path: String,
                          body: Data,
                          contentType: String,
+                         extraHeaders: [String: String],
                          timeout: TimeInterval) async throws -> Response {
         guard let connection else { throw AP2RTSPError.notConnected }
         cseq += 1
@@ -160,6 +162,9 @@ public final class AP2RTSPClient: @unchecked Sendable {
         head += "User-Agent: AirPlay/665.13.1\r\n"
         head += "X-Apple-Client-Name: SuperAudio\r\n"
         head += "Client-Instance: \(clientID)\r\n"
+        for (k, v) in extraHeaders.sorted(by: { $0.key < $1.key }) {
+            head += "\(k): \(v)\r\n"
+        }
         head += "\r\n"
 
         var requestData = head.data(using: .utf8) ?? Data()

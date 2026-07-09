@@ -111,6 +111,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// tty. `--ap2-pin=1234` supplies a fixed AirPlay password.
     private static func ap2PinProvider() -> (@Sendable () async -> String?)? {
         for arg in CommandLine.arguments {
+            // `--ap2-pin-file=<path>`: poll a file for the PIN (up to 2 min).
+            // Lets an orchestrator relay the on-screen PIN without a tty.
+            if arg.hasPrefix("--ap2-pin-file=") {
+                let path = String(arg.dropFirst("--ap2-pin-file=".count))
+                return {
+                    for _ in 0..<120 {
+                        if let s = try? String(contentsOfFile: path, encoding: .utf8) {
+                            let pin = s.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !pin.isEmpty { return pin }
+                        }
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    }
+                    return nil
+                }
+            }
             if arg == "--ap2-pin" || arg == "--ap2-pin=ask" {
                 return {
                     print("Enter the PIN shown on the receiver's screen: ", terminator: "")
