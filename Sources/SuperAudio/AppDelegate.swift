@@ -79,10 +79,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     return
                 }
                 do {
-                    let session = try await AP2PairVerify.run(descriptor: descriptor)
-                    Log.app.notice("AP2 pair-verify ✓ \(descriptor.displayName, privacy: .public) — secret \(session.sharedSecret.count)B, control keys derived")
+                    let live = try await AP2PairVerify.establish(descriptor: descriptor)
+                    Log.app.notice("AP2 pair-verify ✓ \(descriptor.displayName, privacy: .public) — secret \(live.session.sharedSecret.count)B, channel encrypted")
+                    // Gate: an ENCRYPTED request the receiver must decrypt +
+                    // answer 200. Proves the ChaCha20 framing works both ways.
+                    let probe = try await live.client.get(path: "/info")
+                    if probe.isOK {
+                        Log.app.notice("AP2 encrypted channel ✓ \(descriptor.displayName, privacy: .public) — GET /info over cipher returned 200 (\(probe.body.count)B). Control channel COMPLETE.")
+                    } else {
+                        Log.app.error("AP2 encrypted channel ✗ — probe returned \(probe.statusLine, privacy: .public)")
+                    }
+                    live.client.disconnect()
                 } catch {
-                    Log.app.error("AP2 pair-verify ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
+                    Log.app.error("AP2 pair-verify/channel ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
                 }
             }
         }

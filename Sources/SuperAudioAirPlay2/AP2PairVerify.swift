@@ -52,8 +52,17 @@ public enum AP2PairVerify {
         }
     }
 
+    /// A verified, still-open connection with channel encryption already
+    /// enabled — ready for SETUP and the rest of the RTSP plane. The caller
+    /// owns `client` and must `disconnect()` it when the stream ends.
+    public struct LiveSession {
+        public let client: AP2RTSPClient
+        public let session: Session
+    }
+
     /// Convenience: open a fresh connection, resolve the receiver's deviceID
-    /// via /info (the pairing-store key), and run pair-verify on it.
+    /// via /info (the pairing-store key), and run pair-verify on it. The
+    /// connection is closed before returning (handshake-only check).
     public static func run(descriptor: SinkDescriptor) async throws -> Session {
         let client = AP2RTSPClient(descriptor: descriptor)
         do {
@@ -62,13 +71,38 @@ public enum AP2PairVerify {
             throw PairVerifyError.transport(error)
         }
         defer { client.disconnect() }
-        var deviceID = descriptor.displayName
+        return try await run(client: client, deviceID: resolveDeviceID(client, descriptor))
+    }
+
+    /// Connect, pair-verify, and switch the channel to encryption — returning
+    /// the live client so the caller can proceed straight to SETUP. On any
+    /// failure the connection is closed before throwing.
+    public static func establish(descriptor: SinkDescriptor) async throws -> LiveSession {
+        let client = AP2RTSPClient(descriptor: descriptor)
+        do {
+            try await client.connect()
+        } catch {
+            throw PairVerifyError.transport(error)
+        }
+        do {
+            let session = try await run(client: client, deviceID: resolveDeviceID(client, descriptor))
+            client.enableEncryption(writeKey: session.controlWriteKey, readKey: session.controlReadKey)
+            return LiveSession(client: client, session: session)
+        } catch {
+            client.disconnect()
+            throw error
+        }
+    }
+
+    /// The receiver's stable deviceID (pairing-store key), read from /info;
+    /// falls back to the display name to match pair-setup's keying.
+    private static func resolveDeviceID(_ client: AP2RTSPClient, _ descriptor: SinkDescriptor) async -> String {
         if let info = try? await client.get(path: "/info"),
            let plist = try? PropertyListSerialization.propertyList(from: info.body, options: [], format: nil) as? [String: Any],
            let id = plist["deviceID"] as? String {
-            deviceID = id
+            return id
         }
-        return try await run(client: client, deviceID: deviceID)
+        return descriptor.displayName
     }
 
     /// Runs pair-verify on an already-connected client. `deviceID` selects the

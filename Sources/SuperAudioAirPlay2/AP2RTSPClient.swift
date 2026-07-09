@@ -2,6 +2,7 @@
 
 import Foundation
 import Network
+import CryptoKit
 import SuperAudioCore
 
 /// Minimal control-channel client for AirPlay 2 receivers — a persistent TCP
@@ -57,6 +58,121 @@ public final class AP2RTSPClient: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.davidpuerto.SuperAudio.airplay2.rtsp")
     private var connection: NWConnection?
     private var cseq: Int = 0
+
+    // MARK: - Channel encryption (post-pair-verify)
+
+    /// HAP-style session security state. Once set, every byte both ways is
+    /// ChaCha20-Poly1305-framed: [2B LE plaintext-length (also the AAD)]
+    /// [ciphertext][16B tag], nonce = 4 zero bytes + 8B LE per-direction
+    /// frame counter, ≤1024 plaintext bytes per frame.
+    private struct SecureState {
+        let outKey: SymmetricKey
+        let inKey: SymmetricKey
+        var outCount: UInt64 = 0
+        var inCount: UInt64 = 0
+    }
+    private var secure: SecureState?
+    private static let maxFramePlaintext = 1024
+
+    /// Switch the connection to encrypted framing using the pair-verify
+    /// session keys. From our (controller) side: `writeKey` encrypts what we
+    /// send, `readKey` decrypts what the receiver sends.
+    public func enableEncryption(writeKey: Data, readKey: Data) {
+        queue.sync {
+            self.secure = SecureState(outKey: SymmetricKey(data: writeKey), inKey: SymmetricKey(data: readKey))
+        }
+        Log.airplay2.notice("AP2 RTSP[\(self.descriptor.displayName, privacy: .public)] channel encryption ENABLED (Control-Salt keys)")
+    }
+
+    private static func frameNonce(_ count: UInt64) throws -> ChaChaPoly.Nonce {
+        var le = count.littleEndian
+        let counter = withUnsafeBytes(of: &le) { Data($0) }
+        return try ChaChaPoly.Nonce(data: Data(repeating: 0, count: 4) + counter)
+    }
+
+    /// Encrypt `plaintext` into one or more frames, advancing the out-counter.
+    private func encryptFrames(_ plaintext: Data, state: inout SecureState) throws -> Data {
+        var out = Data()
+        let bytes = [UInt8](plaintext)
+        var offset = 0
+        while offset < bytes.count {
+            let len = Swift.min(Self.maxFramePlaintext, bytes.count - offset)
+            var lenLE = UInt16(len).littleEndian
+            let lenData = withUnsafeBytes(of: &lenLE) { Data($0) }
+            let box = try ChaChaPoly.seal(
+                Data(bytes[offset..<offset + len]),
+                using: state.outKey,
+                nonce: Self.frameNonce(state.outCount),
+                authenticating: lenData
+            )
+            out += lenData + box.ciphertext + box.tag
+            state.outCount += 1
+            offset += len
+        }
+        return out
+    }
+
+    /// Peel every complete frame off `encrypted`, appending plaintext to
+    /// `plain` and advancing the in-counter. Leaves partial frames in place.
+    private func drainFrames(_ encrypted: inout Data, into plain: inout Data, state: inout SecureState) throws {
+        var bytes = [UInt8](encrypted)
+        var consumed = 0
+        while bytes.count - consumed >= 2 {
+            let len = Int(UInt16(bytes[consumed]) | (UInt16(bytes[consumed + 1]) << 8))
+            let total = 2 + len + 16
+            guard bytes.count - consumed >= total else { break }
+            let lenData = Data(bytes[consumed..<consumed + 2])
+            let ct = Data(bytes[(consumed + 2)..<(consumed + 2 + len)])
+            let tag = Data(bytes[(consumed + 2 + len)..<(consumed + total)])
+            let box = try ChaChaPoly.SealedBox(nonce: Self.frameNonce(state.inCount), ciphertext: ct, tag: tag)
+            plain += try ChaChaPoly.open(box, using: state.inKey, authenticating: lenData)
+            state.inCount += 1
+            consumed += total
+        }
+        if consumed > 0 {
+            bytes.removeFirst(consumed)
+            encrypted = Data(bytes)
+        }
+    }
+
+    /// Encrypted-channel receive: accumulate frames, decrypt, and complete
+    /// once the decrypted stream holds a full RTSP message.
+    private func receiveAllSecure(connection: NWConnection,
+                                  encBuffer: Data = Data(),
+                                  plain: Data = Data(),
+                                  completion: @escaping (Result<Data, Error>) -> Void) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, isComplete, error in
+            if let error {
+                completion(.failure(AP2RTSPError.receiveFailed(String(describing: error))))
+                return
+            }
+            var enc = encBuffer
+            if let data { enc.append(data) }
+            var plainAcc = plain
+            if var s = self.secure {
+                do {
+                    try self.drainFrames(&enc, into: &plainAcc, state: &s)
+                    self.secure = s
+                } catch {
+                    completion(.failure(AP2RTSPError.receiveFailed("frame decrypt: \(error)")))
+                    return
+                }
+            }
+            if let terminator = plainAcc.range(of: Data("\r\n\r\n".utf8)) {
+                let headersStr = String(data: plainAcc[..<terminator.lowerBound], encoding: .utf8) ?? ""
+                let contentLength = Self.parseContentLength(in: headersStr) ?? 0
+                if plainAcc[terminator.upperBound...].count >= contentLength {
+                    completion(.success(plainAcc))
+                    return
+                }
+            }
+            if isComplete {
+                completion(.success(plainAcc))
+                return
+            }
+            self.receiveAllSecure(connection: connection, encBuffer: enc, plain: plainAcc, completion: completion)
+        }
+    }
 
     /// Stable per-session client identifiers AP2 receivers expect.
     private let clientID: String
@@ -184,27 +300,48 @@ public final class AP2RTSPClient: @unchecked Sendable {
             queue.asyncAfter(deadline: .now() + timeout) {
                 resume(.failure(AP2RTSPError.timeout))
             }
-            Log.airplay2.info("AP2 RTSP[\(label, privacy: .public)] → \(method, privacy: .public) \(path, privacy: .public) (CSeq \(currentCseq), body \(body.count)B)")
-            connection.send(content: requestData, completion: .contentProcessed { sendErr in
-                if let sendErr {
-                    resume(.failure(AP2RTSPError.sendFailed(String(describing: sendErr))))
-                    return
+            // Encryption state lives on `queue`; hop there before touching it.
+            self.queue.async {
+                let wireData: Data
+                let isSecure = self.secure != nil
+                if var s = self.secure {
+                    do {
+                        wireData = try self.encryptFrames(requestData, state: &s)
+                        self.secure = s
+                    } catch {
+                        resume(.failure(AP2RTSPError.sendFailed("frame encrypt: \(error)")))
+                        return
+                    }
+                } else {
+                    wireData = requestData
                 }
-                Self.receiveAll(connection: connection) { result in
-                    switch result {
-                    case .failure(let e):
-                        resume(.failure(e))
-                    case .success(let data):
-                        do {
-                            let response = try Self.parse(data: data)
-                            Log.airplay2.info("AP2 RTSP[\(label, privacy: .public)] ← \(response.statusLine, privacy: .public) (body \(response.body.count)B)")
-                            resume(.success(response))
-                        } catch {
-                            resume(.failure(error))
+                Log.airplay2.info("AP2 RTSP[\(label, privacy: .public)] → \(method, privacy: .public) \(path, privacy: .public) (CSeq \(currentCseq), body \(body.count)B\(isSecure ? ", encrypted" : "", privacy: .public))")
+                connection.send(content: wireData, completion: .contentProcessed { sendErr in
+                    if let sendErr {
+                        resume(.failure(AP2RTSPError.sendFailed(String(describing: sendErr))))
+                        return
+                    }
+                    let handle: (Result<Data, Error>) -> Void = { result in
+                        switch result {
+                        case .failure(let e):
+                            resume(.failure(e))
+                        case .success(let data):
+                            do {
+                                let response = try Self.parse(data: data)
+                                Log.airplay2.info("AP2 RTSP[\(label, privacy: .public)] ← \(response.statusLine, privacy: .public) (body \(response.body.count)B)")
+                                resume(.success(response))
+                            } catch {
+                                resume(.failure(error))
+                            }
                         }
                     }
-                }
-            })
+                    if isSecure {
+                        self.receiveAllSecure(connection: connection, completion: handle)
+                    } else {
+                        Self.receiveAll(connection: connection, completion: handle)
+                    }
+                })
+            }
         }
     }
 
