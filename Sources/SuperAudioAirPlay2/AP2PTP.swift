@@ -38,6 +38,7 @@ public final class AP2PTP: @unchecked Sendable {
     private var announceSeq: UInt16 = 0
     private var syncSeq: UInt16 = 0
     private var tickCount: UInt64 = 0
+    private var rxLogCount: UInt64 = 0
 
     // Monotonic PTP clock. Epoch is arbitrary (receiver treats it as a timeline);
     // SETRATEANCHORTIME must anchor against THIS same clock.
@@ -176,7 +177,13 @@ public final class AP2PTP: @unchecked Sendable {
         }
         guard n >= 34 else { return }
         let msgType = buf[0] & 0x0F
-        Log.airplay2.info("AP2 PTP ← rx type=0x\(String(msgType, radix: 16), privacy: .public) len=\(n) on :319")
+        // Log the first few receipts only (Sync arrives ~8×/s — full logging is
+        // 125/s noise). The receiver asserting its own Sync is gotcha #33.
+        rxLogCount &+= 1
+        let c = rxLogCount
+        if c <= 4 {
+            Log.airplay2.info("AP2 PTP ← rx type=0x\(String(msgType, radix: 16), privacy: .public) len=\(n) on :319 (#\(c))")
+        }
         guard msgType == 0x1 else { return }             // Delay_Req only
         let rxTime = Self.nowPTPNanos()
         let reqSeq = (UInt16(buf[30]) << 8) | UInt16(buf[31])
