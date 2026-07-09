@@ -152,6 +152,11 @@ public enum AP2PairSetup {
             throw PairSetupError.transport(error)
         }
         let m2 = TLV8.decode(m2resp.body)
+        // Full diagnostic dump — when a receiver refuses or reshapes M2, the
+        // status line + TLV types + raw bytes are the only clue what it wants.
+        let m2tlv = m2.map { "t\($0.type)(\($0.value.count)B)" }.joined(separator: " ")
+        let m2hex = m2resp.body.prefix(96).map { String(format: "%02x", $0) }.joined()
+        Log.airplay2.notice("pair-setup[\(label, privacy: .public)] M2 raw: \(m2resp.statusLine, privacy: .public) body=\(m2resp.body.count)B tlv=[\(m2tlv, privacy: .public)] hex=\(m2hex, privacy: .public)")
         try throwIfDeviceError(m2, state: "M2")
         if let st = TLV8.byte(.state, in: m2), st != 0x02 {
             Log.airplay2.error("pair-setup[\(label, privacy: .public)] M2 unexpected state=\(st)")
