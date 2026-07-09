@@ -141,11 +141,18 @@ public struct SRP6aClient {
     }
 
     /// Client proof M1 = H( (H(N) XOR H(g)) | H(I) | s | PAD(A) | PAD(B) | K )
-    /// — RFC 5054 §2.6 / RFC 2945. Sent in pair-setup M3 to prove the client
-    /// knows the password without revealing it.
+    /// — the Stanford SRP-6a / fast-srp-hap convention HomeKit interops with.
+    ///
+    /// Two subtleties, both load-bearing (verified live vs an Apple TV
+    /// 2026-07-08):
+    ///  - **A and B are PAD-to-width** here (matching the wire form), same as u.
+    ///  - **g is hashed in MINIMAL form** (`serialize()` → a single 0x05 byte),
+    ///    NOT PAD(g) — even though the multiplier k = H(N | PAD(g)) pads it.
+    ///    Mixing those two g conventions is what made an otherwise-correct
+    ///    handshake fail authentication at M4 with the right PIN.
     public func clientProof(identity: String, salt: Data, A: BigUInt, B: BigUInt, sessionKey K: Data) -> Data {
         let hN = alg.hash(pad(group.N))
-        let hg = alg.hash(pad(group.g))
+        let hg = alg.hash(group.g.serialize())
         let hNxorG = Data(zip(hN, hg).map { $0 ^ $1 })
         let hI = alg.hash(Data(identity.utf8))
         return alg.hash(hNxorG + hI + salt + pad(A) + pad(B) + K)
