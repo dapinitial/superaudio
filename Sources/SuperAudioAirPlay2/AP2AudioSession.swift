@@ -27,6 +27,7 @@ public final class AP2AudioSession: @unchecked Sendable {
     private var ptp: AP2PTP?
     private var rtp: AP2RTPSender?
     private var event: AP2EventChannel?
+    private var control: AP2ControlSender?
     private var pumpTask: Task<Void, Never>?
     private let ssrc: UInt32
 
@@ -98,6 +99,17 @@ public final class AP2AudioSession: @unchecked Sendable {
         try await sendAnchor(client: client, rtpTime: UInt64(startTS), ptpNanos: anchorPTP,
                              timelineID: ptp.clockIdentity)
 
+        // 5.5. Control-port RTCP: continuous TIME_ANNOUNCE_PTP so the receiver
+        // has the live RTP↔PTP mapping to actually render (the one-shot anchor
+        // isn't enough for realtime). Sender is ~1.5 s ahead of the play head.
+        let bufferSamples = UInt32(anchorLeadNs / 1_000_000_000 * UInt64(Self.outSampleRate))
+        let ctl = AP2ControlSender(peerHost: receiverIP, peerControlPort: setup.controlPort,
+                                   localControlPort: 7011, clockIdentity: ptp.clockIdentity,
+                                   bufferSamples: bufferSamples,
+                                   currentRTPTimestamp: { [weak rtp] in rtp?.currentTimestamp ?? 0 })
+        ctl.start()
+        self.control = ctl
+
         // 6. pump audio
         startPump()
         let (dn, dp) = (descriptor.displayName, setup.dataPort)
@@ -106,6 +118,7 @@ public final class AP2AudioSession: @unchecked Sendable {
 
     public func stop() {
         pumpTask?.cancel(); pumpTask = nil
+        control?.stop(); control = nil
         event?.stop(); event = nil
         rtp?.stop(); rtp = nil
         ptp?.stop(); ptp = nil
