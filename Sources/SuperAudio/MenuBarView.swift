@@ -678,23 +678,12 @@ struct MenuBarView: View {
         Log.app.info("Sink selected: \(descriptor.displayName, privacy: .public) (\(descriptor.protocolKind.rawValue, privacy: .public))")
 
         switch descriptor.protocolKind {
-        case .airplay1, .sonos:
+        case .airplay1, .sonos, .airplay2:
             // Unified toggle model — SessionState.toggle dispatches by
-            // protocolKind into AirPlay1Session.run or SonosSession.run.
+            // protocolKind into AirPlay1Session.run / SonosSession.run /
+            // AP2Session.run. AP2 uses the stored pairing (pair-verify); do the
+            // one-time `--ap2-pair` PIN pairing first for a new AP2 device.
             SessionState.shared.toggle(descriptor)
-        case .airplay2:
-            // M12 WIP — clicking an AP2 device runs the pair-setup handshake
-            // and logs the result. No streaming sink yet; this is the dev
-            // test loop for the pairing sub-task. Watch the airplay2 log.
-            Log.app.notice("AP2 pair-setup test → \(descriptor.displayName, privacy: .public)")
-            Task { @MainActor in
-                do {
-                    let result = try await AP2PairSetup.run(descriptor: descriptor)
-                    Log.app.notice("AP2 pair-setup ✓ \(descriptor.displayName, privacy: .public) — session key \(result.sessionKey.count)B established")
-                } catch {
-                    Log.app.error("AP2 pair-setup ✗ \(descriptor.displayName, privacy: .public): \(String(describing: error), privacy: .public)")
-                }
-            }
         default:
             Log.app.info("No-op selection — \(descriptor.protocolKind.rawValue, privacy: .public) connection lands in a later phase")
         }

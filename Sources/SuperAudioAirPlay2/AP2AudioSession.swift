@@ -26,6 +26,7 @@ public final class AP2AudioSession: @unchecked Sendable {
     private var setup: AP2Setup.StreamSetup?
     private var ptp: AP2PTP?
     private var rtp: AP2RTPSender?
+    private var event: AP2EventChannel?
     private var pumpTask: Task<Void, Never>?
     private let ssrc: UInt32
 
@@ -47,7 +48,16 @@ public final class AP2AudioSession: @unchecked Sendable {
         self.setup = setup
         let receiverIP = client.remoteHost
         let senderIP = client.localHost
-        Log.airplay2.notice("AP2 audio: SETUP ok — dataPort=\(setup.dataPort) receiver=\(receiverIP, privacy: .public) sender=\(senderIP, privacy: .public)")
+        Log.airplay2.notice("AP2 audio: SETUP ok — dataPort=\(setup.dataPort) eventPort=\(setup.eventPort) receiver=\(receiverIP, privacy: .public) sender=\(senderIP, privacy: .public)")
+
+        // 2.5. Event channel — connect to the receiver's eventPort right after
+        // SETUP (as real senders do). The Apple TV appears to need this open to
+        // enter play mode; without it, it accepts audio but never plays.
+        if setup.eventPort > 0 {
+            let ev = AP2EventChannel(host: receiverIP, port: setup.eventPort, sharedSecret: live.session.sharedSecret)
+            do { try await ev.connect(); self.event = ev }
+            catch { Log.airplay2.error("AP2 event channel connect failed: \(String(describing: error), privacy: .public) — continuing") }
+        }
 
         // 3. PTP grandmaster (must be running before RECORD so the receiver slaves)
         let ptp = AP2PTP(senderMAC: AP2SenderIdentity.shared.deviceID, peerHost: receiverIP)
@@ -96,6 +106,7 @@ public final class AP2AudioSession: @unchecked Sendable {
 
     public func stop() {
         pumpTask?.cancel(); pumpTask = nil
+        event?.stop(); event = nil
         rtp?.stop(); rtp = nil
         ptp?.stop(); ptp = nil
         live?.client.disconnect(); live = nil

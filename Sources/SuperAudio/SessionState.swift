@@ -595,6 +595,8 @@ final class SessionState {
                 reason = await AirPlay1Session.run(descriptor: descriptor, duration: nil)
             case .sonos:
                 reason = await SonosSession.run(descriptor: descriptor, duration: nil)
+            case .airplay2:
+                reason = await AP2Session.run(descriptor: descriptor, duration: nil)
             default:
                 Log.app.error("superviseSession: unsupported protocol \(descriptor.protocolKind.rawValue, privacy: .public)")
                 return
