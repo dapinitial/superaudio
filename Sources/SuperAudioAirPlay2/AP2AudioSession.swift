@@ -59,12 +59,13 @@ public final class AP2AudioSession: @unchecked Sendable {
             throw error
         }
 
-        // 4. SETPEERS → RECORD → SETRATEANCHORTIME (all over the encrypted channel)
+        // 4. SETPEERS → SET_PARAMETER volume → SETRATEANCHORTIME (over the cipher).
+        // NOTE: RECORD is deliberately NOT sent. The modern Apple TV never
+        // responds to it (it times out every time), and worse, a late/absent
+        // RECORD response desyncs the encrypted RTSP channel and makes the
+        // subsequent volume/anchor requests time out too — the intermittent
+        // "RTSP timed out" session failures. Skipping it makes the flow reliable.
         try await sendPeers(client: client, addresses: [senderIP, receiverIP].filter { !$0.isEmpty })
-        // RECORD can block on the receiver's PTP sync; keep it non-fatal during
-        // bring-up so we can see whether anchor + audio proceed regardless.
-        do { try await sendRecord(client: client) }
-        catch { Log.airplay2.error("AP2 RECORD failed (\(String(describing: error), privacy: .public)) — continuing to anchor") }
 
         // 5. RTP audio sender + anchor
         let startTS: UInt32 = 0
@@ -73,6 +74,12 @@ public final class AP2AudioSession: @unchecked Sendable {
                                startTimestamp: startTS)
         try await rtp.connect()
         self.rtp = rtp
+
+        // Set stream volume BEFORE the anchor — AirPlay streams can default to
+        // muted (-144 dB); without this the receiver plays silence even though
+        // everything else is correct. 0.0 dB = max (the TV's own volume still
+        // governs actual loudness).
+        try? await sendVolume(client: client, db: 0.0)
 
         // Anchor: sample `startTS` plays at PTP time (now + lead). Give ~1.5 s of
         // runway so the first packets arrive before their play time.
@@ -182,6 +189,16 @@ public final class AP2AudioSession: @unchecked Sendable {
         let resp = try await client.send(method: "RECORD", uri: uri, body: Data(),
                                          extraHeaders: dacpHeaders(), timeout: 4)
         Log.airplay2.notice("AP2 RECORD ← \(resp.statusLine, privacy: .public) (Audio-Latency \(resp.headers["Audio-Latency"] ?? "?", privacy: .public))")
+    }
+
+    /// SET_PARAMETER volume, in dB (0.0 = max, -30 ≈ quietest, -144 = mute).
+    /// Text body `volume: <f>\r\n`, same as AirPlay 1 RAOP, over the cipher.
+    private func sendVolume(client: AP2RTSPClient, db: Float) async throws {
+        let body = Data("volume: \(String(format: "%.6f", db))\r\n".utf8)
+        let uri = "rtsp://\(bracket(client.localHost.isEmpty ? client.remoteHost : client.localHost))/\(sessionSeed())"
+        let resp = try await client.send(method: "SET_PARAMETER", uri: uri, body: body,
+                                         contentType: "text/parameters", extraHeaders: dacpHeaders())
+        Log.airplay2.notice("AP2 SET_PARAMETER volume=\(db)dB ← \(resp.statusLine, privacy: .public)")
     }
 
     private func sendAnchor(client: AP2RTSPClient, rtpTime: UInt64, ptpNanos: UInt64, timelineID: Data) async throws {

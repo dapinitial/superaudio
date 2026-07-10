@@ -49,14 +49,17 @@ public final class AP2PTP: @unchecked Sendable {
     private var tickCount: UInt64 = 0
     private var rxLogCount: UInt64 = 0
 
-    // Monotonic PTP clock. Epoch is arbitrary (receiver treats it as a timeline);
-    // SETRATEANCHORTIME must anchor against THIS same clock.
-    private static var timebase: mach_timebase_info_data_t = {
-        var tb = mach_timebase_info_data_t(); mach_timebase_info(&tb); return tb
-    }()
+    /// PTP grandmaster time in nanoseconds since the **PTP/TAI epoch** (real
+    /// wall-clock, not since-boot). AirPlay's PTP profile is TAI = UTC + 37 s,
+    /// and we advertise `currentUtcOffset = 37`, so the clock must be a real
+    /// timestamp: if we advertise a since-boot value (~3 days) the receiver
+    /// reads the SETRATEANCHORTIME anchor as decades in the past and drops all
+    /// audio (silence). `SETRATEANCHORTIME` anchors against THIS same clock.
+    static let taiMinusUTC: UInt64 = 37
     public static func nowPTPNanos() -> UInt64 {
-        let t = mach_absolute_time()
-        return t &* UInt64(timebase.numer) / UInt64(timebase.denom)
+        var ts = timespec()
+        clock_gettime(CLOCK_REALTIME, &ts)
+        return (UInt64(ts.tv_sec) + taiMinusUTC) &* 1_000_000_000 &+ UInt64(ts.tv_nsec)
     }
 
     public init(senderMAC: String, peerHost: String) {
