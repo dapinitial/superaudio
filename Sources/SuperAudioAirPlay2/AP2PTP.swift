@@ -26,6 +26,13 @@ public final class AP2PTP: @unchecked Sendable {
     private let peerHost: String       // receiver IP (unicast target)
     private let domain: UInt8 = 0
 
+    /// Our advertised grandmaster priority1. The sender MUST win BMCA so the
+    /// receiver slaves to our clock (and our SETRATEANCHORTIME networkTime is in
+    /// a domain the receiver tracks). A real Apple TV defaults to 248 and wins
+    /// the clockIdentity tiebreak against us, so we advertise a clearly-better
+    /// (lower) value to become grandmaster deterministically.
+    private let ourPriority1: UInt8 = 1
+
     private var eventFD: Int32 = -1    // port 319
     private var generalFD: Int32 = -1  // port 320
     private var peerAddr: sockaddr_in = sockaddr_in()
@@ -33,7 +40,9 @@ public final class AP2PTP: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.davidpuerto.SuperAudio.airplay2.ptp")
     private var timer: DispatchSourceTimer?
     private var eventSource: DispatchSourceRead?
+    private var generalSource: DispatchSourceRead?
     private var running = false
+    private var announceLogged = false
 
     private var announceSeq: UInt16 = 0
     private var syncSeq: UInt16 = 0
@@ -76,6 +85,13 @@ public final class AP2PTP: @unchecked Sendable {
         src.resume()
         eventSource = src
 
+        // Read the general socket (320) — Announce lands here; parse the
+        // receiver's grandmaster priority + clockIdentity to settle who masters.
+        let gsrc = DispatchSource.makeReadSource(fileDescriptor: generalFD, queue: queue)
+        gsrc.setEventHandler { [weak self] in self?.handleGeneralReadable() }
+        gsrc.resume()
+        generalSource = gsrc
+
         // 125 ms Sync/Follow_Up cadence; Announce every 8th tick (~1 s).
         let t = DispatchSource.makeTimerSource(queue: queue)
         t.schedule(deadline: .now(), repeating: .milliseconds(125))
@@ -86,10 +102,28 @@ public final class AP2PTP: @unchecked Sendable {
         Log.airplay2.notice("AP2 PTP grandmaster started — peer \(ph, privacy: .public), clockID \(cid, privacy: .public)")
     }
 
+    // Reads the general port (320). Logs the receiver's Announce fields once so
+    // we can compare BMCA: lower priority1 wins; tie → lower clockIdentity.
+    private func handleGeneralReadable() {
+        var buf = [UInt8](repeating: 0, count: 128)
+        let n = recvfrom(generalFD, &buf, buf.count, 0, nil, nil)
+        guard n >= 64 else { return }
+        let msgType = buf[0] & 0x0F
+        guard msgType == 0xB, !announceLogged else { return }   // Announce
+        announceLogged = true
+        let theirPriority1 = buf[47]
+        let theirGMID = Data(buf[53..<61]).map { String(format: "%02x", $0) }.joined()
+        let ourID = clockIdentity.map { String(format: "%02x", $0) }.joined()
+        let op = ourPriority1
+        let weWin = op < theirPriority1 || (op == theirPriority1 && ourID < theirGMID)
+        Log.airplay2.notice("AP2 PTP BMCA: receiver Announce priority1=\(theirPriority1) gmID=\(theirGMID, privacy: .public); ours priority1=\(op) id=\(ourID, privacy: .public) → WE \(weWin ? "WIN (receiver should slave to us)" : "LOSE (receiver is master — our anchor clock is WRONG)", privacy: .public)")
+    }
+
     public func stop() {
         running = false
         timer?.cancel(); timer = nil
         eventSource?.cancel(); eventSource = nil
+        generalSource?.cancel(); generalSource = nil
         if eventFD >= 0 { close(eventFD); eventFD = -1 }
         if generalFD >= 0 { close(generalFD); generalFD = -1 }
     }
@@ -153,9 +187,9 @@ public final class AP2PTP: @unchecked Sendable {
         body.append(ptpTimestamp(Self.nowPTPNanos()))    // originTimestamp
         body.append(contentsOf: [0x00, 0x25])            // currentUtcOffset = 37
         body.append(0x00)                                // reserved
-        body.append(248)                                 // grandmasterPriority1
+        body.append(ourPriority1)                        // grandmasterPriority1 (win BMCA)
         body.append(contentsOf: [0xF8, 0xFE, 0x43, 0x6A])// grandmasterClockQuality
-        body.append(248)                                 // grandmasterPriority2
+        body.append(ourPriority1)                        // grandmasterPriority2
         body.append(clockIdentity)                       // grandmasterIdentity
         body.append(contentsOf: [0x00, 0x00])            // stepsRemoved
         body.append(0xA0)                                // timeSource = internal osc

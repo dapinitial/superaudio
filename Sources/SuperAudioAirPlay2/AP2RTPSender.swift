@@ -44,8 +44,10 @@ public final class AP2RTPSender: @unchecked Sendable {
     private var packetCount: UInt64 = 0
     private var firstPacket = true
 
-    /// Nonce padding variant — real hardware may want the 8 counter bytes before
-    /// or after the 4 zero bytes. Flipped during hardware bring-up.
+    /// Nonce padding variant — the 8-byte packet nonce is padded to ChaCha's
+    /// 12 bytes. Leading zeros (4 zero bytes ‖ counter) matches the control
+    /// channel's proven convention; that's the default now that the PTP clock
+    /// is fixed (trailing zeros gave silence).
     public var nonceZerosLeadPadding = true
 
     public init(config: Config, startTimestamp: UInt32) {
