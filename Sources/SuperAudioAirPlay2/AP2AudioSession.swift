@@ -113,8 +113,12 @@ public final class AP2AudioSession: @unchecked Sendable {
             var converter: AVAudioConverter?
             var pending = Data()                 // leftover int16 bytes < one frame
             let frameBytes = Self.spf * 2 * 2    // spf samples * 2ch * 2 bytes
+            guard let alacEncoder = ALACFrameEncoder(sampleRate: Self.outSampleRate, framesPerPacket: Self.spf) else {
+                Log.airplay2.error("AP2 pump: ALAC encoder init failed — cannot stream")
+                return
+            }
             Log.airplay2.notice("AP2 pump: subscribed, waiting for chunks…")
-            var chunkCount = 0, convertFails = 0
+            var chunkCount = 0, convertFails = 0, alacFails = 0
 
             for await chunk in stream {
                 if Task.isCancelled { break }
@@ -132,11 +136,17 @@ public final class AP2AudioSession: @unchecked Sendable {
                 }
                 pending.append(s16)
                 while pending.count >= frameBytes {
-                    let frame = pending.prefix(frameBytes)
-                    rtp.sendFrame(Data(frame))
+                    let frame = Data(pending.prefix(frameBytes))
                     pending.removeFirst(frameBytes)
+                    // type-96 realtime payload is ALAC, not raw PCM.
+                    if let alac = alacEncoder.encode(frame) {
+                        rtp.sendFrame(alac)
+                    } else {
+                        alacFails += 1
+                        if alacFails == 1 { Log.airplay2.error("AP2 pump: ALAC encode returned nil (first)") }
+                    }
                 }
-                if chunkCount % 100 == 0 { Log.airplay2.info("AP2 pump: \(chunkCount) chunks, \(convertFails) convert-fails, pending=\(pending.count)B") }
+                if chunkCount % 100 == 0 { Log.airplay2.info("AP2 pump: \(chunkCount) chunks, \(convertFails) convert-fails, \(alacFails) alac-fails, pending=\(pending.count)B") }
             }
             Log.airplay2.notice("AP2 pump: stream ended after \(chunkCount) chunks")
         }

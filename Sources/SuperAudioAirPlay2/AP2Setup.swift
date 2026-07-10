@@ -129,9 +129,9 @@ public enum AP2Setup {
 
         let stream: [String: Any] = [
             "type": realtimeType,               // 0x60
-            "audioFormat": 0x800,               // PCM/44100/16/2 in Apple's table
+            "audioFormat": 0x40000,             // ALAC 44100/16/2 in Apple's table
             "audioMode": "default",
-            "ct": 1,                            // compression type 1 = raw PCM
+            "ct": 2,                            // compression type 2 = ALAC (type-96 realtime is ALAC, not raw PCM)
             "isMedia": true,
             "sr": sampleRate,
             "spf": spf,

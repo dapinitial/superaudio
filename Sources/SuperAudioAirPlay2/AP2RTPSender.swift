@@ -123,8 +123,11 @@ public final class AP2RTPSender: @unchecked Sendable {
         rtpTimestamp &+= UInt32(config.spf)
         packetCount &+= 1
         if packetCount % 200 == 0 {
-            let (pc, ts, secs) = (packetCount, rtpTimestamp, packetCount * UInt64(config.spf) / 44100)
-            Log.airplay2.notice("AP2 RTP sent \(pc) packets (ts=\(ts), ~\(secs)s audio)")
+            // ALAC payload size is the silent-vs-real-audio tell: silence
+            // compresses to ~tens of bytes, real music is hundreds+.
+            let (pc, sz) = (packetCount, pcm.count)
+            let kind = sz < 64 ? "SILENT SOURCE (nothing playing on the Mac?)" : "real audio"
+            Log.airplay2.notice("AP2 RTP sent \(pc) packets — last ALAC payload \(sz)B → \(kind, privacy: .public)")
         }
     }
 
