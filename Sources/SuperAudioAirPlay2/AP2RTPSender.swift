@@ -89,7 +89,10 @@ public final class AP2RTPSender: @unchecked Sendable {
         guard let connection else { return }
         var header = Data(count: 12)
         header[0] = 0x80
-        header[1] = firstPacket ? 0xE0 : 0x60      // marker on the first packet
+        // PT 97 (0x61) — Apple's AirPlay 2 realtime ALAC uses payload type 97,
+        // NOT 96 (confirmed from a working macOS-sender capture). Marker bit on
+        // the first packet.
+        header[1] = firstPacket ? 0xE1 : 0x61
         firstPacket = false
         header[2] = UInt8(sequence >> 8); header[3] = UInt8(sequence & 0xFF)
         let ts = rtpTimestamp

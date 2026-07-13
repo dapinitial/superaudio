@@ -33,9 +33,8 @@ public final class AP2AudioSession: @unchecked Sendable {
 
     public init(descriptor: SinkDescriptor) {
         self.descriptor = descriptor
-        var s = [UInt8](repeating: 0, count: 4)
-        _ = s.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 4, $0.baseAddress!) }
-        self.ssrc = s.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
+        // Apple sends SSRC = 0 for realtime audio (confirmed from capture).
+        self.ssrc = 0
     }
 
     public func start() async throws {
@@ -77,6 +76,11 @@ public final class AP2AudioSession: @unchecked Sendable {
         // subsequent volume/anchor requests time out too — the intermittent
         // "RTSP timed out" session failures. Skipping it makes the flow reliable.
         try await sendPeers(client: client, addresses: [senderIP, receiverIP].filter { !$0.isEmpty })
+        // RECORD — the transition into playing state (Apple's flow per capture:
+        // SETUP → RECORD → SET_PARAMETER → SETRATEANCHORTIME). Non-fatal: if it
+        // times out we still try to stream, but this is the likely play trigger.
+        do { try await sendRecord(client: client) }
+        catch { Log.airplay2.error("AP2 RECORD failed (\(String(describing: error), privacy: .public)) — continuing") }
 
         // 5. RTP audio sender + anchor
         let startTS: UInt32 = 0
@@ -210,8 +214,13 @@ public final class AP2AudioSession: @unchecked Sendable {
 
     private func sendRecord(client: AP2RTSPClient) async throws {
         let uri = "rtsp://\(bracket(client.localHost.isEmpty ? client.remoteHost : client.localHost))/\(sessionSeed())"
+        // RECORD is the "enter playing state" transition. It hands the receiver
+        // the initial RTP seq/timestamp anchor via RTP-Info (same as AirPlay 1).
+        var headers = dacpHeaders()
+        headers["Range"] = "npt=0-"
+        headers["RTP-Info"] = "seq=0;rtptime=0"
         let resp = try await client.send(method: "RECORD", uri: uri, body: Data(),
-                                         extraHeaders: dacpHeaders(), timeout: 4)
+                                         extraHeaders: headers, timeout: 6)
         Log.airplay2.notice("AP2 RECORD ← \(resp.statusLine, privacy: .public) (Audio-Latency \(resp.headers["Audio-Latency"] ?? "?", privacy: .public))")
     }
 

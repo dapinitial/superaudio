@@ -24,6 +24,7 @@ public final class AP2EventChannel: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.davidpuerto.SuperAudio.airplay2.event")
     private var connection: NWConnection?
     private var inCount: UInt64 = 0
+    private var outCount: UInt64 = 0
     private var inBuffer = Data()
 
     /// Derive the event-channel keys from the pair-verify X25519 shared secret.
@@ -90,12 +91,41 @@ public final class AP2EventChannel: @unchecked Sendable {
             var c = inCount.littleEndian
             let nonce = Data(repeating: 0, count: 4) + withUnsafeBytes(of: &c) { Data($0) }
             if let box = try? ChaChaPoly.SealedBox(nonce: try ChaChaPoly.Nonce(data: nonce), ciphertext: ct, tag: tag),
-               (try? ChaChaPoly.open(box, using: inKey, authenticating: lenData)) != nil {
+               let plain = try? ChaChaPoly.open(box, using: inKey, authenticating: lenData) {
                 inCount &+= 1
+                // The receiver pushes RTSP-style event requests; reply 200 OK
+                // (echo CSeq) so it keeps the channel open. Silence → the ATV
+                // hangs up (EOF), which may drop us out of play mode.
+                respond200(toRequest: plain)
             }
             consumed += total
         }
         if consumed > 0 { bytes.removeFirst(consumed); inBuffer = Data(bytes) }
+    }
+
+    private func respond200(toRequest plain: Data) {
+        let text = String(data: plain, encoding: .utf8) ?? ""
+        var cseq = "0"
+        for line in text.split(separator: "\r\n") {
+            if line.lowercased().hasPrefix("cseq:") {
+                cseq = line.split(separator: ":", maxSplits: 1).last.map { String($0).trimmingCharacters(in: .whitespaces) } ?? "0"
+            }
+        }
+        let reply = "RTSP/1.0 200 OK\r\nCSeq: \(cseq)\r\nServer: AirTunes/550.10\r\nContent-Length: 0\r\nAudio-Latency: 0\r\n\r\n"
+        sendEncrypted(Data(reply.utf8))
+    }
+
+    private func sendEncrypted(_ plaintext: Data) {
+        guard let connection else { return }
+        var lenLE = UInt16(plaintext.count).littleEndian
+        let lenData = withUnsafeBytes(of: &lenLE) { Data($0) }
+        var c = outCount.littleEndian
+        let nonce = Data(repeating: 0, count: 4) + withUnsafeBytes(of: &c) { Data($0) }
+        guard let box = try? ChaChaPoly.seal(plaintext, using: outKey,
+                                             nonce: try ChaChaPoly.Nonce(data: nonce),
+                                             authenticating: lenData) else { return }
+        outCount &+= 1
+        connection.send(content: lenData + box.ciphertext + box.tag, completion: .idempotent)
     }
 
     public func stop() {
