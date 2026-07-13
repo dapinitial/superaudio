@@ -48,6 +48,8 @@ public final class AP2PTP: @unchecked Sendable {
     private var syncSeq: UInt16 = 0
     private var tickCount: UInt64 = 0
     private var rxLogCount: UInt64 = 0
+    private var grantSeq: UInt16 = 0
+    private var grantLogged = false
 
     /// PTP grandmaster time in nanoseconds since the **PTP/TAI epoch** (real
     /// wall-clock, not since-boot). AirPlay's PTP profile is TAI = UTC + 37 s,
@@ -108,18 +110,50 @@ public final class AP2PTP: @unchecked Sendable {
     // Reads the general port (320). Logs the receiver's Announce fields once so
     // we can compare BMCA: lower priority1 wins; tie → lower clockIdentity.
     private func handleGeneralReadable() {
-        var buf = [UInt8](repeating: 0, count: 128)
+        var buf = [UInt8](repeating: 0, count: 256)
         let n = recvfrom(generalFD, &buf, buf.count, 0, nil, nil)
-        guard n >= 64 else { return }
+        guard n >= 44 else { return }
         let msgType = buf[0] & 0x0F
-        guard msgType == 0xB, !announceLogged else { return }   // Announce
-        announceLogged = true
-        let theirPriority1 = buf[47]
-        let theirGMID = Data(buf[53..<61]).map { String(format: "%02x", $0) }.joined()
-        let ourID = clockIdentity.map { String(format: "%02x", $0) }.joined()
-        let op = ourPriority1
-        let weWin = op < theirPriority1 || (op == theirPriority1 && ourID < theirGMID)
-        Log.airplay2.notice("AP2 PTP BMCA: receiver Announce priority1=\(theirPriority1) gmID=\(theirGMID, privacy: .public); ours priority1=\(op) id=\(ourID, privacy: .public) → WE \(weWin ? "WIN (receiver should slave to us)" : "LOSE (receiver is master — our anchor clock is WRONG)", privacy: .public)")
+        if msgType == 0xB, !announceLogged {                    // Announce
+            announceLogged = true
+            let theirPriority1 = buf[47]
+            let theirGMID = Data(buf[53..<61]).map { String(format: "%02x", $0) }.joined()
+            let ourID = clockIdentity.map { String(format: "%02x", $0) }.joined()
+            let op = ourPriority1
+            let weWin = op < theirPriority1 || (op == theirPriority1 && ourID < theirGMID)
+            Log.airplay2.notice("AP2 PTP BMCA: receiver Announce priority1=\(theirPriority1) gmID=\(theirGMID, privacy: .public); ours priority1=\(op) id=\(ourID, privacy: .public) → WE \(weWin ? "WIN" : "LOSE", privacy: .public)")
+        } else if msgType == 0xC {                              // Signaling: unicast REQUEST
+            sendUnicastGrant(request: buf)
+        }
+    }
+
+    /// The Apple TV sends REQUEST_UNICAST_TRANSMISSION signaling asking our
+    /// grandmaster to grant unicast Announce/Sync/Delay_Resp. Without the GRANT
+    /// reply the receiver may never fully lock its clock and discards all audio.
+    /// Mirrors Apple's exact grant packet (its extended `00 0d 93` TLVs),
+    /// substituting our clockIdentity as source and the requester as target.
+    private func sendUnicastGrant(request buf: [UInt8]) {
+        let reqClock = Data(buf[20..<28])       // requester (ATV) clockIdentity
+        let reqPort = Data(buf[28..<30])        // requester sourcePortId
+        var g = Data(count: 34)
+        g[0] = 0x1C; g[1] = 0x02                 // signaling, PTPv2
+        g[2] = 0x00; g[3] = 0x6A                 // messageLength = 106
+        g[4] = domain
+        g[6] = 0x04; g[7] = 0x08                 // flags (timescale, unicast)
+        g.replaceSubrange(20..<28, with: clockIdentity)
+        g[28] = 0x80; g[29] = 0x00               // sourcePortId 0x8000
+        g[30] = UInt8(grantSeq >> 8); g[31] = UInt8(grantSeq & 0xFF)
+        grantSeq &+= 1
+        g[32] = 0x05; g[33] = 0x80               // control, logMessageInterval
+        g.append(reqClock); g.append(reqPort)    // targetPortIdentity = requester
+        // GRANT TLV 1 (Apple ext, type 0x0003, len 22)
+        g.append(contentsOf: [0x00, 0x03, 0x00, 0x16, 0x00, 0x0D, 0x93, 0x00, 0x00, 0x01])
+        g.append(Data(count: 16))
+        // GRANT TLV 2 (Apple ext, type 0x0003, len 32)
+        g.append(contentsOf: [0x00, 0x03, 0x00, 0x20, 0x00, 0x0D, 0x93, 0x00, 0x00, 0x05])
+        g.append(Data(count: 26))
+        sendPacket(g, fd: generalFD, port: 320)
+        if !grantLogged { grantLogged = true; Log.airplay2.notice("AP2 PTP: granting unicast transmission to the receiver (mirrors Apple)") }
     }
 
     public func stop() {
